@@ -43,7 +43,7 @@ export default function HomePage() {
             >
               <Image
                 src="/rider-on-time-logo.jpg"
-                alt="Rider on Time logo"
+                alt="Rider On Time logo"
                 width={78}
                 height={78}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -70,7 +70,7 @@ export default function HomePage() {
                   lineHeight: 1.1,
                 }}
               >
-                On-Time Taxi
+                Rider On Time
               </div>
               <div
                 style={{
@@ -79,7 +79,7 @@ export default function HomePage() {
                   marginTop: "4px",
                 }}
               >
-                Rider on Time logo now anchored at the top left
+                Approved logo now anchored at the top left
               </div>
             </div>
           </div>
@@ -177,7 +177,7 @@ export default function HomePage() {
                 }}
               >
                 Get there.<br />
-                On time.<br />
+                On Time.<br />
                 Every time.
               </h1>
 
@@ -190,8 +190,8 @@ export default function HomePage() {
                   maxWidth: "720px",
                 }}
               >
-                The approved Rider on Time logo is now built into the live homepage header at the top left,
-                while the main site still keeps the public ride, city, app, and admin paths easy to reach.
+                The approved Rider On Time logo is now built into the live homepage header at the top left,
+                and the homepage wording now uses a capital <strong>O</strong> in <strong>On Time</strong>.
               </p>
 
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -244,7 +244,7 @@ export default function HomePage() {
               >
                 <Image
                   src="/rider-on-time-logo.jpg"
-                  alt="Rider on Time homepage preview"
+                  alt="Rider On Time homepage preview"
                   width={900}
                   height={1175}
                   style={{ width: "100%", height: "auto", display: "block" }}
