@@ -3,21 +3,21 @@ import Link from "next/link";
 const launchCards = [
   {
     title: "Broker Account",
-    text: "Open the broker login and dashboard lane for liability-insurance driver records.",
+    text: "Broker login, dashboard review, notes, and added-to-policy status are now part of the live launch flow.",
     href: "/broker-account",
     tone: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%)",
     cta: "Open Broker Account",
   },
   {
     title: "Driver Compliance",
-    text: "Review the driver compliance workflow before approval.",
+    text: "Review driver compliance steps and keep the onboarding flow moving.",
     href: "/drive",
     tone: "linear-gradient(135deg,#38bdf8 0%,#6366f1 100%)",
     cta: "Open Driver Compliance",
   },
   {
     title: "Admin Console",
-    text: "Manage the admin tools, review lanes, and system controls.",
+    text: "Manage the admin tools, review lanes, and control pages from one place.",
     href: "/admin",
     tone: "linear-gradient(135deg,#f59e0b 0%,#ef4444 100%)",
     cta: "Open Admin",
@@ -60,7 +60,7 @@ export default function HomePage() {
             </div>
             <div style={{ fontSize: "30px", fontWeight: 800, lineHeight: 1.1 }}>Rider On Time</div>
             <div style={{ fontSize: "14px", color: "#d9e5ff", marginTop: "6px" }}>
-              Homepage now includes the broker workflow as a visible launch step.
+              The broker workflow is now a visible part of the homepage and launch path.
             </div>
           </div>
 
@@ -124,13 +124,13 @@ export default function HomePage() {
                   marginBottom: "14px",
                 }}
               >
-                New visible step
+                Next live broker step
               </div>
               <h1 style={{ margin: "0 0 12px", fontSize: "44px", lineHeight: 1.04 }}>
-                Broker Account is now part of the main launch flow
+                Broker review actions are now the active workflow step
               </h1>
               <p style={{ margin: 0, color: "#d9e5ff", fontSize: "18px", lineHeight: 1.75, maxWidth: "720px" }}>
-                This keeps the liability-insurance workflow moving even while the live Checkr setup is blocked. The broker can log in, open a dashboard, and review the driver information needed for insurance work.
+                The broker can now move from login into review work, leave notes, and mark drivers as added to policy while Checkr stays parked for the later integration phase.
               </p>
             </div>
 
@@ -147,10 +147,10 @@ export default function HomePage() {
               </div>
               <div style={{ display: "grid", gap: "12px" }}>
                 {[
-                  "Broker login page",
-                  "Broker dashboard page",
-                  "Driver details ready for broker review",
-                  "Checkr pass/fail placeholder ready for later",
+                  "Broker login page live",
+                  "Broker dashboard live",
+                  "Broker notes saved in-browser",
+                  "Added to policy status buttons live",
                 ].map((item) => (
                   <div
                     key={item}
