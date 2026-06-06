@@ -1,6 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
 
+const featureCards = [
+  {
+    title: "Panic Archive",
+    text: "The next live step now shows separated panic-recording archive areas for rider, driver, and owner events.",
+    href: "/admin/panic-archive",
+    button: "Open panic archive",
+  },
+  {
+    title: "Admin Console",
+    text: "Owner controls, compliance, and the panic-review lane are now visible from the homepage path.",
+    href: "/admin",
+    button: "Open admin console",
+  },
+  {
+    title: "Get App",
+    text: "Rider and driver app paths stay connected to the same public launch flow.",
+    href: "/get-app",
+    button: "Open get app",
+  },
+  {
+    title: "Cities",
+    text: "City expansion and route pages can keep building from this same homepage shell.",
+    href: "/cities",
+    button: "Open cities",
+  },
+];
+
 export default function HomePage() {
   return (
     <main
@@ -22,13 +49,7 @@ export default function HomePage() {
             marginBottom: "24px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "14px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <div
               style={{
                 width: "78px",
@@ -63,26 +84,11 @@ export default function HomePage() {
               >
                 Live homepage brand update
               </div>
-              <div
-                style={{
-                  fontSize: "28px",
-                  fontWeight: 800,
-                  lineHeight: 1.1,
-                }}
-              >
-                Rider On Time
-              </div>
+              <div style={{ fontSize: "28px", fontWeight: 800, lineHeight: 1.1 }}>Rider On Time</div>
             </div>
           </div>
 
-          <nav
-            style={{
-              display: "flex",
-              gap: "14px",
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
+          <nav style={{ display: "flex", gap: "14px", flexWrap: "wrap", alignItems: "center" }}>
             {[
               ["Ride", "/ride"],
               ["Drive", "/drive"],
@@ -133,14 +139,7 @@ export default function HomePage() {
             }}
           />
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-              gap: "26px",
-              alignItems: "center",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "26px", alignItems: "center" }}>
             <div>
               <div
                 style={{
@@ -181,13 +180,12 @@ export default function HomePage() {
                   maxWidth: "720px",
                 }}
               >
-                The approved Rider On Time logo is now built into the live homepage header at the top left,
-                and the homepage wording now uses a capital <strong>O</strong> in <strong>On Time</strong>.
+                The homepage now shows the panic archive as the current live build step, so the emergency admin work is visible from the front page too.
               </p>
 
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <Link
-                  href="/ride"
+                  href="/admin/panic-archive"
                   style={{
                     textDecoration: "none",
                     background: "#ffffff",
@@ -197,7 +195,7 @@ export default function HomePage() {
                     borderRadius: "14px",
                   }}
                 >
-                  Open Ride
+                  Open Panic Archive
                 </Link>
                 <Link
                   href="/admin"
@@ -224,22 +222,27 @@ export default function HomePage() {
                 border: "1px solid rgba(255,255,255,0.08)",
               }}
             >
-              <div
-                style={{
-                  borderRadius: "24px",
-                  overflow: "hidden",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
-                  background: "#05070d",
-                }}
-              >
-                <Image
-                  src="/rider-on-time-logo.jpg"
-                  alt="Rider On Time homepage preview"
-                  width={900}
-                  height={1175}
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                />
+              <div style={{ display: "grid", gap: "12px" }}>
+                {[
+                  "6 separate panic archive areas",
+                  "Search by driver, rider, or owner ID",
+                  "Download, review, delete, and restore flow",
+                  "Temporary hold before final removal",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    style={{
+                      borderRadius: "18px",
+                      padding: "16px",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      fontWeight: 700,
+                      color: "#d8e4ff",
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -248,19 +251,14 @@ export default function HomePage() {
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
             gap: "16px",
             marginBottom: "22px",
           }}
         >
-          {[
-            ["Admin Console", "Owner controls, compliance, marquee tools, and launch tracking stay visible from the homepage."],
-            ["Driver Compliance", "License, insurance, and other driver checks stay part of the launch path."],
-            ["Get App", "Rider and driver app flows remain linked on the public site."],
-            ["Cities", "Service area pages and route expansion can keep building from this same homepage."],
-          ].map(([title, text]) => (
+          {featureCards.map((card) => (
             <div
-              key={title}
+              key={card.title}
               style={{
                 borderRadius: "24px",
                 padding: "22px",
@@ -269,8 +267,23 @@ export default function HomePage() {
                 boxShadow: "0 16px 40px rgba(0,0,0,0.18)",
               }}
             >
-              <div style={{ fontSize: "20px", fontWeight: 800, marginBottom: "10px" }}>{title}</div>
-              <div style={{ color: "#d8e4ff", lineHeight: 1.7, fontSize: "15px" }}>{text}</div>
+              <div style={{ fontSize: "20px", fontWeight: 800, marginBottom: "10px" }}>{card.title}</div>
+              <div style={{ color: "#d8e4ff", lineHeight: 1.7, fontSize: "15px", minHeight: "100px" }}>{card.text}</div>
+              <Link
+                href={card.href}
+                style={{
+                  display: "inline-block",
+                  marginTop: "16px",
+                  textDecoration: "none",
+                  background: "#ffffff",
+                  color: "#09111f",
+                  fontWeight: 800,
+                  padding: "12px 14px",
+                  borderRadius: "12px",
+                }}
+              >
+                {card.button}
+              </Link>
             </div>
           ))}
         </section>

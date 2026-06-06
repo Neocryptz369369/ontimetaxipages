@@ -3,216 +3,348 @@ import Link from "next/link";
 const archiveGroups = [
   {
     title: "Driver audio",
-    tone: "sky",
-    entries: [
-      { id: "DR100001", label: "Driver audio clip", time: "2 min ago", status: "New" },
-      { id: "DR100014", label: "Driver audio clip", time: "19 min ago", status: "Reviewed" },
+    color: "#38bdf8",
+    records: [
+      { id: "DR-1044", file: "driver-audio-1044.wav", time: "2 min ago", state: "New" },
+      { id: "DR-7721", file: "driver-audio-7721.wav", time: "18 min ago", state: "Reviewed" },
     ],
   },
   {
     title: "Driver video",
-    tone: "emerald",
-    entries: [
-      { id: "DR100001", label: "Driver video clip", time: "2 min ago", status: "New" },
-      { id: "DR100014", label: "Driver video clip", time: "19 min ago", status: "Reviewed" },
+    color: "#22c55e",
+    records: [
+      { id: "DR-1044", file: "driver-video-1044.mp4", time: "2 min ago", state: "New" },
+      { id: "DR-6620", file: "driver-video-6620.mp4", time: "33 min ago", state: "Hold" },
     ],
   },
   {
     title: "Rider audio",
-    tone: "violet",
-    entries: [
-      { id: "CU200211", label: "Rider audio clip", time: "8 min ago", status: "New" },
-      { id: "CU200145", label: "Rider audio clip", time: "43 min ago", status: "Hold" },
+    color: "#f472b6",
+    records: [
+      { id: "CU-2001", file: "rider-audio-2001.wav", time: "7 min ago", state: "New" },
+      { id: "CU-2014", file: "rider-audio-2014.wav", time: "49 min ago", state: "Reviewed" },
     ],
   },
   {
     title: "Rider video",
-    tone: "amber",
-    entries: [
-      { id: "CU200211", label: "Rider video clip", time: "8 min ago", status: "New" },
-      { id: "CU200145", label: "Rider video clip", time: "43 min ago", status: "Hold" },
+    color: "#f59e0b",
+    records: [
+      { id: "CU-2001", file: "rider-video-2001.mp4", time: "7 min ago", state: "New" },
+      { id: "CU-2058", file: "rider-video-2058.mp4", time: "1 hr ago", state: "Hold" },
     ],
   },
   {
     title: "Owner app audio",
-    tone: "rose",
-    entries: [
-      { id: "OWN0001", label: "Owner audio clip", time: "1 hr ago", status: "Reviewed" },
+    color: "#a78bfa",
+    records: [
+      { id: "OWN-0001", file: "owner-audio-0001.wav", time: "12 min ago", state: "New" },
+      { id: "OWN-0004", file: "owner-audio-0004.wav", time: "Yesterday", state: "Reviewed" },
     ],
   },
   {
     title: "Owner app video",
-    tone: "cyan",
-    entries: [
-      { id: "OWN0001", label: "Owner video clip", time: "1 hr ago", status: "Reviewed" },
+    color: "#fb7185",
+    records: [
+      { id: "OWN-0001", file: "owner-video-0001.mp4", time: "12 min ago", state: "New" },
+      { id: "OWN-0004", file: "owner-video-0004.mp4", time: "Yesterday", state: "Reviewed" },
     ],
   },
 ];
 
-const alerts = [
-  "New panic recording reached the admin archive.",
-  "ID search should match driver, rider, or owner IDs.",
-  "Delete should move recordings into a hold area first, not remove them right away.",
-  "Reminder email stays unwired until Dennis confirms the exact address.",
+const holdArea = [
+  { type: "Driver video", id: "DR-6620", left: "4 days left" },
+  { type: "Rider video", id: "CU-2058", left: "2 days left" },
+  { type: "Owner app audio", id: "OWN-0004", left: "1 day left" },
 ];
 
-const holdItems = [
-  { type: "Driver audio", id: "DR100014", daysLeft: "4 days left" },
-  { type: "Rider video", id: "CU200145", daysLeft: "1 day left" },
-];
-
-function toneClasses(tone: string) {
-  if (tone === "emerald") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-100";
-  if (tone === "violet") return "border-violet-400/30 bg-violet-400/10 text-violet-100";
-  if (tone === "amber") return "border-amber-400/30 bg-amber-400/10 text-amber-100";
-  if (tone === "rose") return "border-rose-400/30 bg-rose-400/10 text-rose-100";
-  if (tone === "cyan") return "border-cyan-400/30 bg-cyan-400/10 text-cyan-100";
-  return "border-sky-400/30 bg-sky-400/10 text-sky-100";
-}
-
-function statusBadge(status: string) {
-  if (status === "New") return "bg-rose-400/20 text-rose-100 border border-rose-400/30";
-  if (status === "Hold") return "bg-amber-400/20 text-amber-100 border border-amber-400/30";
-  return "bg-emerald-400/20 text-emerald-100 border border-emerald-400/30";
+function stateStyle(state: string) {
+  if (state === "New") return { background: "rgba(255,77,184,0.16)", color: "#ffd1f0", border: "1px solid rgba(255,77,184,0.28)" };
+  if (state === "Hold") return { background: "rgba(245,158,11,0.16)", color: "#ffe3a6", border: "1px solid rgba(245,158,11,0.28)" };
+  return { background: "rgba(34,197,94,0.16)", color: "#cbffe0", border: "1px solid rgba(34,197,94,0.28)" };
 }
 
 export default function PanicArchivePage() {
   return (
-    <main className="min-h-screen bg-[#08111f] text-white">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[#0b1728] shadow-[0_30px_100px_rgba(0,0,0,0.45)]">
-          <div className="border-b border-white/10 bg-[linear-gradient(135deg,#0f172a_0%,#123154_45%,#7c2d12_100%)] px-6 py-6 sm:px-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-200/90">
-                  Admin console • Panic recordings
-                </p>
-                <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
-                  Panic archive and recordings board
-                </h1>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-100/90 sm:text-base">
-                  This admin screen organizes panic-button recordings into the 6 separate archive areas Dennis requested,
-                  with search, review, download, delete, restore, and hold-state structure.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/admin"
-                  className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                >
-                  Back to Admin
-                </Link>
-                <button className="inline-flex items-center rounded-full bg-amber-300 px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-amber-200">
-                  New archive alert
-                </button>
-              </div>
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "radial-gradient(circle at top, #14213d 0%, #09101d 44%, #03060b 100%)",
+        color: "#ffffff",
+        fontFamily: "Arial, Helvetica, sans-serif",
+      }}
+    >
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "28px 18px 80px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
+            marginBottom: "24px",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 800,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#8fdcff",
+                marginBottom: "10px",
+              }}
+            >
+              Emergency recordings lane
             </div>
+            <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Panic archive and review board</h1>
+            <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "860px" }}>
+              This step separates rider, driver, and owner panic recordings into 6 archive areas and gives Dennis a review path for search, download, delete, and restore handling.
+            </p>
           </div>
 
-          <div className="grid gap-0 xl:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="border-b border-white/10 bg-[#0a1423] p-6 xl:border-b-0 xl:border-r">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-200">Search recordings</p>
-                <div className="mt-4 rounded-2xl border border-white/10 bg-[#101d31] px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Find by ID</p>
-                  <p className="mt-2 text-base font-bold text-white">DR100001 / CU200211 / OWN0001</p>
-                </div>
-              </div>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <Link
+              href="/admin"
+              style={{
+                textDecoration: "none",
+                color: "#ffffff",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                padding: "12px 16px",
+                borderRadius: "14px",
+                fontWeight: 800,
+              }}
+            >
+              Back to admin
+            </Link>
+            <Link
+              href="/"
+              style={{
+                textDecoration: "none",
+                color: "#09111f",
+                background: "#ffffff",
+                padding: "12px 16px",
+                borderRadius: "14px",
+                fontWeight: 800,
+              }}
+            >
+              Back to homepage
+            </Link>
+          </div>
+        </div>
 
-              <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-200">Alert notes</p>
-                <div className="mt-4 space-y-3">
-                  {alerts.map((item) => (
-                    <div key={item} className="rounded-2xl border border-white/10 bg-[#101d31] px-4 py-3 text-sm leading-7 text-slate-300">
-                      • {item}
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "14px",
+            marginBottom: "22px",
+          }}
+        >
+          {[
+            ["Archive areas", "6"],
+            ["Records awaiting review", "5"],
+            ["Deleted hold queue", "3"],
+            ["ID search enabled", "Yes"],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              style={{
+                borderRadius: "22px",
+                padding: "20px",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                boxShadow: "0 18px 40px rgba(0,0,0,0.22)",
+              }}
+            >
+              <div style={{ color: "#9fb7e5", fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 800 }}>{label}</div>
+              <div style={{ marginTop: "10px", fontSize: "34px", fontWeight: 800 }}>{value}</div>
+            </div>
+          ))}
+        </section>
+
+        <section
+          style={{
+            borderRadius: "24px",
+            padding: "22px",
+            marginBottom: "22px",
+            background: "linear-gradient(135deg, rgba(255,77,184,0.18) 0%, rgba(47,109,255,0.18) 55%, rgba(255,255,255,0.04) 100%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+          }}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: "14px", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 800, color: "#d9e5ff" }}>Search by ID</div>
+              <p style={{ margin: "8px 0 0", color: "#d9e5ff", lineHeight: 1.7 }}>
+                Search should match driver IDs, customer IDs, or owner recording IDs when Dennis needs to find a panic event fast.
+              </p>
+            </div>
+            <div
+              style={{
+                minWidth: "280px",
+                borderRadius: "16px",
+                background: "rgba(0,0,0,0.26)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                padding: "14px 16px",
+                fontWeight: 700,
+                color: "#ffffff",
+              }}
+            >
+              Search IDs: DR-1044 / CU-2001 / OWN-0001
+            </div>
+          </div>
+        </section>
+
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))",
+            gap: "16px",
+            marginBottom: "22px",
+          }}
+        >
+          {archiveGroups.map((group) => (
+            <div
+              key={group.title}
+              style={{
+                borderRadius: "24px",
+                overflow: "hidden",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
+              }}
+            >
+              <div style={{ padding: "16px 18px", background: group.color, color: "#08111f", fontWeight: 800, fontSize: "22px" }}>{group.title}</div>
+              <div style={{ padding: "18px" }}>
+                {group.records.map((record) => (
+                  <div
+                    key={record.file}
+                    style={{
+                      borderRadius: "18px",
+                      padding: "16px",
+                      background: "rgba(0,0,0,0.22)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", marginBottom: "10px" }}>
+                      <div style={{ fontWeight: 800, fontSize: "18px" }}>{record.file}</div>
+                      <div style={{ ...stateStyle(record.state), borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                        {record.state}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-200">Delete-hold rule</p>
-                <p className="mt-4 text-sm leading-7 text-slate-300">
-                  Deleted recordings should move into a hold area first, stay there for the default 5 days,
-                  and be restorable before final removal.
-                </p>
-              </div>
-            </aside>
-
-            <section className="p-6">
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {archiveGroups.map((group) => (
-                  <div key={group.title} className="rounded-[28px] border border-white/10 bg-[#101d31] p-5 shadow-lg">
-                    <div className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${toneClasses(group.tone)}`}>
-                      {group.title}
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      {group.entries.map((entry) => (
-                        <div key={`${group.title}-${entry.id}-${entry.time}`} className="rounded-2xl border border-white/10 bg-[#0b1728] p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-extrabold text-white">{entry.label}</p>
-                              <p className="mt-1 text-xs text-slate-400">{entry.id} • {entry.time}</p>
-                            </div>
-                            <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-bold ${statusBadge(entry.status)}`}>
-                              {entry.status}
-                            </span>
-                          </div>
-
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <button className="rounded-full bg-sky-400 px-3 py-2 text-xs font-extrabold text-slate-950 transition hover:bg-sky-300">
-                              Review
-                            </button>
-                            <button className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-extrabold text-white transition hover:bg-white/10">
-                              Download
-                            </button>
-                            <button className="rounded-full border border-rose-300/30 bg-rose-300/10 px-3 py-2 text-xs font-extrabold text-rose-100 transition hover:bg-rose-300/20">
-                              Delete
-                            </button>
-                          </div>
+                    <div style={{ color: "#bcd0f8", fontSize: "14px", marginBottom: "12px" }}>ID: {record.id} • Received: {record.time}</div>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      {[
+                        ["Review", "#ffffff", "#09111f"],
+                        ["Download", "rgba(255,255,255,0.08)", "#ffffff"],
+                        ["Delete", "rgba(255,77,184,0.16)", "#ffd1f0"],
+                      ].map(([label, bg, color]) => (
+                        <div
+                          key={label}
+                          style={{
+                            padding: "10px 12px",
+                            borderRadius: "12px",
+                            background: bg,
+                            color,
+                            fontWeight: 800,
+                            border: "1px solid rgba(255,255,255,0.10)",
+                          }}
+                        >
+                          {label}
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          ))}
+        </section>
 
-              <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-200">Deleted recordings hold area</p>
-                  <div className="mt-4 space-y-3">
-                    {holdItems.map((item) => (
-                      <div key={`${item.type}-${item.id}`} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#101d31] p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-sm font-extrabold text-white">{item.type}</p>
-                          <p className="mt-1 text-xs text-slate-400">{item.id} • {item.daysLeft}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <button className="rounded-full bg-emerald-400 px-3 py-2 text-xs font-extrabold text-slate-950 transition hover:bg-emerald-300">
-                            Restore
-                          </button>
-                          <button className="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs font-extrabold text-amber-100 transition hover:bg-amber-300/20">
-                            Extend hold
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.2fr 0.8fr",
+            gap: "16px",
+          }}
+        >
+          <div
+            style={{
+              borderRadius: "24px",
+              padding: "22px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.10)",
+            }}
+          >
+            <h2 style={{ marginTop: 0, fontSize: "28px" }}>Deleted hold area</h2>
+            <p style={{ color: "#d9e5ff", lineHeight: 1.7 }}>
+              Delete should not permanently remove a recording right away. The hold area keeps a recovery window before final expiry.
+            </p>
+            <div style={{ display: "grid", gap: "12px" }}>
+              {holdArea.map((item) => (
+                <div
+                  key={item.type + item.id}
+                  style={{
+                    borderRadius: "18px",
+                    padding: "16px",
+                    background: "rgba(0,0,0,0.24)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 800 }}>{item.type}</div>
+                    <div style={{ color: "#bcd0f8", marginTop: "6px" }}>ID: {item.id}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                    <div style={{ color: "#ffe3a6", fontWeight: 800 }}>{item.left}</div>
+                    <div style={{ padding: "10px 12px", borderRadius: "12px", background: "#ffffff", color: "#09111f", fontWeight: 800 }}>Restore</div>
+                    <div style={{ padding: "10px 12px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", color: "#ffffff", fontWeight: 800 }}>Extend hold</div>
                   </div>
                 </div>
-
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-200">Important note</p>
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-[#101d31] p-4 text-sm leading-7 text-slate-300">
-                    The email alert destination is still intentionally left unwired here until Dennis confirms the exact address.
-                    This page is focused on the admin-console archive and recording-management structure first.
-                  </div>
-                </div>
-              </div>
-            </section>
+              ))}
+            </div>
           </div>
-        </div>
+
+          <div
+            style={{
+              borderRadius: "24px",
+              padding: "22px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.10)",
+            }}
+          >
+            <h2 style={{ marginTop: 0, fontSize: "28px" }}>Important notes</h2>
+            <div style={{ display: "grid", gap: "12px" }}>
+              {[
+                "Keep rider, driver, and owner recordings separate.",
+                "Show IDs with each recording entry.",
+                "Let Dennis review before permanent deletion.",
+                "Email destination still needs exact confirmation before wiring alerts.",
+                "This is a live admin build step, but localhost is still preview-only.",
+              ].map((note) => (
+                <div
+                  key={note}
+                  style={{
+                    borderRadius: "16px",
+                    padding: "14px 16px",
+                    background: "rgba(0,0,0,0.24)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#d9e5ff",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {note}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );
