@@ -10,21 +10,21 @@ const featureCards = [
   },
   {
     title: "Marquee Manager",
-    text: "The homepage now points to a real marquee page where ads can be created, edited, and deleted from admin.",
+    text: "The admin route now takes you to a working marquee page with Add, Edit, Preview, and Delete actions.",
     href: "/admin/marquee",
     button: "Open marquee manager",
+  },
+  {
+    title: "Supervisor Free Rides",
+    text: "The next live step now shows supervisor slots, driver ID search, and free-ride queue actions.",
+    href: "/supervisors",
+    button: "Open supervisors",
   },
   {
     title: "Admin Console",
     text: "Owner controls, compliance, and review lanes stay visible from the homepage path.",
     href: "/admin",
     button: "Open admin console",
-  },
-  {
-    title: "Cities",
-    text: "City expansion and route pages can keep building from this same homepage shell.",
-    href: "/cities",
-    button: "Open cities",
   },
 ];
 
@@ -119,7 +119,7 @@ export default function HomePage() {
           style={{
             borderRadius: "34px",
             padding: "34px 26px",
-            background: "linear-gradient(135deg, rgba(34,197,94,0.16) 0%, rgba(14,165,233,0.16) 48%, rgba(0,0,0,0.62) 100%)",
+            background: "linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(236,72,153,0.18) 48%, rgba(0,0,0,0.62) 100%)",
             border: "1px solid rgba(255,255,255,0.12)",
             boxShadow: "0 25px 90px rgba(0,0,0,0.38)",
             overflow: "hidden",
@@ -134,7 +134,7 @@ export default function HomePage() {
               width: "320px",
               height: "320px",
               borderRadius: "999px",
-              background: "radial-gradient(circle, rgba(45,108,255,0.35) 0%, rgba(45,108,255,0.02) 70%)",
+              background: "radial-gradient(circle, rgba(124,58,237,0.35) 0%, rgba(124,58,237,0.02) 70%)",
               pointerEvents: "none",
             }}
           />
@@ -176,16 +176,16 @@ export default function HomePage() {
                   margin: "0 0 22px",
                   fontSize: "18px",
                   lineHeight: 1.7,
-                  color: "#d8e4ff",
+                  color: "#f5e9ff",
                   maxWidth: "720px",
                 }}
               >
-                The marquee manager is now part of the live homepage flow, and the admin route should take you to a real ad-management page.
+                The supervisor free-ride step is now visible from the homepage with driver ID search, monthly ride status, and clear-after-received actions.
               </p>
 
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <Link
-                  href="/admin/marquee"
+                  href="/supervisors"
                   style={{
                     textDecoration: "none",
                     background: "#ffffff",
@@ -195,7 +195,7 @@ export default function HomePage() {
                     borderRadius: "14px",
                   }}
                 >
-                  Open Marquee Manager
+                  Open supervisor board
                 </Link>
                 <Link
                   href="/admin"
@@ -209,7 +209,7 @@ export default function HomePage() {
                     border: "1px solid rgba(255,255,255,0.16)",
                   }}
                 >
-                  Open Admin Console
+                  Open admin console
                 </Link>
               </div>
             </div>
@@ -224,10 +224,10 @@ export default function HomePage() {
             >
               <div style={{ display: "grid", gap: "12px" }}>
                 {[
-                  "Real marquee page in admin",
-                  "Create new ad button",
-                  "Edit and delete actions",
-                  "Authority alerts kept separate",
+                  "First five accepted drivers become supervisors",
+                  "One free ride every month",
+                  "Search by driver ID",
+                  "X clear after ride is received",
                 ].map((item) => (
                   <div
                     key={item}
@@ -237,7 +237,7 @@ export default function HomePage() {
                       background: "rgba(255,255,255,0.06)",
                       border: "1px solid rgba(255,255,255,0.10)",
                       fontWeight: 700,
-                      color: "#d8e4ff",
+                      color: "#f5e9ff",
                     }}
                   >
                     {item}
