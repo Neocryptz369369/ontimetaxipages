@@ -232,7 +232,7 @@ export default function HomePage() {
             <div
               style={{
                 position: "relative",
-                minHeight: "640px",
+                minHeight: "660px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -242,8 +242,8 @@ export default function HomePage() {
                 style={{
                   position: "relative",
                   width: "100%",
-                  maxWidth: "640px",
-                  height: "600px",
+                  maxWidth: "660px",
+                  height: "620px",
                   borderRadius: "34px",
                   padding: "26px",
                   background: "linear-gradient(145deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 100%)",
@@ -268,8 +268,8 @@ export default function HomePage() {
                   style={{
                     position: "relative",
                     width: "100%",
-                    maxWidth: "520px",
-                    height: "460px",
+                    maxWidth: "580px",
+                    height: "540px",
                   }}
                 >
                   <Image
@@ -279,7 +279,7 @@ export default function HomePage() {
                     priority
                     style={{
                       objectFit: "contain",
-                      padding: "18px 18px 42px 18px",
+                      padding: "12px 12px 32px 12px",
                     }}
                   />
                 </div>
