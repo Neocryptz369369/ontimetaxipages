@@ -232,12 +232,12 @@ export default function HomePage() {
             <div
               style={{
                 position: "relative",
-                borderRadius: "32px",
-                padding: "18px",
+                borderRadius: "34px",
+                padding: "22px",
                 background: "linear-gradient(145deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 100%)",
                 border: "1px solid rgba(255,255,255,0.14)",
                 boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
-                minHeight: "420px",
+                minHeight: "520px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -246,8 +246,8 @@ export default function HomePage() {
               <div
                 style={{
                   position: "absolute",
-                  inset: "18px",
-                  borderRadius: "26px",
+                  inset: "22px",
+                  borderRadius: "28px",
                   background: "radial-gradient(circle at top, rgba(45,108,255,0.18) 0%, rgba(255,77,187,0.12) 38%, rgba(0,0,0,0.18) 100%)",
                   pointerEvents: "none",
                 }}
@@ -257,20 +257,24 @@ export default function HomePage() {
                 style={{
                   position: "relative",
                   width: "100%",
-                  maxWidth: "420px",
-                  aspectRatio: "1 / 1",
-                  borderRadius: "28px",
+                  maxWidth: "500px",
+                  height: "420px",
+                  borderRadius: "30px",
                   overflow: "hidden",
                   border: "1px solid rgba(255,255,255,0.16)",
                   boxShadow: "0 0 40px rgba(73,196,255,0.18), 0 0 30px rgba(255,74,187,0.16)",
                   background: "#05070d",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "24px",
                 }}
               >
                 <Image
                   src="/rider-on-time-logo.jpg"
                   alt="Rider On Time big logo"
                   fill
-                  style={{ objectFit: "cover" }}
+                  style={{ objectFit: "contain", padding: "22px" }}
                   priority
                 />
               </div>
