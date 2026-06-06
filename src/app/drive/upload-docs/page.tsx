@@ -1,425 +1,372 @@
 'use client';
 
-import { ChangeEvent, useMemo, useState } from "react";
 import Link from "next/link";
+import { ChangeEvent, useMemo, useState } from "react";
 
-type DocKey = 'license' | 'insurance' | 'background' | 'driving_record';
+type DocKey = "license" | "insurance" | "background" | "driving_record";
+type ReviewStatus = "Approved" | "Denied";
 
-type DocState = {
-  fileName: string;
-  marked: boolean;
+type PendingFile = {
+  name: string;
+  size: number;
+  type: string;
 };
 
-type DocItem = {
+type ReviewRecord = {
   id: DocKey;
-  title: string;
-  help: string;
+  label: string;
+  fileName: string;
+  fileSize: number;
+  fileSizeText: string;
+  mimeType: string;
+  decision: ReviewStatus;
+  reason: string;
+  sentAt: string;
 };
 
-const docItems: DocItem[] = [
+const storageKey = "riderOnTimeComplianceUploads";
+const allowedExtensions = ["pdf", "jpg", "jpeg", "png", "webp"];
+const maxFileSize = 10 * 1024 * 1024;
+
+const docDefinitions: Array<{ id: DocKey; label: string; note: string }> = [
   {
-    id: 'license',
-    title: 'Driver license',
-    help: 'Choose the driver license file first. Front and back can be combined into one file if needed.',
+    id: "license",
+    label: "Driver license",
+    note: "Upload the driver license file first.",
   },
   {
-    id: 'insurance',
-    title: 'Proof of insurance',
-    help: 'Choose the current insurance file before marking it uploaded.',
+    id: "insurance",
+    label: "Insurance proof",
+    note: "Upload the current insurance file first.",
   },
   {
-    id: 'background',
-    title: 'Background check result',
-    help: 'Choose the background check file first.',
+    id: "background",
+    label: "Background check result",
+    note: "Upload the screening result file first.",
   },
   {
-    id: 'driving_record',
-    title: 'Driving record check',
-    help: 'Choose the driving record file before marking it uploaded.',
+    id: "driving_record",
+    label: "Driving record check",
+    note: "Upload the driving record file first.",
   },
 ];
 
-const initialDocs: Record<DocKey, DocState> = {
-  license: { fileName: '', marked: false },
-  insurance: { fileName: '', marked: false },
-  background: { fileName: '', marked: false },
-  driving_record: { fileName: '', marked: false },
-};
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
-function statusStyles(label: string) {
-  if (label === 'Uploaded') {
+function extensionFromName(fileName: string) {
+  const parts = fileName.toLowerCase().split(".");
+  return parts.length > 1 ? parts.pop() || "" : "";
+}
+
+function decide(file: PendingFile) {
+  const extension = extensionFromName(file.name);
+
+  if (!allowedExtensions.includes(extension)) {
     return {
-      background: 'rgba(34,197,94,0.18)',
-      color: '#cbffe0',
-      border: '1px solid rgba(34,197,94,0.30)',
+      decision: "Denied" as ReviewStatus,
+      reason: `Denied automatically because .${extension || "unknown"} is not allowed. Use PDF, JPG, JPEG, PNG, or WEBP.`,
     };
   }
 
-  if (label === 'File selected') {
+  if (file.size > maxFileSize) {
     return {
-      background: 'rgba(56,189,248,0.18)',
-      color: '#d9f6ff',
-      border: '1px solid rgba(56,189,248,0.30)',
+      decision: "Denied" as ReviewStatus,
+      reason: "Denied automatically because the file is larger than 10 MB.",
     };
   }
 
   return {
-    background: 'rgba(148,163,184,0.18)',
-    color: '#e2e8f0',
-    border: '1px solid rgba(148,163,184,0.30)',
+    decision: "Approved" as ReviewStatus,
+    reason: "Approved automatically because the file type is allowed and the file size is within the limit.",
   };
 }
 
-export default function UploadDocsPage() {
-  const [docs, setDocs] = useState<Record<DocKey, DocState>>(initialDocs);
-  const [message, setMessage] = useState('Choose a file first, then press Mark uploaded.');
+function badgeStyle(done: boolean) {
+  return done
+    ? {
+        background: "rgba(34,197,94,0.16)",
+        color: "#cbffe0",
+        border: "1px solid rgba(34,197,94,0.28)",
+      }
+    : {
+        background: "rgba(56,189,248,0.16)",
+        color: "#d9f6ff",
+        border: "1px solid rgba(56,189,248,0.28)",
+      };
+}
 
-  const uploadedCount = useMemo(
-    () => Object.values(docs).filter((item) => item.marked).length,
-    [docs]
+export default function UploadDocsPage() {
+  const [selectedFiles, setSelectedFiles] = useState<Partial<Record<DocKey, PendingFile>>>({});
+  const [message, setMessage] = useState(
+    "Upload all 4 files first. Then press Send at the bottom so the admin panel can receive them and the system can decide approved or denied."
+  );
+  const [sent, setSent] = useState(false);
+
+  const selectedCount = useMemo(
+    () => Object.values(selectedFiles).filter(Boolean).length,
+    [selectedFiles]
   );
 
-  const allUploaded = uploadedCount === docItems.length;
+  const allFilesReady = selectedCount === docDefinitions.length;
 
-  function onChooseFile(id: DocKey, event: ChangeEvent<HTMLInputElement>) {
-    const picked = event.target.files?.[0];
+  function handleFileChange(id: DocKey, label: string, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
 
-    setDocs((current) => ({
+    if (!file) return;
+
+    setSelectedFiles((current) => ({
       ...current,
       [id]: {
-        fileName: picked ? picked.name : '',
-        marked: false,
+        name: file.name,
+        size: file.size,
+        type: file.type || "unknown",
       },
     }));
 
-    if (picked) {
-      setMessage(`${picked.name} selected. Now press Mark uploaded.`);
-    } else {
-      setMessage('No file selected yet.');
-    }
+    setSent(false);
+    setMessage(`${label} selected. Keep going until all 4 files are ready.`);
   }
 
-  function markUploaded(id: DocKey) {
-    const item = docs[id];
-
-    if (!item.fileName) {
-      setMessage('Choose a file first.');
+  function handleSend() {
+    if (!allFilesReady) {
+      setMessage("Upload all 4 files first. Then press Send.");
       return;
     }
 
-    setDocs((current) => ({
-      ...current,
-      [id]: {
-        ...current[id],
-        marked: true,
-      },
-    }));
+    const sentAt = new Date().toLocaleString();
 
-    setMessage(`${item.fileName} marked uploaded.`);
-  }
+    const records: ReviewRecord[] = docDefinitions.map((doc) => {
+      const file = selectedFiles[doc.id]!;
+      const result = decide(file);
 
-  function clearFile(id: DocKey) {
-    setDocs((current) => ({
-      ...current,
-      [id]: {
-        fileName: '',
-        marked: false,
-      },
-    }));
+      return {
+        id: doc.id,
+        label: doc.label,
+        fileName: file.name,
+        fileSize: file.size,
+        fileSizeText: formatBytes(file.size),
+        mimeType: file.type,
+        decision: result.decision,
+        reason: result.reason,
+        sentAt,
+      };
+    });
 
-    setMessage('File cleared. Choose a new file.');
+    window.localStorage.setItem(storageKey, JSON.stringify(records));
+    setSent(true);
+    setMessage("Files sent to the admin panel. The automated system finished the approval/denial check.");
   }
 
   return (
     <main
       style={{
-        minHeight: '100vh',
-        background: 'radial-gradient(circle at top, #11304a 0%, #0a1322 42%, #04060b 100%)',
-        color: '#ffffff',
-        fontFamily: 'Arial, Helvetica, sans-serif',
+        minHeight: "100vh",
+        background: "radial-gradient(circle at top, #12314b 0%, #0a1522 42%, #04060b 100%)",
+        color: "#ffffff",
+        fontFamily: "Arial, Helvetica, sans-serif",
       }}
     >
-      <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '28px 18px 80px' }}>
+      <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 18px 80px" }}>
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '16px',
-            flexWrap: 'wrap',
-            marginBottom: '24px',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
+            marginBottom: "24px",
           }}
         >
           <div>
             <div
               style={{
-                fontSize: '12px',
+                fontSize: "12px",
                 fontWeight: 800,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                color: '#8fdcff',
-                marginBottom: '10px',
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#8fdcff",
+                marginBottom: "10px",
               }}
             >
-              Driver document upload lane
+              Driver upload lane
             </div>
-            <h1 style={{ margin: 0, fontSize: '42px', lineHeight: 1.05 }}>Upload driver documents</h1>
-            <p style={{ margin: '12px 0 0', color: '#d9e5ff', fontSize: '17px', lineHeight: 1.7, maxWidth: '860px' }}>
-              This page now follows the right order: choose a file first, then mark it uploaded.
+            <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>
+              Upload driver documents, then send to admin
+            </h1>
+            <p
+              style={{
+                margin: "12px 0 0",
+                color: "#d9e5ff",
+                fontSize: "17px",
+                lineHeight: 1.7,
+                maxWidth: "900px",
+              }}
+            >
+              Drivers upload all required files first. Then they press one Send button at the bottom. After that, the admin panel receives the files and the automated system decides approved or denied.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             <Link
-              href='/drive'
+              href="/drive"
               style={{
-                textDecoration: 'none',
-                color: '#ffffff',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                padding: '12px 16px',
-                borderRadius: '14px',
+                textDecoration: "none",
+                color: "#ffffff",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                padding: "12px 16px",
+                borderRadius: "14px",
                 fontWeight: 800,
               }}
             >
-              Back to driver onboarding
+              Back to driver flow
             </Link>
             <Link
-              href='/'
+              href="/admin/compliance-review"
               style={{
-                textDecoration: 'none',
-                color: '#09111f',
-                background: '#ffffff',
-                padding: '12px 16px',
-                borderRadius: '14px',
+                textDecoration: "none",
+                color: "#09111f",
+                background: "#ffffff",
+                padding: "12px 16px",
+                borderRadius: "14px",
                 fontWeight: 800,
               }}
             >
-              Back to homepage
+              Open admin review
             </Link>
           </div>
         </div>
 
         <section
           style={{
-            borderRadius: '30px',
-            padding: '26px',
-            marginBottom: '22px',
-            background: 'linear-gradient(135deg, rgba(56,189,248,0.18) 0%, rgba(45,108,255,0.16) 55%, rgba(255,255,255,0.05) 100%)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 24px 70px rgba(0,0,0,0.35)',
+            borderRadius: "30px",
+            padding: "26px",
+            marginBottom: "22px",
+            background: "linear-gradient(135deg, rgba(20,184,166,0.18) 0%, rgba(45,108,255,0.18) 52%, rgba(255,255,255,0.05) 100%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
           }}
         >
-          <div
-            style={{
-              display: 'inline-block',
-              padding: '8px 12px',
-              borderRadius: '999px',
-              background: 'rgba(255,255,255,0.10)',
-              fontSize: '12px',
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginBottom: '14px',
-            }}
-          >
-            Fixed upload order
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+            <div style={{ borderRadius: "22px", padding: "18px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#bfe8ff" }}>
+                Files ready
+              </div>
+              <div style={{ fontSize: "34px", fontWeight: 800, marginTop: "10px" }}>{selectedCount} / 4</div>
+            </div>
+            <div style={{ borderRadius: "22px", padding: "18px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#bfe8ff" }}>
+                Send button
+              </div>
+              <div style={{ fontSize: "20px", fontWeight: 800, marginTop: "14px", color: allFilesReady ? "#cbffe0" : "#d9f6ff" }}>
+                {allFilesReady ? "Ready" : "Waiting for all 4 files"}
+              </div>
+            </div>
+            <div style={{ borderRadius: "22px", padding: "18px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#bfe8ff" }}>
+                Admin result
+              </div>
+              <div style={{ fontSize: "20px", fontWeight: 800, marginTop: "14px", color: sent ? "#cbffe0" : "#d9f6ff" }}>
+                {sent ? "Sent and reviewed" : "Not sent yet"}
+              </div>
+            </div>
           </div>
 
-          <h2 style={{ margin: '0 0 10px', fontSize: '34px', lineHeight: 1.08 }}>
-            Pick the file first. Mark it second.
-          </h2>
-
-          <p style={{ margin: 0, color: '#d9e5ff', fontSize: '18px', lineHeight: 1.7, maxWidth: '860px' }}>
-            Each document row now gives you a real file chooser first. The Mark uploaded button stays locked until a file is picked.
-          </p>
+          <div
+            style={{
+              marginTop: "18px",
+              borderRadius: "20px",
+              padding: "16px 18px",
+              background: "rgba(0,0,0,0.22)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "#e8f2ff",
+              lineHeight: 1.7,
+            }}
+          >
+            {message}
+          </div>
         </section>
 
         <section
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '16px',
-            marginBottom: '22px',
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "18px",
           }}
         >
-          <div
-            style={{
-              borderRadius: '24px',
-              padding: '20px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-            }}
-          >
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#8fdcff', marginBottom: '8px' }}>
-              Progress
-            </div>
-            <div style={{ fontSize: '34px', fontWeight: 800 }}>{uploadedCount} / {docItems.length}</div>
-            <div style={{ color: '#d9e5ff', marginTop: '8px', lineHeight: 1.6 }}>
-              Documents marked uploaded
-            </div>
-          </div>
-
-          <div
-            style={{
-              borderRadius: '24px',
-              padding: '20px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-            }}
-          >
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#8fdcff', marginBottom: '8px' }}>
-              Page rule
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: 800 }}>No mark button before file choice</div>
-            <div style={{ color: '#d9e5ff', marginTop: '8px', lineHeight: 1.6 }}>
-              If no file is chosen, the mark button stays disabled.
-            </div>
-          </div>
-
-          <div
-            style={{
-              borderRadius: '24px',
-              padding: '20px',
-              background: allUploaded ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.06)',
-              border: allUploaded ? '1px solid rgba(34,197,94,0.28)' : '1px solid rgba(255,255,255,0.10)',
-            }}
-          >
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#8fdcff', marginBottom: '8px' }}>
-              Current state
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: 800 }}>{allUploaded ? 'All documents ready' : 'Waiting for uploads'}</div>
-            <div style={{ color: '#d9e5ff', marginTop: '8px', lineHeight: 1.6 }}>
-              {allUploaded ? 'Every required document has been marked uploaded.' : 'Choose files and mark them one by one.'}
-            </div>
-          </div>
-        </section>
-
-        <section style={{ display: 'grid', gap: '16px', marginBottom: '22px' }}>
-          {docItems.map((doc) => {
-            const current = docs[doc.id];
-            const statusLabel = current.marked ? 'Uploaded' : current.fileName ? 'File selected' : 'Waiting';
-            const badge = statusStyles(statusLabel);
+          {docDefinitions.map((doc) => {
+            const file = selectedFiles[doc.id];
+            const isReady = Boolean(file);
 
             return (
               <div
                 key={doc.id}
                 style={{
-                  borderRadius: '28px',
-                  padding: '22px',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  boxShadow: '0 16px 50px rgba(0,0,0,0.20)',
+                  borderRadius: "28px",
+                  padding: "22px",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: '16px',
-                    flexWrap: 'wrap',
-                    marginBottom: '14px',
-                  }}
-                >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start", marginBottom: "14px" }}>
                   <div>
-                    <h3 style={{ margin: '0 0 8px', fontSize: '26px', lineHeight: 1.1 }}>{doc.title}</h3>
-                    <p style={{ margin: 0, color: '#d9e5ff', lineHeight: 1.7, maxWidth: '820px' }}>{doc.help}</p>
+                    <div style={{ fontSize: "24px", fontWeight: 800, lineHeight: 1.12 }}>{doc.label}</div>
+                    <div style={{ marginTop: "8px", color: "#cfe3ff", lineHeight: 1.6 }}>{doc.note}</div>
                   </div>
-
-                  <div
+                  <span
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: '999px',
-                      fontSize: '12px',
+                      ...badgeStyle(isReady),
+                      borderRadius: "999px",
+                      padding: "8px 12px",
+                      fontSize: "12px",
                       fontWeight: 800,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      ...badge,
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {statusLabel}
-                  </div>
+                    {isReady ? "Uploaded" : "Waiting"}
+                  </span>
                 </div>
 
-                <div
+                <label
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(0,1fr)',
-                    gap: '14px',
+                    display: "block",
+                    borderRadius: "18px",
+                    padding: "14px",
+                    background: "rgba(0,0,0,0.20)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    marginBottom: "14px",
                   }}
                 >
-                  <label style={{ display: 'grid', gap: '8px', fontWeight: 700 }}>
-                    <span>Choose file</span>
-                    <input
-                      type='file'
-                      onChange={(event) => onChooseFile(doc.id, event)}
-                      style={{
-                        width: '100%',
-                        padding: '14px 16px',
-                        borderRadius: '14px',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: 'rgba(0,0,0,0.24)',
-                        color: '#ffffff',
-                        fontSize: '15px',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </label>
-
-                  <div
-                    style={{
-                      borderRadius: '18px',
-                      padding: '14px 16px',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  >
-                    <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8fdcff', marginBottom: '6px' }}>
-                      Selected file
-                    </div>
-                    <div style={{ color: current.fileName ? '#ffffff' : '#cbd5e1', lineHeight: 1.6 }}>
-                      {current.fileName || 'No file chosen yet'}
-                    </div>
+                  <div style={{ fontWeight: 700, marginBottom: "8px" }}>Choose file</div>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    onChange={(event) => handleFileChange(doc.id, doc.label, event)}
+                    style={{ width: "100%" }}
+                  />
+                  <div style={{ marginTop: "10px", color: "#b8cee8", fontSize: "14px" }}>
+                    {file ? `${file.name} • ${formatBytes(file.size)}` : "No file selected yet."}
                   </div>
+                </label>
 
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <button
-                      type='button'
-                      onClick={() => markUploaded(doc.id)}
-                      disabled={!current.fileName || current.marked}
-                      style={{
-                        border: 'none',
-                        borderRadius: '14px',
-                        padding: '14px 18px',
-                        fontWeight: 800,
-                        cursor: !current.fileName || current.marked ? 'not-allowed' : 'pointer',
-                        opacity: !current.fileName || current.marked ? 0.55 : 1,
-                        background: 'linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%)',
-                        color: '#04111f',
-                      }}
-                    >
-                      {current.marked ? 'Uploaded' : 'Mark uploaded'}
-                    </button>
-
-                    <button
-                      type='button'
-                      onClick={() => clearFile(doc.id)}
-                      disabled={!current.fileName && !current.marked}
-                      style={{
-                        borderRadius: '14px',
-                        padding: '14px 18px',
-                        fontWeight: 800,
-                        cursor: !current.fileName && !current.marked ? 'not-allowed' : 'pointer',
-                        opacity: !current.fileName && !current.marked ? 0.55 : 1,
-                        background: 'rgba(255,255,255,0.08)',
-                        color: '#ffffff',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                      }}
-                    >
-                      Clear
-                    </button>
-                  </div>
+                <div
+                  style={{
+                    borderRadius: "18px",
+                    padding: "14px",
+                    background: "rgba(0,0,0,0.20)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#d9e5ff",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {file
+                    ? "This file is ready. After all 4 files are uploaded, press Send at the bottom."
+                    : "Upload this file first. The system will not review anything until the bottom Send button is pressed."}
                 </div>
               </div>
             );
@@ -428,16 +375,59 @@ export default function UploadDocsPage() {
 
         <section
           style={{
-            borderRadius: '24px',
-            padding: '20px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            marginTop: "22px",
+            borderRadius: "30px",
+            padding: "24px",
+            background: "linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(14,165,233,0.16) 100%)",
+            border: "1px solid rgba(255,255,255,0.12)",
           }}
         >
-          <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#8fdcff', marginBottom: '10px' }}>
-            Live page message
+          <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.16em", fontWeight: 800, color: "#dfffee", marginBottom: "10px" }}>
+            Final step
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 700, lineHeight: 1.6 }}>{message}</div>
+          <div style={{ fontSize: "30px", fontWeight: 800, lineHeight: 1.12, marginBottom: "10px" }}>
+            Send the full file set to admin review
+          </div>
+          <div style={{ color: "#e6f6ff", lineHeight: 1.7, marginBottom: "16px" }}>
+            This sends all uploaded files to the admin panel and then the automated system decides approved or denied.
+          </div>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!allFilesReady}
+              style={{
+                border: "none",
+                cursor: allFilesReady ? "pointer" : "not-allowed",
+                opacity: allFilesReady ? 1 : 0.5,
+                textDecoration: "none",
+                color: "#09111f",
+                background: "#ffffff",
+                padding: "12px 16px",
+                borderRadius: "14px",
+                fontWeight: 800,
+                fontSize: "15px",
+              }}
+            >
+              Send to admin panel
+            </button>
+            {sent && (
+              <Link
+                href="/admin/compliance-review"
+                style={{
+                  textDecoration: "none",
+                  color: "#ffffff",
+                  background: "rgba(255,255,255,0.10)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  padding: "12px 16px",
+                  borderRadius: "14px",
+                  fontWeight: 800,
+                }}
+              >
+                Open admin review results
+              </Link>
+            )}
+          </div>
         </section>
       </div>
     </main>
