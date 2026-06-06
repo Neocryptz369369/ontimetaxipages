@@ -45,10 +45,10 @@ export default function HomePage() {
             Homepage Update
           </div>
           <div style={{ fontSize: "22px", fontWeight: 800, marginTop: "6px" }}>
-            Admin console and driver compliance are now part of the homepage build.
+            Admin console, driver compliance, and app marquee controls are part of the homepage build.
           </div>
-          <div style={{ fontSize: "16px", lineHeight: 1.6, marginTop: "8px", maxWidth: "900px" }}>
-            This homepage now shows the owner/admin path and the full driver onboarding compliance direction too.
+          <div style={{ fontSize: "16px", lineHeight: 1.6, marginTop: "8px", maxWidth: "920px" }}>
+            This homepage now shows the owner/admin path, the driver compliance path, and the ad marquee / authority alert work too.
           </div>
         </section>
 
@@ -68,7 +68,7 @@ export default function HomePage() {
 
           <p style={{ margin: 0, fontSize: "19px", lineHeight: 1.7, maxWidth: "840px", color: "#486581" }}>
             Real upfront pricing. Trusted local drivers. No surge surprises hidden in fine print.
-            This homepage now shows the rider path, the admin path, and the driver compliance path.
+            This homepage now shows the rider path, the admin path, the driver compliance path, and the live app-marquee control direction.
           </p>
 
           <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "24px" }}>
@@ -94,7 +94,7 @@ export default function HomePage() {
             Owner and admin controls are available from this homepage.
           </h2>
           <p style={{ margin: 0, fontSize: "18px", lineHeight: 1.7, maxWidth: "860px", color: "#cbd5e1" }}>
-            The admin panel is now treated as part of the visible homepage path, not a hidden back page.
+            The admin panel is treated as part of the visible homepage path, not a hidden back page.
           </p>
           <div style={threeColGrid}>
             <div style={darkCard}><h3 style={{ marginTop: 0 }}>Executive Controls</h3><p style={darkBody}>Dispatch overrides, emergency controls, free-ride controls, and owner-side actions.</p></div>
@@ -135,6 +135,34 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section
+          style={{
+            background: "#ffffff",
+            border: "2px solid #0f172a",
+            borderRadius: "24px",
+            padding: "30px 28px",
+            boxShadow: "0 20px 48px rgba(15, 23, 42, 0.08)",
+            marginBottom: "22px",
+          }}
+        >
+          <div style={badgeLight}>Marquee And Alerts Now Visible</div>
+          <h2 style={{ margin: "0 0 12px", fontSize: "38px", lineHeight: 1.1 }}>
+            App ads and public-safety alerts are part of the live build path.
+          </h2>
+          <p style={{ margin: 0, fontSize: "18px", lineHeight: 1.7, maxWidth: "860px", color: "#486581" }}>
+            The marquee system now includes normal admin-managed ads plus automatic one-minute authority alerts for Amber Alerts, Emergency Alert System alerts, and Public Safety Alerts.
+          </p>
+          <div style={threeColGrid}>
+            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Regular Ads</h3><p style={lightBody}>Created only from the admin panel with a + new ad flow.</p></div>
+            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Authority Alerts</h3><p style={lightBody}>Amber, EAS, and Public Safety alerts override the marquee for one minute.</p></div>
+            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Return To Ads</h3><p style={lightBody}>After one minute, the normal ad flow should continue again.</p></div>
+          </div>
+          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "24px" }}>
+            <Link href="/admin" style={darkButton}>Manage Marquee In Admin</Link>
+            <Link href="/admin" style={secondaryButton}>Review Alert Controls</Link>
+          </div>
+        </section>
+
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "22px" }}>
           <div style={lightCard}><h3 style={{ marginTop: 0 }}>Ride</h3><p style={lightBody}>The Ride page is active and part of the live website path.</p></div>
           <div style={lightCard}><h3 style={{ marginTop: 0 }}>Get app</h3><p style={lightBody}>The app flow continues next with rider and driver paths for Android and iPhone.</p></div>
@@ -144,7 +172,7 @@ export default function HomePage() {
         <section style={{ background: "#ffffff", border: "1px solid #d9e2ec", borderRadius: "18px", padding: "22px", marginBottom: "18px" }}>
           <h2 style={{ marginTop: 0 }}>Launch status</h2>
           <p style={{ marginBottom: 0 }}>
-            The homepage now visibly reflects the public ride path, the admin-panel work, and the driver onboarding compliance flow.
+            The homepage now visibly reflects the public ride path, the admin-panel work, the driver onboarding compliance flow, and the marquee/alert system work.
           </p>
         </section>
 

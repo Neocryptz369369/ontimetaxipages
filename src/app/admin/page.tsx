@@ -296,7 +296,7 @@ export default function AdminPage() {
                   <p style={eyebrowStyle}>Apps Marquee Controls</p>
                   <h2 style={{ margin: '8px 0 10px' }}>Admin-managed ads and authority alerts</h2>
                   <p style={{ color: '#486581', margin: 0, maxWidth: '760px', lineHeight: 1.6 }}>
-                    Ads should be created only in the admin panel. Authority-driven emergency alerts are separate from regular ads and should only last 1 minute before normal ads continue again.
+                    Ads should be created only in the admin panel. Authority-driven emergency alerts are separate from normal ads and should only last 1 minute before normal ads continue again.
                   </p>
                 </div>
                 <button
