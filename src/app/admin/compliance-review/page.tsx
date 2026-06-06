@@ -102,10 +102,10 @@ export default function ComplianceReviewPage() {
                 color: "#d9e5ff",
                 fontSize: "17px",
                 lineHeight: 1.7,
-                maxWidth: "860px",
+                maxWidth: "900px",
               }}
             >
-              This page receives the sent driver files and shows the automated approval or denial result for each one.
+              This page receives the sent driver files and shows the automated approval or denial result for each one. Background check and driving record items are treated as separate-agency-required files.
             </p>
           </div>
 
@@ -160,6 +160,23 @@ export default function ComplianceReviewPage() {
             <div style={{ fontSize: "12px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#bfe8ff" }}>Denied</div>
             <div style={{ fontSize: "34px", fontWeight: 800, marginTop: "10px", color: "#ffd1f0" }}>{deniedCount}</div>
           </div>
+        </section>
+
+        <section
+          style={{
+            borderRadius: "28px",
+            padding: "24px",
+            background: "linear-gradient(135deg, rgba(125,211,252,0.12) 0%, rgba(168,85,247,0.12) 100%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            marginBottom: "22px",
+            color: "#e6f6ff",
+            lineHeight: 1.8,
+          }}
+        >
+          <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#dbeafe", marginBottom: "10px" }}>
+            Review rule now
+          </div>
+          The automated system handles the decision step after Send. For the background check and driving record, the upload is treated as a separate-agency-required file before the automated decision is shown here.
         </section>
 
         {records.length === 0 ? (

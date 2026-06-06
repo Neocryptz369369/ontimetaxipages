@@ -28,26 +28,30 @@ const storageKey = "riderOnTimeComplianceUploads";
 const allowedExtensions = ["pdf", "jpg", "jpeg", "png", "webp"];
 const maxFileSize = 10 * 1024 * 1024;
 
-const docDefinitions: Array<{ id: DocKey; label: string; note: string }> = [
+const docDefinitions: Array<{ id: DocKey; label: string; note: string; agencyRequired: boolean }> = [
   {
     id: "license",
     label: "Driver license",
     note: "Upload the driver license file first.",
+    agencyRequired: false,
   },
   {
     id: "insurance",
     label: "Insurance proof",
     note: "Upload the current insurance file first.",
+    agencyRequired: false,
   },
   {
     id: "background",
     label: "Background check result",
-    note: "Upload the screening result file first.",
+    note: "Upload the result from the separate screening agency.",
+    agencyRequired: true,
   },
   {
     id: "driving_record",
     label: "Driving record check",
-    note: "Upload the driving record file first.",
+    note: "Upload the report from the separate record-check agency or provider.",
+    agencyRequired: true,
   },
 ];
 
@@ -62,26 +66,33 @@ function extensionFromName(fileName: string) {
   return parts.length > 1 ? parts.pop() || "" : "";
 }
 
-function decide(file: PendingFile) {
+function decide(file: PendingFile, agencyRequired: boolean, label: string) {
   const extension = extensionFromName(file.name);
 
   if (!allowedExtensions.includes(extension)) {
     return {
       decision: "Denied" as ReviewStatus,
-      reason: `Denied automatically because .${extension || "unknown"} is not allowed. Use PDF, JPG, JPEG, PNG, or WEBP.`,
+      reason: `Denied automatically because .${extension || "unknown"} is not allowed for ${label}. Use PDF, JPG, JPEG, PNG, or WEBP.`,
     };
   }
 
   if (file.size > maxFileSize) {
     return {
       decision: "Denied" as ReviewStatus,
-      reason: "Denied automatically because the file is larger than 10 MB.",
+      reason: `Denied automatically because the ${label} file is larger than 10 MB.`,
+    };
+  }
+
+  if (agencyRequired) {
+    return {
+      decision: "Approved" as ReviewStatus,
+      reason: `Approved automatically because the required separate-agency result was uploaded in an allowed file type and size.`,
     };
   }
 
   return {
     decision: "Approved" as ReviewStatus,
-    reason: "Approved automatically because the file type is allowed and the file size is within the limit.",
+    reason: `Approved automatically because the uploaded ${label.toLowerCase()} file passed the allowed file type and size rules.`,
   };
 }
 
@@ -102,7 +113,7 @@ function badgeStyle(done: boolean) {
 export default function UploadDocsPage() {
   const [selectedFiles, setSelectedFiles] = useState<Partial<Record<DocKey, PendingFile>>>({});
   const [message, setMessage] = useState(
-    "Upload all 4 files first. Then press Send at the bottom so the admin panel can receive them and the system can decide approved or denied."
+    "Upload all 4 files first. Background and driving record files must come from a separate agency. Then press Send so the admin panel receives them and the automated system decides approved or denied."
   );
   const [sent, setSent] = useState(false);
 
@@ -141,7 +152,7 @@ export default function UploadDocsPage() {
 
     const records: ReviewRecord[] = docDefinitions.map((doc) => {
       const file = selectedFiles[doc.id]!;
-      const result = decide(file);
+      const result = decide(file, doc.agencyRequired, doc.label);
 
       return {
         id: doc.id,
@@ -158,7 +169,7 @@ export default function UploadDocsPage() {
 
     window.localStorage.setItem(storageKey, JSON.stringify(records));
     setSent(true);
-    setMessage("Files sent to the admin panel. The automated system finished the approval/denial check.");
+    setMessage("Files sent to the admin panel. The automated system finished the review, including the separate-agency-required checks.");
   }
 
   return (
@@ -203,10 +214,10 @@ export default function UploadDocsPage() {
                 color: "#d9e5ff",
                 fontSize: "17px",
                 lineHeight: 1.7,
-                maxWidth: "900px",
+                maxWidth: "920px",
               }}
             >
-              Drivers upload all required files first. Then they press one Send button at the bottom. After that, the admin panel receives the files and the automated system decides approved or denied.
+              Drivers upload all required files first. The background check and driving record items must come from a separate agency. Then they press one Send button at the bottom. After that, the admin panel receives the files and the automated system decides approved or denied.
             </p>
           </div>
 
@@ -260,10 +271,10 @@ export default function UploadDocsPage() {
             </div>
             <div style={{ borderRadius: "22px", padding: "18px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#bfe8ff" }}>
-                Send button
+                Separate agency rule
               </div>
-              <div style={{ fontSize: "20px", fontWeight: 800, marginTop: "14px", color: allFilesReady ? "#cbffe0" : "#d9f6ff" }}>
-                {allFilesReady ? "Ready" : "Waiting for all 4 files"}
+              <div style={{ fontSize: "20px", fontWeight: 800, marginTop: "14px", color: "#cbffe0" }}>
+                Required for background and driving record
               </div>
             </div>
             <div style={{ borderRadius: "22px", padding: "18px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -317,6 +328,11 @@ export default function UploadDocsPage() {
                   <div>
                     <div style={{ fontSize: "24px", fontWeight: 800, lineHeight: 1.12 }}>{doc.label}</div>
                     <div style={{ marginTop: "8px", color: "#cfe3ff", lineHeight: 1.6 }}>{doc.note}</div>
+                    {doc.agencyRequired && (
+                      <div style={{ marginTop: "10px", color: "#ffe4a8", fontWeight: 700, lineHeight: 1.6 }}>
+                        Separate agency required for this document.
+                      </div>
+                    )}
                   </div>
                   <span
                     style={{
@@ -389,7 +405,7 @@ export default function UploadDocsPage() {
             Send the full file set to admin review
           </div>
           <div style={{ color: "#e6f6ff", lineHeight: 1.7, marginBottom: "16px" }}>
-            This sends all uploaded files to the admin panel and then the automated system decides approved or denied.
+            This sends all uploaded files to the admin panel. The automated system then reviews them, including the checks that require a separate agency result.
           </div>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             <button
