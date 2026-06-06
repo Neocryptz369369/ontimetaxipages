@@ -4,21 +4,21 @@ import Link from "next/link";
 const workflowLinks = [
   {
     title: "Broker Account",
-    text: "Insurance and broker workflow lives on its own page now, not on the homepage.",
+    text: "Broker and insurance workflow now lives on its own page instead of taking over the homepage.",
     href: "/broker-account",
     cta: "Open Broker Account",
     tone: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%)",
   },
   {
     title: "Driver Compliance",
-    text: "Driver compliance stays on its own route so the homepage keeps its public-facing look.",
+    text: "Driver compliance keeps its own route so the homepage stays public-facing.",
     href: "/drive",
     cta: "Open Driver Compliance",
     tone: "linear-gradient(135deg,#38bdf8 0%,#6366f1 100%)",
   },
   {
     title: "Admin Console",
-    text: "Internal admin tools remain on their own page and no longer take over the homepage.",
+    text: "Internal admin tools stay on a separate page and no longer replace the homepage.",
     href: "/admin",
     cta: "Open Admin",
     tone: "linear-gradient(135deg,#f59e0b 0%,#ef4444 100%)",
@@ -232,11 +232,6 @@ export default function HomePage() {
             <div
               style={{
                 position: "relative",
-                borderRadius: "34px",
-                padding: "22px",
-                background: "linear-gradient(145deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 100%)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
                 minHeight: "520px",
                 display: "flex",
                 alignItems: "center",
@@ -245,37 +240,24 @@ export default function HomePage() {
             >
               <div
                 style={{
-                  position: "absolute",
-                  inset: "22px",
-                  borderRadius: "28px",
-                  background: "radial-gradient(circle at top, rgba(45,108,255,0.18) 0%, rgba(255,77,187,0.12) 38%, rgba(0,0,0,0.18) 100%)",
-                  pointerEvents: "none",
-                }}
-              />
-
-              <div
-                style={{
                   position: "relative",
                   width: "100%",
-                  maxWidth: "500px",
-                  height: "420px",
-                  borderRadius: "30px",
-                  overflow: "hidden",
-                  border: "1px solid rgba(255,255,255,0.16)",
-                  boxShadow: "0 0 40px rgba(73,196,255,0.18), 0 0 30px rgba(255,74,187,0.16)",
-                  background: "#05070d",
+                  maxWidth: "380px",
+                  height: "360px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: "24px",
                 }}
               >
                 <Image
                   src="/rider-on-time-logo.jpg"
-                  alt="Rider On Time big logo"
+                  alt="Rider On Time large logo"
                   fill
-                  style={{ objectFit: "contain", padding: "22px" }}
                   priority
+                  style={{
+                    objectFit: "contain",
+                    padding: "12px 12px 48px 12px",
+                  }}
                 />
               </div>
             </div>
