@@ -169,8 +169,8 @@ export default function HomePage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-              gap: "26px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "28px",
               alignItems: "center",
             }}
           >
@@ -231,37 +231,48 @@ export default function HomePage() {
 
             <div
               style={{
-                borderRadius: "28px",
-                padding: "24px",
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow: "0 18px 40px rgba(0,0,0,0.24)",
+                position: "relative",
+                borderRadius: "32px",
+                padding: "18px",
+                background: "linear-gradient(145deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 100%)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
+                minHeight: "420px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#dfffee", marginBottom: "12px" }}>
-                Why people come here
-              </div>
-              <div style={{ display: "grid", gap: "12px" }}>
-                {[
-                  "Fast public-facing homepage restored",
-                  "Logo and main brand feel back in place",
-                  "Internal workflow pages moved off the homepage",
-                  "Broker and admin work kept on separate routes",
-                ].map((item) => (
-                  <div
-                    key={item}
-                    style={{
-                      borderRadius: "18px",
-                      padding: "12px 14px",
-                      background: "rgba(0,0,0,0.22)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      color: "#e6f6ff",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {item}
-                  </div>
-                ))}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: "18px",
+                  borderRadius: "26px",
+                  background: "radial-gradient(circle at top, rgba(45,108,255,0.18) 0%, rgba(255,77,187,0.12) 38%, rgba(0,0,0,0.18) 100%)",
+                  pointerEvents: "none",
+                }}
+              />
+
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: "420px",
+                  aspectRatio: "1 / 1",
+                  borderRadius: "28px",
+                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.16)",
+                  boxShadow: "0 0 40px rgba(73,196,255,0.18), 0 0 30px rgba(255,74,187,0.16)",
+                  background: "#05070d",
+                }}
+              >
+                <Image
+                  src="/rider-on-time-logo.jpg"
+                  alt="Rider On Time big logo"
+                  fill
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
               </div>
             </div>
           </div>
