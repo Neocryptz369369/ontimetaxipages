@@ -1,3 +1,6 @@
+'use client';
+
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 
 const adminCards = [
@@ -25,6 +28,162 @@ const adminCards = [
 ];
 
 export default function AdminPage() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [error, setError] = useState("");
+
+  function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!username.trim() || !password.trim()) {
+      setError("Enter your username and password first.");
+      return;
+    }
+
+    setError("");
+    setIsLoggedIn(true);
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          background: "radial-gradient(circle at top, #14213d 0%, #09101d 44%, #03060b 100%)",
+          color: "#ffffff",
+          fontFamily: "Arial, Helvetica, sans-serif",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "520px",
+            borderRadius: "28px",
+            padding: "28px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 800,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              color: "#8fdcff",
+              marginBottom: "12px",
+            }}
+          >
+            Admin login restored
+          </div>
+
+          <h1 style={{ margin: "0 0 10px", fontSize: "38px", lineHeight: 1.05 }}>Log in to admin</h1>
+          <p style={{ margin: "0 0 22px", color: "#d9e5ff", lineHeight: 1.7, fontSize: "17px" }}>
+            This puts the admin login gate back before the admin controls open.
+          </p>
+
+          <form onSubmit={handleLogin} autoComplete="on">
+            <div style={{ display: "grid", gap: "14px" }}>
+              <label style={{ display: "grid", gap: "8px", fontWeight: 700 }}>
+                <span>Username</span>
+                <input
+                  type="text"
+                  name="username"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "14px 16px",
+                    borderRadius: "14px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(0,0,0,0.24)",
+                    color: "#ffffff",
+                    fontSize: "16px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </label>
+
+              <label style={{ display: "grid", gap: "8px", fontWeight: 700 }}>
+                <span>Password</span>
+                <input
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "14px 16px",
+                    borderRadius: "14px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(0,0,0,0.24)",
+                    color: "#ffffff",
+                    fontSize: "16px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </label>
+
+              {error ? (
+                <div
+                  style={{
+                    borderRadius: "14px",
+                    padding: "12px 14px",
+                    background: "rgba(255,77,184,0.14)",
+                    border: "1px solid rgba(255,77,184,0.28)",
+                    color: "#ffd1f0",
+                    fontWeight: 700,
+                  }}
+                >
+                  {error}
+                </div>
+              ) : null}
+
+              <button
+                type="submit"
+                style={{
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "14px 18px",
+                  borderRadius: "14px",
+                  background: "linear-gradient(135deg,#2d6cff 0%,#19b5ff 100%)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: "16px",
+                }}
+              >
+                Log in
+              </button>
+            </div>
+          </form>
+
+          <div style={{ marginTop: "18px" }}>
+            <Link
+              href="/"
+              style={{
+                textDecoration: "none",
+                color: "#ffffff",
+                fontWeight: 700,
+              }}
+            >
+              Back to homepage
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main
       style={{
@@ -60,24 +219,41 @@ export default function AdminPage() {
             </div>
             <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Rider On Time admin console</h1>
             <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "760px" }}>
-              The admin console now has a dedicated marquee manager path so you can actually open the ad area and work with it.
+              The admin login gate is back, and after login you can open the panic archive, marquee manager, and other admin tools.
             </p>
           </div>
 
-          <Link
-            href="/"
-            style={{
-              textDecoration: "none",
-              color: "#ffffff",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              padding: "12px 16px",
-              borderRadius: "14px",
-              fontWeight: 800,
-            }}
-          >
-            Back to homepage
-          </Link>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => setIsLoggedIn(false)}
+              style={{
+                border: "1px solid rgba(255,255,255,0.12)",
+                cursor: "pointer",
+                color: "#ffffff",
+                background: "rgba(255,255,255,0.08)",
+                padding: "12px 16px",
+                borderRadius: "14px",
+                fontWeight: 800,
+              }}
+            >
+              Log out
+            </button>
+            <Link
+              href="/"
+              style={{
+                textDecoration: "none",
+                color: "#ffffff",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                padding: "12px 16px",
+                borderRadius: "14px",
+                fontWeight: 800,
+              }}
+            >
+              Back to homepage
+            </Link>
+          </div>
         </div>
 
         <section
@@ -85,7 +261,7 @@ export default function AdminPage() {
             borderRadius: "28px",
             padding: "26px",
             marginBottom: "22px",
-            background: "linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(14,165,233,0.18) 55%, rgba(255,255,255,0.05) 100%)",
+            background: "linear-gradient(135deg, rgba(45,108,255,0.18) 0%, rgba(25,181,255,0.18) 55%, rgba(255,255,255,0.05) 100%)",
             border: "1px solid rgba(255,255,255,0.12)",
             boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
           }}
@@ -103,11 +279,11 @@ export default function AdminPage() {
               marginBottom: "14px",
             }}
           >
-            Fixed admin destination
+            Login requirement restored
           </div>
-          <h2 style={{ margin: "0 0 10px", fontSize: "34px", lineHeight: 1.08 }}>Marquee manager now has its own page</h2>
+          <h2 style={{ margin: "0 0 10px", fontSize: "34px", lineHeight: 1.08 }}>You now have to log in before entering admin</h2>
           <p style={{ margin: 0, color: "#d9e5ff", fontSize: "18px", lineHeight: 1.7, maxWidth: "820px" }}>
-            Use the marquee manager card below to open the ad page directly and work with create, edit, and delete actions.
+            This puts the admin panel back behind a login screen and keeps the browser-friendly username and password fields in place.
           </p>
         </section>
 
