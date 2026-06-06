@@ -1,235 +1,355 @@
+'use client';
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
-export default function DriverOnboardingPage() {
+type CheckItem = {
+  id: string;
+  title: string;
+  detail: string;
+  provider: string;
+};
+
+const screeningSteps: CheckItem[] = [
+  {
+    id: 'license',
+    title: 'Driver license check',
+    detail: 'Upload a current driver license and confirm it matches the driver profile.',
+    provider: 'State license record / DMV verification',
+  },
+  {
+    id: 'insurance',
+    title: 'Insurance check',
+    detail: 'Add active vehicle insurance and verify policy dates before approval.',
+    provider: 'Insurance carrier proof + policy review',
+  },
+  {
+    id: 'background',
+    title: 'Background check',
+    detail: 'Complete the background screening step before the driver can go live.',
+    provider: 'Approved background screening provider',
+  },
+  {
+    id: 'driving_record',
+    title: 'Driving record check',
+    detail: 'Review driving history before final approval.',
+    provider: 'Motor vehicle report / driving record source',
+  },
+];
+
+export default function DrivePage() {
+  const [completed, setCompleted] = useState<Record<string, boolean>>({
+    license: false,
+    insurance: false,
+    background: false,
+    driving_record: false,
+  });
+  const [agreed, setAgreed] = useState(false);
+  const [message, setMessage] = useState('Driver onboarding screen ready.');
+
+  const doneCount = useMemo(
+    () => Object.values(completed).filter(Boolean).length,
+    [completed]
+  );
+
+  function toggleStep(id: string) {
+    setCompleted((current) => {
+      const next = { ...current, [id]: !current[id] };
+      return next;
+    });
+  }
+
+  function markAgreement() {
+    const allDone = Object.values(completed).every(Boolean);
+
+    if (!allDone) {
+      setMessage('Finish all 4 compliance checks before agreeing.');
+      return;
+    }
+
+    setAgreed(true);
+    setMessage('Driver agreement saved.');
+  }
+
   return (
     <main
       style={{
-        minHeight: "100vh",
-        background: "#f5f7fb",
-        color: "#102a43",
-        fontFamily: "Arial, Helvetica, sans-serif",
+        minHeight: '100vh',
+        background: 'radial-gradient(circle at top, #11304a 0%, #0a1322 42%, #04060b 100%)',
+        color: '#ffffff',
+        fontFamily: 'Arial, Helvetica, sans-serif',
       }}
     >
-      <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "32px 20px 96px" }}>
+      <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '28px 18px 80px' }}>
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "16px",
-            marginBottom: "22px",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+            marginBottom: '24px',
           }}
         >
-          <div style={{ fontWeight: 800, fontSize: "24px", color: "#1d4ed8" }}>On-Time Taxi</div>
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", fontWeight: 700 }}>
-            <Link href="/" style={{ textDecoration: "none", color: "#334155" }}>Home</Link>
-            <Link href="/ride" style={{ textDecoration: "none", color: "#334155" }}>Ride</Link>
-            <Link href="/get-app" style={{ textDecoration: "none", color: "#334155" }}>Get app</Link>
-            <Link href="/admin" style={{ textDecoration: "none", color: "#1d4ed8" }}>Admin</Link>
+          <div>
+            <div
+              style={{
+                fontSize: '12px',
+                fontWeight: 800,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: '#8fdcff',
+                marginBottom: '10px',
+              }}
+            >
+              Driver onboarding lane
+            </div>
+            <h1 style={{ margin: 0, fontSize: '42px', lineHeight: 1.05 }}>Driver screening and compliance</h1>
+            <p style={{ margin: '12px 0 0', color: '#d9e5ff', fontSize: '17px', lineHeight: 1.7, maxWidth: '860px' }}>
+              This step makes the driver signup path more complete by showing the 4 checks Dennis wanted before a driver is approved.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <Link
+              href='/'
+              style={{
+                textDecoration: 'none',
+                color: '#ffffff',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                padding: '12px 16px',
+                borderRadius: '14px',
+                fontWeight: 800,
+              }}
+            >
+              Back to homepage
+            </Link>
+            <Link
+              href='/admin'
+              style={{
+                textDecoration: 'none',
+                color: '#09111f',
+                background: '#ffffff',
+                padding: '12px 16px',
+                borderRadius: '14px',
+                fontWeight: 800,
+              }}
+            >
+              Open admin
+            </Link>
           </div>
         </div>
 
         <section
           style={{
-            background: "#ffffff",
-            border: "1px solid #d9e2ec",
-            borderRadius: "24px",
-            padding: "34px 28px",
-            boxShadow: "0 20px 48px rgba(15, 23, 42, 0.08)",
-            marginBottom: "22px",
+            borderRadius: '30px',
+            padding: '26px',
+            marginBottom: '22px',
+            background: 'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(14,165,233,0.18) 55%, rgba(255,255,255,0.05) 100%)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 24px 70px rgba(0,0,0,0.35)',
           }}
         >
           <div
             style={{
-              display: "inline-block",
-              padding: "8px 12px",
-              borderRadius: "999px",
-              background: "#dbeafe",
-              color: "#1d4ed8",
-              fontSize: "12px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              marginBottom: "14px",
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '16px',
+              alignItems: 'center',
             }}
           >
-            Driver Onboarding
-          </div>
+            <div>
+              <div
+                style={{
+                  display: 'inline-block',
+                  padding: '8px 12px',
+                  borderRadius: '999px',
+                  background: 'rgba(255,255,255,0.10)',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  marginBottom: '14px',
+                }}
+              >
+                Live step now visible
+              </div>
+              <h2 style={{ margin: '0 0 10px', fontSize: '34px', lineHeight: 1.08 }}>Drivers must pass all 4 checks</h2>
+              <p style={{ margin: 0, color: '#e8fff5', fontSize: '18px', lineHeight: 1.7 }}>
+                License, insurance, background check, and driving record review are all part of the same approval path now.
+              </p>
+            </div>
 
-          <h1 style={{ fontSize: "50px", lineHeight: 1.05, margin: "0 0 16px" }}>
-            Driver screening and compliance before approval.
-          </h1>
-
-          <p style={{ margin: 0, fontSize: "19px", lineHeight: 1.7, maxWidth: "860px", color: "#486581" }}>
-            Drivers are not approved with only a license and insurance. The full onboarding path also
-            includes a background check, a driving record check, and a guided list of the proper places
-            to complete each required step.
-          </p>
-
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "24px" }}>
-            <Link
-              href="/admin"
+            <div
               style={{
-                display: "inline-block",
-                textDecoration: "none",
-                background: "#1d4ed8",
-                color: "#ffffff",
-                fontWeight: 700,
-                padding: "14px 18px",
-                borderRadius: "14px",
+                borderRadius: '22px',
+                padding: '18px',
+                background: 'rgba(0,0,0,0.24)',
+                border: '1px solid rgba(255,255,255,0.10)',
               }}
             >
-              Open Admin Console
-            </Link>
-            <Link
-              href="/"
+              <div style={{ fontSize: '14px', color: '#d9e5ff', marginBottom: '10px', fontWeight: 700 }}>Current compliance status</div>
+              <div style={{ fontSize: '40px', fontWeight: 800 }}>{doneCount}/4</div>
+              <div style={{ marginTop: '12px', borderRadius: '12px', padding: '12px 14px', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontWeight: 700 }}>
+                {message}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '14px',
+            marginBottom: '22px',
+          }}
+        >
+          {[
+            ['Required checks', '4'],
+            ['Driver path', 'Screening first'],
+            ['Approval gate', 'All checks done'],
+            ['Agreement', agreed ? 'Saved' : 'Pending'],
+          ].map(([label, value]) => (
+            <div
+              key={label}
               style={{
-                display: "inline-block",
-                textDecoration: "none",
-                background: "#eff6ff",
-                color: "#1d4ed8",
-                fontWeight: 700,
-                padding: "14px 18px",
-                borderRadius: "14px",
-                border: "1px solid #bfdbfe",
+                borderRadius: '22px',
+                padding: '20px',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                boxShadow: '0 18px 40px rgba(0,0,0,0.22)',
               }}
             >
-              Back to homepage
-            </Link>
-          </div>
+              <div style={{ color: '#b7e8ff', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 800 }}>{label}</div>
+              <div style={{ marginTop: '10px', fontSize: '34px', fontWeight: 800 }}>{value}</div>
+            </div>
+          ))}
         </section>
 
         <section
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-            gap: "16px",
-            marginBottom: "22px",
-          }}
-        >
-          <div style={cardStyle}>
-            <h2 style={{ marginTop: 0 }}>1. License</h2>
-            <p style={bodyStyle}>Upload and verify a valid driver’s license before the account can move forward.</p>
-          </div>
-          <div style={cardStyle}>
-            <h2 style={{ marginTop: 0 }}>2. Insurance</h2>
-            <p style={bodyStyle}>Upload current insurance and keep it active in the driver record.</p>
-          </div>
-          <div style={cardStyle}>
-            <h2 style={{ marginTop: 0 }}>3. Background Check</h2>
-            <p style={bodyStyle}>Complete a full background check as part of the driver approval process.</p>
-          </div>
-          <div style={cardStyle}>
-            <h2 style={{ marginTop: 0 }}>4. Driving Record Check</h2>
-            <p style={bodyStyle}>Complete a driving record review before the driver can be accepted.</p>
-          </div>
-        </section>
-
-        <section
-          style={{
-            background: "#0f172a",
-            color: "#ffffff",
-            borderRadius: "24px",
-            padding: "30px 28px",
-            boxShadow: "0 20px 48px rgba(15, 23, 42, 0.18)",
-            marginBottom: "22px",
-            border: "2px solid #1d4ed8",
+            display: 'grid',
+            gridTemplateColumns: '1.1fr 0.9fr',
+            gap: '16px',
+            marginBottom: '22px',
           }}
         >
           <div
             style={{
-              display: "inline-block",
-              padding: "8px 12px",
-              borderRadius: "999px",
-              background: "#1d4ed8",
-              color: "#ffffff",
-              fontSize: "12px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              marginBottom: "16px",
+              borderRadius: '24px',
+              padding: '22px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.10)',
             }}
           >
-            Proper Places To Complete Checks
+            <h2 style={{ marginTop: 0, fontSize: '28px' }}>Driver screening checklist</h2>
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {screeningSteps.map((item) => {
+                const isDone = completed[item.id];
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      borderRadius: '18px',
+                      padding: '18px',
+                      background: 'rgba(0,0,0,0.24)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      <div>
+                        <div style={{ fontSize: '20px', fontWeight: 800 }}>{item.title}</div>
+                        <div style={{ color: '#d9e5ff', marginTop: '6px' }}>{item.provider}</div>
+                      </div>
+                      <div
+                        style={{
+                          borderRadius: '999px',
+                          padding: '6px 10px',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          background: isDone ? 'rgba(34,197,94,0.16)' : 'rgba(245,158,11,0.16)',
+                          color: isDone ? '#cbffe0' : '#ffe3a6',
+                          border: isDone ? '1px solid rgba(34,197,94,0.28)' : '1px solid rgba(245,158,11,0.28)',
+                        }}
+                      >
+                        {isDone ? 'Done' : 'Pending'}
+                      </div>
+                    </div>
+                    <p style={{ margin: '0 0 14px', color: '#f5fbff', lineHeight: 1.7 }}>{item.detail}</p>
+                    <button
+                      type='button'
+                      onClick={() => toggleStep(item.id)}
+                      style={{
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        background: '#ffffff',
+                        color: '#09111f',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {isDone ? 'Mark pending' : 'Mark done'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-
-          <h2 style={{ margin: "0 0 12px", fontSize: "38px", lineHeight: 1.1 }}>
-            Driver compliance must go through the full screening path.
-          </h2>
-
-          <p style={{ margin: 0, fontSize: "18px", lineHeight: 1.7, maxWidth: "860px", color: "#cbd5e1" }}>
-            This page gives drivers a clear compliance checklist and a visible place to follow the proper process.
-            Provider names and final approved locations can be updated here without changing the structure of the flow.
-          </p>
 
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: "16px",
-              marginTop: "22px",
+              borderRadius: '24px',
+              padding: '22px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.10)',
             }}
           >
-            <div style={darkCardStyle}>
-              <h3 style={{ marginTop: 0 }}>License verification</h3>
-              <p style={darkBodyStyle}>Approved upload / verification location to be used for license review.</p>
+            <h2 style={{ marginTop: 0, fontSize: '28px' }}>Driver approval notes</h2>
+            <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
+              {[
+                'Show drivers where to complete each required check.',
+                'Do not approve drivers until all 4 checks are complete.',
+                'Keep this flow aligned with the homepage and admin style.',
+                'This is still preview-only locally until it is live on the public site.',
+              ].map((note) => (
+                <div
+                  key={note}
+                  style={{
+                    borderRadius: '16px',
+                    padding: '14px 16px',
+                    background: 'rgba(0,0,0,0.24)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#e8fff5',
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {note}
+                </div>
+              ))}
             </div>
-            <div style={darkCardStyle}>
-              <h3 style={{ marginTop: 0 }}>Insurance verification</h3>
-              <p style={darkBodyStyle}>Approved upload / verification location to be used for insurance review.</p>
-            </div>
-            <div style={darkCardStyle}>
-              <h3 style={{ marginTop: 0 }}>Background check provider</h3>
-              <p style={darkBodyStyle}>Approved provider / path for completing the required background check.</p>
-            </div>
-            <div style={darkCardStyle}>
-              <h3 style={{ marginTop: 0 }}>Driving record provider</h3>
-              <p style={darkBodyStyle}>Approved provider / path for completing the required driving record check.</p>
-            </div>
-          </div>
-        </section>
 
-        <section
-          style={{
-            background: "#ffffff",
-            border: "1px solid #d9e2ec",
-            borderRadius: "18px",
-            padding: "22px",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Approval rule</h2>
-          <p style={{ marginBottom: 0, lineHeight: 1.7, color: "#486581" }}>
-            Drivers should not be marked accepted until the license, insurance, background check, and driving record check are all completed and reviewed.
-          </p>
+            <button
+              type='button'
+              onClick={markAgreement}
+              style={{
+                border: 'none',
+                cursor: 'pointer',
+                padding: '14px 18px',
+                borderRadius: '14px',
+                background: '#ffffff',
+                color: '#09111f',
+                fontWeight: 800,
+                width: '100%',
+              }}
+            >
+              Agree and continue
+            </button>
+          </div>
         </section>
       </div>
     </main>
   );
 }
-
-const cardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #d9e2ec",
-  borderRadius: "18px",
-  padding: "18px",
-};
-
-const darkCardStyle: React.CSSProperties = {
-  background: "#111c34",
-  border: "1px solid #334155",
-  borderRadius: "18px",
-  padding: "18px",
-};
-
-const bodyStyle: React.CSSProperties = {
-  marginBottom: 0,
-  color: "#486581",
-  lineHeight: 1.7,
-};
-
-const darkBodyStyle: React.CSSProperties = {
-  marginBottom: 0,
-  color: "#cbd5e1",
-  lineHeight: 1.7,
-};
