@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -5,283 +6,284 @@ export default function HomePage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#f5f7fb",
-        color: "#102a43",
+        background: "radial-gradient(circle at top, #16213f 0%, #090c14 45%, #000000 100%)",
+        color: "#ffffff",
         fontFamily: "Arial, Helvetica, sans-serif",
       }}
     >
-      <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "28px 20px 96px" }}>
-        <div
+      <div style={{ maxWidth: "1180px", margin: "0 auto", padding: "22px 18px 90px" }}>
+        <header
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: "18px",
             flexWrap: "wrap",
+            marginBottom: "24px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+            }}
+          >
+            <div
+              style={{
+                width: "78px",
+                height: "78px",
+                borderRadius: "18px",
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.16)",
+                boxShadow: "0 0 30px rgba(73,196,255,0.20), 0 0 22px rgba(255,74,187,0.18)",
+                background: "#05070d",
+                flexShrink: 0,
+              }}
+            >
+              <Image
+                src="/rider-on-time-logo.jpg"
+                alt="Rider on Time logo"
+                width={78}
+                height={78}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                priority
+              />
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#8fdcff",
+                }}
+              >
+                Live homepage brand update
+              </div>
+              <div
+                style={{
+                  fontSize: "28px",
+                  fontWeight: 800,
+                  lineHeight: 1.1,
+                }}
+              >
+                On-Time Taxi
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  color: "#f7a8df",
+                  marginTop: "4px",
+                }}
+              >
+                Rider on Time logo now anchored at the top left
+              </div>
+            </div>
+          </div>
+
+          <nav
+            style={{
+              display: "flex",
+              gap: "14px",
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {[
+              ["Ride", "/ride"],
+              ["Drive", "/drive"],
+              ["Get app", "/get-app"],
+              ["Cities", "/cities"],
+              ["Admin", "/admin"],
+            ].map(([label, href]) => (
+              <Link
+                key={href}
+                href={href}
+                style={{
+                  textDecoration: "none",
+                  color: "#ffffff",
+                  padding: "10px 14px",
+                  borderRadius: "999px",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  background: href === "/admin" ? "linear-gradient(135deg,#2d6cff 0%,#19b5ff 100%)" : "rgba(255,255,255,0.05)",
+                  fontWeight: 700,
+                }}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </header>
+
+        <section
+          style={{
+            borderRadius: "34px",
+            padding: "34px 26px",
+            background: "linear-gradient(135deg, rgba(255,77,187,0.18) 0%, rgba(38,78,255,0.16) 48%, rgba(0,0,0,0.62) 100%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            boxShadow: "0 25px 90px rgba(0,0,0,0.38)",
+            overflow: "hidden",
+            position: "relative",
+            marginBottom: "22px",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: "auto -120px -120px auto",
+              width: "320px",
+              height: "320px",
+              borderRadius: "999px",
+              background: "radial-gradient(circle, rgba(45,108,255,0.35) 0%, rgba(45,108,255,0.02) 70%)",
+              pointerEvents: "none",
+            }}
+          />
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "26px",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  display: "inline-block",
+                  padding: "8px 12px",
+                  borderRadius: "999px",
+                  background: "rgba(255,255,255,0.10)",
+                  color: "#ffe3f4",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  marginBottom: "16px",
+                }}
+              >
+                Homepage step now visible
+              </div>
+
+              <h1
+                style={{
+                  margin: "0 0 14px",
+                  fontSize: "clamp(38px, 7vw, 66px)",
+                  lineHeight: 1.02,
+                  letterSpacing: "-0.03em",
+                }}
+              >
+                Get there.<br />
+                On time.<br />
+                Every time.
+              </h1>
+
+              <p
+                style={{
+                  margin: "0 0 22px",
+                  fontSize: "18px",
+                  lineHeight: 1.7,
+                  color: "#d8e4ff",
+                  maxWidth: "720px",
+                }}
+              >
+                The approved Rider on Time logo is now built into the live homepage header at the top left,
+                while the main site still keeps the public ride, city, app, and admin paths easy to reach.
+              </p>
+
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <Link
+                  href="/ride"
+                  style={{
+                    textDecoration: "none",
+                    background: "#ffffff",
+                    color: "#09111f",
+                    fontWeight: 800,
+                    padding: "14px 18px",
+                    borderRadius: "14px",
+                  }}
+                >
+                  Open Ride
+                </Link>
+                <Link
+                  href="/admin"
+                  style={{
+                    textDecoration: "none",
+                    background: "rgba(255,255,255,0.08)",
+                    color: "#ffffff",
+                    fontWeight: 800,
+                    padding: "14px 18px",
+                    borderRadius: "14px",
+                    border: "1px solid rgba(255,255,255,0.16)",
+                  }}
+                >
+                  Open Admin Console
+                </Link>
+              </div>
+            </div>
+
+            <div
+              style={{
+                borderRadius: "30px",
+                padding: "18px",
+                background: "rgba(0,0,0,0.34)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  borderRadius: "24px",
+                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+                  background: "#05070d",
+                }}
+              >
+                <Image
+                  src="/rider-on-time-logo.jpg"
+                  alt="Rider on Time homepage preview"
+                  width={900}
+                  height={1175}
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
             gap: "16px",
-            marginBottom: "20px",
-          }}
-        >
-          <div style={{ fontWeight: 800, fontSize: "24px", color: "#1d4ed8" }}>On-Time Taxi</div>
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", fontWeight: 700 }}>
-            <Link href="/ride" style={{ textDecoration: "none", color: "#334155" }}>Ride</Link>
-            <Link href="/drive" style={{ textDecoration: "none", color: "#334155" }}>Drive</Link>
-            <Link href="/get-app" style={{ textDecoration: "none", color: "#334155" }}>Get app</Link>
-            <Link href="/cities" style={{ textDecoration: "none", color: "#334155" }}>Cities</Link>
-            <Link href="/admin" style={{ textDecoration: "none", color: "#1d4ed8" }}>Admin</Link>
-          </div>
-        </div>
-
-        <section
-          style={{
-            background: "#b42318",
-            color: "#ffffff",
-            borderRadius: "20px",
-            padding: "18px 20px",
-            marginBottom: "18px",
-            boxShadow: "0 16px 36px rgba(180, 35, 24, 0.25)",
-          }}
-        >
-          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.95 }}>
-            Homepage Update
-          </div>
-          <div style={{ fontSize: "22px", fontWeight: 800, marginTop: "6px" }}>
-            Admin console, driver compliance, and app marquee controls are part of the homepage build.
-          </div>
-          <div style={{ fontSize: "16px", lineHeight: 1.6, marginTop: "8px", maxWidth: "920px" }}>
-            This homepage now shows the owner/admin path, the driver compliance path, and the ad marquee / authority alert work too.
-          </div>
-        </section>
-
-        <section
-          style={{
-            background: "#ffffff",
-            border: "1px solid #d9e2ec",
-            borderRadius: "24px",
-            padding: "34px 28px",
-            boxShadow: "0 20px 48px rgba(15, 23, 42, 0.08)",
             marginBottom: "22px",
           }}
         >
-          <h1 style={{ fontSize: "52px", lineHeight: 1.05, margin: "0 0 16px" }}>
-            Get there. On time. Every time.
-          </h1>
-
-          <p style={{ margin: 0, fontSize: "19px", lineHeight: 1.7, maxWidth: "840px", color: "#486581" }}>
-            Real upfront pricing. Trusted local drivers. No surge surprises hidden in fine print.
-            This homepage now shows the rider path, the admin path, the driver compliance path, and the live app-marquee control direction.
-          </p>
-
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "24px" }}>
-            <Link href="/ride" style={primaryButton}>Open Ride page</Link>
-            <Link href="/admin" style={darkButton}>OPEN ADMIN CONSOLE</Link>
-            <Link href="/drive" style={secondaryButton}>Open Driver Compliance</Link>
-          </div>
+          {[
+            ["Admin Console", "Owner controls, compliance, marquee tools, and launch tracking stay visible from the homepage."],
+            ["Driver Compliance", "License, insurance, and other driver checks stay part of the launch path."],
+            ["Get App", "Rider and driver app flows remain linked on the public site."],
+            ["Cities", "Service area pages and route expansion can keep building from this same homepage."],
+          ].map(([title, text]) => (
+            <div
+              key={title}
+              style={{
+                borderRadius: "24px",
+                padding: "22px",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                boxShadow: "0 16px 40px rgba(0,0,0,0.18)",
+              }}
+            >
+              <div style={{ fontSize: "20px", fontWeight: 800, marginBottom: "10px" }}>{title}</div>
+              <div style={{ color: "#d8e4ff", lineHeight: 1.7, fontSize: "15px" }}>{text}</div>
+            </div>
+          ))}
         </section>
-
-        <section
-          style={{
-            background: "#0f172a",
-            color: "#ffffff",
-            borderRadius: "24px",
-            padding: "30px 28px",
-            boxShadow: "0 20px 48px rgba(15, 23, 42, 0.18)",
-            marginBottom: "22px",
-            border: "3px solid #1d4ed8",
-          }}
-        >
-          <div style={badgeBlue}>Admin Console Now Live</div>
-          <h2 style={{ margin: "0 0 12px", fontSize: "40px", lineHeight: 1.1 }}>
-            Owner and admin controls are available from this homepage.
-          </h2>
-          <p style={{ margin: 0, fontSize: "18px", lineHeight: 1.7, maxWidth: "860px", color: "#cbd5e1" }}>
-            The admin panel is treated as part of the visible homepage path, not a hidden back page.
-          </p>
-          <div style={threeColGrid}>
-            <div style={darkCard}><h3 style={{ marginTop: 0 }}>Executive Controls</h3><p style={darkBody}>Dispatch overrides, emergency controls, free-ride controls, and owner-side actions.</p></div>
-            <div style={darkCard}><h3 style={{ marginTop: 0 }}>Driver Monitoring</h3><p style={darkBody}>Driver visibility, hotspot tracking, ledger sections, and supervisor workflow controls.</p></div>
-            <div style={darkCard}><h3 style={{ marginTop: 0 }}>System Visibility</h3><p style={darkBody}>API status, state toggles, safety flows, training status, and release-path controls.</p></div>
-          </div>
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "24px" }}>
-            <Link href="/admin" style={whiteButton}>Go to Admin Panel</Link>
-            <Link href="/admin" style={primaryButton}>Owner Control Area</Link>
-          </div>
-        </section>
-
-        <section
-          style={{
-            background: "#ffffff",
-            border: "2px solid #1d4ed8",
-            borderRadius: "24px",
-            padding: "30px 28px",
-            boxShadow: "0 20px 48px rgba(15, 23, 42, 0.08)",
-            marginBottom: "22px",
-          }}
-        >
-          <div style={badgeLight}>Driver Compliance Now Visible</div>
-          <h2 style={{ margin: "0 0 12px", fontSize: "38px", lineHeight: 1.1 }}>
-            Drivers must complete the full screening process before approval.
-          </h2>
-          <p style={{ margin: 0, fontSize: "18px", lineHeight: 1.7, maxWidth: "860px", color: "#486581" }}>
-            License and insurance alone are not enough. Drivers also need a background check, a driving record check, and a clear list of proper places to complete those steps.
-          </p>
-          <div style={threeColGrid}>
-            <div style={lightCard}><h3 style={{ marginTop: 0 }}>License + Insurance</h3><p style={lightBody}>Required documents must be uploaded and kept current.</p></div>
-            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Background Check</h3><p style={lightBody}>A full screening step is required before approval.</p></div>
-            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Driving Record</h3><p style={lightBody}>Driving record review must be completed before a driver is accepted.</p></div>
-          </div>
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "24px" }}>
-            <Link href="/drive" style={primaryButton}>Open Driver Compliance Page</Link>
-            <Link href="/admin" style={secondaryButton}>Review In Admin</Link>
-          </div>
-        </section>
-
-        <section
-          style={{
-            background: "#ffffff",
-            border: "2px solid #0f172a",
-            borderRadius: "24px",
-            padding: "30px 28px",
-            boxShadow: "0 20px 48px rgba(15, 23, 42, 0.08)",
-            marginBottom: "22px",
-          }}
-        >
-          <div style={badgeLight}>Marquee And Alerts Now Visible</div>
-          <h2 style={{ margin: "0 0 12px", fontSize: "38px", lineHeight: 1.1 }}>
-            App ads and public-safety alerts are part of the live build path.
-          </h2>
-          <p style={{ margin: 0, fontSize: "18px", lineHeight: 1.7, maxWidth: "860px", color: "#486581" }}>
-            The marquee system now includes normal admin-managed ads plus automatic one-minute authority alerts for Amber Alerts, Emergency Alert System alerts, and Public Safety Alerts.
-          </p>
-          <div style={threeColGrid}>
-            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Regular Ads</h3><p style={lightBody}>Created only from the admin panel with a + new ad flow.</p></div>
-            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Authority Alerts</h3><p style={lightBody}>Amber, EAS, and Public Safety alerts override the marquee for one minute.</p></div>
-            <div style={lightCard}><h3 style={{ marginTop: 0 }}>Return To Ads</h3><p style={lightBody}>After one minute, the normal ad flow should continue again.</p></div>
-          </div>
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "24px" }}>
-            <Link href="/admin" style={darkButton}>Manage Marquee In Admin</Link>
-            <Link href="/admin" style={secondaryButton}>Review Alert Controls</Link>
-          </div>
-        </section>
-
-        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "22px" }}>
-          <div style={lightCard}><h3 style={{ marginTop: 0 }}>Ride</h3><p style={lightBody}>The Ride page is active and part of the live website path.</p></div>
-          <div style={lightCard}><h3 style={{ marginTop: 0 }}>Get app</h3><p style={lightBody}>The app flow continues next with rider and driver paths for Android and iPhone.</p></div>
-          <div style={lightCard}><h3 style={{ marginTop: 0 }}>Cities</h3><p style={lightBody}>Cities, geofence rules, and state toggles are being connected step by step.</p></div>
-        </section>
-
-        <section style={{ background: "#ffffff", border: "1px solid #d9e2ec", borderRadius: "18px", padding: "22px", marginBottom: "18px" }}>
-          <h2 style={{ marginTop: 0 }}>Launch status</h2>
-          <p style={{ marginBottom: 0 }}>
-            The homepage now visibly reflects the public ride path, the admin-panel work, the driver onboarding compliance flow, and the marquee/alert system work.
-          </p>
-        </section>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "18px" }}>
-          <Link href="/admin" style={{ display: "inline-block", textDecoration: "none", background: "#b42318", color: "#ffffff", fontWeight: 800, padding: "14px 18px", borderRadius: "999px", boxShadow: "0 14px 30px rgba(180, 35, 24, 0.28)" }}>
-            Admin @
-          </Link>
-        </div>
       </div>
     </main>
   );
 }
-
-const badgeBlue: React.CSSProperties = {
-  display: "inline-block",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background: "#1d4ed8",
-  color: "#ffffff",
-  fontSize: "12px",
-  fontWeight: 800,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  marginBottom: "16px",
-};
-
-const badgeLight: React.CSSProperties = {
-  display: "inline-block",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background: "#dbeafe",
-  color: "#1d4ed8",
-  fontSize: "12px",
-  fontWeight: 800,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  marginBottom: "16px",
-};
-
-const threeColGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "16px",
-  marginTop: "22px",
-};
-
-const darkCard: React.CSSProperties = {
-  background: "#111c34",
-  border: "1px solid #334155",
-  borderRadius: "18px",
-  padding: "18px",
-};
-
-const lightCard: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #d9e2ec",
-  borderRadius: "18px",
-  padding: "18px",
-};
-
-const darkBody: React.CSSProperties = {
-  marginBottom: 0,
-  color: "#cbd5e1",
-  lineHeight: 1.7,
-};
-
-const lightBody: React.CSSProperties = {
-  marginBottom: 0,
-  color: "#486581",
-  lineHeight: 1.7,
-};
-
-const primaryButton: React.CSSProperties = {
-  display: "inline-block",
-  textDecoration: "none",
-  background: "#1d4ed8",
-  color: "#ffffff",
-  fontWeight: 700,
-  padding: "14px 18px",
-  borderRadius: "14px",
-};
-
-const darkButton: React.CSSProperties = {
-  display: "inline-block",
-  textDecoration: "none",
-  background: "#0f172a",
-  color: "#ffffff",
-  fontWeight: 800,
-  padding: "14px 18px",
-  borderRadius: "14px",
-};
-
-const whiteButton: React.CSSProperties = {
-  display: "inline-block",
-  textDecoration: "none",
-  background: "#ffffff",
-  color: "#0f172a",
-  fontWeight: 800,
-  padding: "14px 18px",
-  borderRadius: "14px",
-};
-
-const secondaryButton: React.CSSProperties = {
-  display: "inline-block",
-  textDecoration: "none",
-  background: "#eff6ff",
-  color: "#1d4ed8",
-  fontWeight: 700,
-  padding: "14px 18px",
-  borderRadius: "14px",
-  border: "1px solid #bfdbfe",
-};
