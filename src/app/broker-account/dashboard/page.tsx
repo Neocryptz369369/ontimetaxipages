@@ -74,8 +74,7 @@ function pillStyle(text: string) {
 }
 
 export default function BrokerDashboardPage() {
-  const [drivers, setDrivers] = useState<DriverRecord[]>(initialDrivers);
-  const [message, setMessage] = useState("Broker dashboard ready.");
+  const [drivers] = useState<DriverRecord[]>(initialDrivers);
 
   const readyCount = useMemo(
     () => drivers.filter((driver) => driver.brokerStatus === "Ready for broker review").length,
@@ -91,40 +90,6 @@ export default function BrokerDashboardPage() {
     () => drivers.filter((driver) => driver.brokerStatus === "Added to policy").length,
     [drivers]
   );
-
-  function updateStatus(id: string, nextStatus: BrokerStatus) {
-    setDrivers((current) =>
-      current.map((driver) =>
-        driver.id === id ? { ...driver, brokerStatus: nextStatus } : driver
-      )
-    );
-    setMessage(`${id} updated to ${nextStatus}.`);
-  }
-
-  function updateNotes(id: string, notes: string) {
-    setDrivers((current) =>
-      current.map((driver) =>
-        driver.id === id ? { ...driver, notes } : driver
-      )
-    );
-  }
-
-  async function copyDriver(record: DriverRecord) {
-    const text = `Driver ID: ${record.id}
-Full name: ${record.name}
-Date of birth: ${record.dob}
-Driver license number: ${record.licenseNumber}
-License file: ${record.licenseFile}
-Broker status: ${record.brokerStatus}
-Notes: ${record.notes || "none"}`;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      setMessage(`${record.name} copied.`);
-    } catch {
-      setMessage(`Could not copy ${record.name} right now.`);
-    }
-  }
 
   return (
     <main
@@ -143,7 +108,7 @@ Notes: ${record.notes || "none"}`;
             </div>
             <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Broker Dashboard</h1>
             <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "920px" }}>
-              This dashboard now lets the broker review drivers, leave notes, and mark them as added to policy while the later Checkr pass/fail integration stays parked for a future step.
+              This dashboard keeps the broker workflow moving now and links into the new detailed broker review page on its own route.
             </p>
           </div>
 
@@ -155,10 +120,10 @@ Notes: ${record.notes || "none"}`;
               Back to Broker Account
             </Link>
             <Link
-              href="/"
+              href="/broker-account/review"
               style={{ textDecoration: "none", color: "#09111f", background: "#ffffff", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
             >
-              Back to homepage
+              Open Broker Driver Review
             </Link>
           </div>
         </div>
@@ -176,30 +141,9 @@ Notes: ${record.notes || "none"}`;
             <div style={{ fontSize: "12px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#bfe8ff" }}>Added to policy</div>
             <div style={{ fontSize: "34px", fontWeight: 800, marginTop: "10px", color: "#cbffe0" }}>{addedCount}</div>
           </div>
-          <div style={{ borderRadius: "24px", padding: "20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <div style={{ fontSize: "12px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#bfe8ff" }}>Checkr later</div>
-            <div style={{ fontSize: "20px", fontWeight: 800, marginTop: "14px", color: "#d9f6ff" }}>Pass / fail will land here later</div>
-          </div>
         </section>
 
-        <section
-          style={{
-            borderRadius: "28px",
-            padding: "24px",
-            background: "linear-gradient(135deg, rgba(125,211,252,0.12) 0%, rgba(168,85,247,0.12) 100%)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            marginBottom: "22px",
-            color: "#e6f6ff",
-            lineHeight: 1.8,
-          }}
-        >
-          <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#dbeafe", marginBottom: "10px" }}>
-            Current purpose
-          </div>
-          This is the useful broker step while Checkr is blocked. The broker can review driver information now, write notes, and mark when the driver has been added to policy.
-        </section>
-
-        <section style={{ display: "grid", gap: "16px", marginBottom: "22px" }}>
+        <section style={{ display: "grid", gap: "16px" }}>
           {drivers.map((record) => (
             <div
               key={record.id}
@@ -222,7 +166,7 @@ Notes: ${record.notes || "none"}`;
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px", marginBottom: "14px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
                 <div style={{ borderRadius: "18px", padding: "14px", background: "rgba(0,0,0,0.20)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "8px" }}>Full name</div>
                   <div style={{ fontWeight: 700 }}>{record.name}</div>
@@ -240,66 +184,8 @@ Notes: ${record.notes || "none"}`;
                   <div style={{ fontWeight: 700 }}>{record.licenseFile}</div>
                 </div>
               </div>
-
-              <div style={{ borderRadius: "20px", padding: "16px", background: "rgba(0,0,0,0.20)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: "14px" }}>
-                <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "8px" }}>Broker notes</div>
-                <textarea
-                  value={record.notes}
-                  onChange={(e) => updateNotes(record.id, e.target.value)}
-                  placeholder="Write broker notes here..."
-                  style={{
-                    width: "100%",
-                    minHeight: "110px",
-                    padding: "14px 16px",
-                    borderRadius: "14px",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "#ffffff",
-                    fontSize: "15px",
-                    outline: "none",
-                    boxSizing: "border-box",
-                    resize: "vertical",
-                    fontFamily: "Arial, Helvetica, sans-serif",
-                  }}
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={() => updateStatus(record.id, "Broker reviewing")}
-                  style={{ border: "none", cursor: "pointer", color: "#09111f", background: "#ffe3a6", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
-                >
-                  Mark reviewing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateStatus(record.id, "Added to policy")}
-                  style={{ border: "none", cursor: "pointer", color: "#09111f", background: "#cbffe0", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
-                >
-                  Mark added to policy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateStatus(record.id, "Ready for broker review")}
-                  style={{ border: "1px solid rgba(255,255,255,0.14)", cursor: "pointer", color: "#ffffff", background: "rgba(255,255,255,0.08)", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
-                >
-                  Reset status
-                </button>
-                <button
-                  type="button"
-                  onClick={() => copyDriver(record)}
-                  style={{ border: "1px solid rgba(255,255,255,0.14)", cursor: "pointer", color: "#ffffff", background: "rgba(255,255,255,0.08)", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
-                >
-                  Copy driver details
-                </button>
-              </div>
             </div>
           ))}
-        </section>
-
-        <section style={{ borderRadius: "20px", padding: "16px 18px", background: "rgba(0,0,0,0.22)", border: "1px solid rgba(255,255,255,0.08)", color: "#d9e5ff", lineHeight: 1.7 }}>
-          {message}
         </section>
       </div>
     </main>
