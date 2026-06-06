@@ -232,7 +232,7 @@ export default function HomePage() {
             <div
               style={{
                 position: "relative",
-                minHeight: "620px",
+                minHeight: "640px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -242,23 +242,47 @@ export default function HomePage() {
                 style={{
                   position: "relative",
                   width: "100%",
-                  maxWidth: "560px",
-                  height: "560px",
+                  maxWidth: "640px",
+                  height: "600px",
+                  borderRadius: "34px",
+                  padding: "26px",
+                  background: "linear-gradient(145deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 100%)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <Image
-                  src="/rider-on-time-logo.jpg"
-                  alt="Rider On Time large logo"
-                  fill
-                  priority
+                <div
                   style={{
-                    objectFit: "contain",
-                    padding: "10px 10px 36px 10px",
+                    position: "absolute",
+                    inset: "26px",
+                    borderRadius: "28px",
+                    background: "radial-gradient(circle at top, rgba(45,108,255,0.18) 0%, rgba(255,77,187,0.12) 38%, rgba(0,0,0,0.18) 100%)",
+                    pointerEvents: "none",
                   }}
                 />
+
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    maxWidth: "520px",
+                    height: "460px",
+                  }}
+                >
+                  <Image
+                    src="/rider-on-time-logo.jpg"
+                    alt="Rider On Time large logo"
+                    fill
+                    priority
+                    style={{
+                      objectFit: "contain",
+                      padding: "18px 18px 42px 18px",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
