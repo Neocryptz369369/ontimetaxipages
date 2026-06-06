@@ -72,15 +72,6 @@ export default function HomePage() {
               >
                 Rider On Time
               </div>
-              <div
-                style={{
-                  fontSize: "14px",
-                  color: "#f7a8df",
-                  marginTop: "4px",
-                }}
-              >
-                Approved logo now anchored at the top left
-              </div>
             </div>
           </div>
 
