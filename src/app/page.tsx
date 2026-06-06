@@ -3,16 +3,16 @@ import Link from "next/link";
 
 const featureCards = [
   {
-    title: "Panic Archive",
-    text: "The next live step now shows separated panic-recording archive areas for rider, driver, and owner events.",
-    href: "/admin/panic-archive",
-    button: "Open panic archive",
+    title: "Marquee Manager",
+    text: "The next live step now shows marquee ad controls, edit actions, delete actions, and authority alerts.",
+    href: "/admin/marquee",
+    button: "Open marquee manager",
   },
   {
-    title: "Admin Console",
-    text: "Owner controls, compliance, and the panic-review lane are now visible from the homepage path.",
-    href: "/admin",
-    button: "Open admin console",
+    title: "Panic Archive",
+    text: "Panic recordings stay separated for rider, driver, and owner review inside the admin lane.",
+    href: "/admin/panic-archive",
+    button: "Open panic archive",
   },
   {
     title: "Get App",
@@ -180,12 +180,12 @@ export default function HomePage() {
                   maxWidth: "720px",
                 }}
               >
-                The homepage now shows the panic archive as the current live build step, so the emergency admin work is visible from the front page too.
+                The homepage now shows the marquee manager as the current live build step, so ad controls are visible from the front page too.
               </p>
 
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <Link
-                  href="/admin/panic-archive"
+                  href="/admin/marquee"
                   style={{
                     textDecoration: "none",
                     background: "#ffffff",
@@ -195,7 +195,7 @@ export default function HomePage() {
                     borderRadius: "14px",
                   }}
                 >
-                  Open Panic Archive
+                  Open Marquee Manager
                 </Link>
                 <Link
                   href="/admin"
@@ -224,10 +224,10 @@ export default function HomePage() {
             >
               <div style={{ display: "grid", gap: "12px" }}>
                 {[
-                  "6 separate panic archive areas",
-                  "Search by driver, rider, or owner ID",
-                  "Download, review, delete, and restore flow",
-                  "Temporary hold before final removal",
+                  "+ New Ad admin control",
+                  "Edit and Delete on ad items",
+                  "authority alerts kept separate",
+                  "homepage-visible marquee progress",
                 ].map((item) => (
                   <div
                     key={item}
