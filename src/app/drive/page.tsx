@@ -72,7 +72,7 @@ export default function DrivePage() {
     }
 
     setAgreed(true);
-    setMessage('Agreement saved. You can continue now.');
+    setMessage('Agreement saved. Continue to document upload now.');
   }
 
   return (
@@ -208,7 +208,8 @@ export default function DrivePage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: '14px',
             marginBottom: '22px',
-          }}>
+          }}
+        >
           {[
             ['Required checks', '4'],
             ['Driver path', 'Screening first'],
@@ -316,7 +317,7 @@ export default function DrivePage() {
                 'Show drivers where to complete each required check.',
                 'Do not approve drivers until all 4 checks are complete.',
                 'Keep this flow aligned with the homepage and admin style.',
-                'This is still preview-only locally until it is live on the public site.',
+                'The next step should be document upload, not admin login.',
               ].map((note) => (
                 <div
                   key={note}
@@ -354,7 +355,7 @@ export default function DrivePage() {
 
             {agreed ? (
               <Link
-                href='/admin'
+                href='/drive/upload-docs'
                 style={{
                   display: 'block',
                   textDecoration: 'none',
@@ -367,7 +368,7 @@ export default function DrivePage() {
                   fontWeight: 800,
                 }}
               >
-                Continue to Admin Review
+                Continue to Document Upload
               </Link>
             ) : (
               <div
@@ -381,7 +382,7 @@ export default function DrivePage() {
                   fontWeight: 700,
                 }}
               >
-                Finish all checks to unlock continue
+                Finish all checks to unlock document upload
               </div>
             )}
           </div>
