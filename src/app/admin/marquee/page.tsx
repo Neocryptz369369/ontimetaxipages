@@ -1,6 +1,18 @@
+'use client';
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
-const ads = [
+type AdItem = {
+  id: string;
+  title: string;
+  audience: string;
+  status: string;
+  priority: string;
+  body: string;
+};
+
+const starterAds: AdItem[] = [
   {
     id: "AD-001",
     title: "Weekend airport ride push",
@@ -40,7 +52,104 @@ function badgeStyle(value: string) {
   return { background: "rgba(56,189,248,0.16)", color: "#d9f6ff", border: "1px solid rgba(56,189,248,0.28)" };
 }
 
+function makeNextId(items: AdItem[]) {
+  const max = items.reduce((highest, item) => {
+    const num = Number(item.id.replace("AD-", ""));
+    return Number.isFinite(num) && num > highest ? num : highest;
+  }, 0);
+
+  return `AD-${String(max + 1).padStart(3, "0")}`;
+}
+
 export default function AdminMarqueePage() {
+  const [ads, setAds] = useState<AdItem[]>(starterAds);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(starterAds[0].id);
+  const [title, setTitle] = useState("");
+  const [audience, setAudience] = useState("All apps");
+  const [status, setStatus] = useState("Draft");
+  const [priority, setPriority] = useState("Normal");
+  const [body, setBody] = useState("");
+
+  const liveAds = useMemo(() => ads.filter((ad) => ad.status === "Live"), [ads]);
+  const draftAds = useMemo(() => ads.filter((ad) => ad.status === "Draft"), [ads]);
+  const previewAd = ads.find((ad) => ad.id === previewId) || null;
+
+  function resetForm() {
+    setEditingId(null);
+    setTitle("");
+    setAudience("All apps");
+    setStatus("Draft");
+    setPriority("Normal");
+    setBody("");
+    setShowForm(false);
+  }
+
+  function openNewAd() {
+    setEditingId(null);
+    setTitle("");
+    setAudience("All apps");
+    setStatus("Draft");
+    setPriority("Normal");
+    setBody("");
+    setShowForm(true);
+  }
+
+  function openEdit(ad: AdItem) {
+    setEditingId(ad.id);
+    setTitle(ad.title);
+    setAudience(ad.audience);
+    setStatus(ad.status);
+    setPriority(ad.priority);
+    setBody(ad.body);
+    setShowForm(true);
+  }
+
+  function saveAd() {
+    if (!title.trim() || !body.trim()) return;
+
+    if (editingId) {
+      setAds((current) =>
+        current.map((ad) =>
+          ad.id === editingId
+            ? { ...ad, title: title.trim(), audience, status, priority, body: body.trim() }
+            : ad
+        )
+      );
+      setPreviewId(editingId);
+      resetForm();
+      return;
+    }
+
+    const newId = makeNextId(ads);
+    const newAd: AdItem = {
+      id: newId,
+      title: title.trim(),
+      audience,
+      status,
+      priority,
+      body: body.trim(),
+    };
+
+    setAds((current) => [newAd, ...current]);
+    setPreviewId(newId);
+    resetForm();
+  }
+
+  function deleteAd(id: string) {
+    const remaining = ads.filter((ad) => ad.id !== id);
+    setAds(remaining);
+
+    if (previewId === id) {
+      setPreviewId(remaining.length ? remaining[0].id : null);
+    }
+
+    if (editingId === id) {
+      resetForm();
+    }
+  }
+
   return (
     <main
       style={{
@@ -76,7 +185,7 @@ export default function AdminMarqueePage() {
             </div>
             <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Ad marquee manager</h1>
             <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "820px" }}>
-              This is the page where ads can be created, reviewed, edited, and deleted from the admin side.
+              Add, edit, delete, and preview now work directly in this admin page.
             </p>
           </div>
 
@@ -95,8 +204,12 @@ export default function AdminMarqueePage() {
             >
               Back to admin
             </Link>
-            <div
+            <button
+              type="button"
+              onClick={openNewAd}
               style={{
+                border: "none",
+                cursor: "pointer",
                 padding: "12px 16px",
                 borderRadius: "14px",
                 background: "#ffffff",
@@ -105,7 +218,7 @@ export default function AdminMarqueePage() {
               }}
             >
                             + New ad
-            </div>
+            </button>
           </div>
         </div>
 
@@ -118,10 +231,10 @@ export default function AdminMarqueePage() {
           }}
         >
           {[
-            ["Live ads", "2"],
-            ["Draft ads", "1"],
-            ["Authority alerts", "3"],
-            ["Admin actions", "Create • Edit • Delete"],
+            ["Live ads", String(liveAds.length)],
+            ["Draft ads", String(draftAds.length)],
+            ["Total ads", String(ads.length)],
+            ["Authority alerts", String(authorityAlerts.length)],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -134,7 +247,7 @@ export default function AdminMarqueePage() {
               }}
             >
               <div style={{ color: "#9fb7e5", fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 800 }}>{label}</div>
-              <div style={{ marginTop: "10px", fontSize: label === "Admin actions" ? "20px" : "34px", fontWeight: 800 }}>{value}</div>
+              <div style={{ marginTop: "10px", fontSize: "34px", fontWeight: 800 }}>{value}</div>
             </div>
           ))}
         </section>
@@ -142,7 +255,7 @@ export default function AdminMarqueePage() {
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: "1.15fr 0.85fr",
+            gridTemplateColumns: "1.05fr 0.95fr",
             gap: "16px",
             marginBottom: "22px",
           }}
@@ -155,54 +268,51 @@ export default function AdminMarqueePage() {
               border: "1px solid rgba(255,255,255,0.10)",
             }}
           >
-            <h2 style={{ marginTop: 0, fontSize: "28px" }}>Current ad list</h2>
+            <h2 style={{ marginTop: 0, fontSize: "28px" }}>{editingId ? `Edit ${editingId}` : "Create or edit ad"}</h2>
             <div style={{ display: "grid", gap: "12px" }}>
-              {ads.map((ad) => (
-                <div
-                  key={ad.id}
-                  style={{
-                    borderRadius: "18px",
-                    padding: "18px",
-                    background: "rgba(0,0,0,0.24)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", marginBottom: "10px" }}>
-                    <div>
-                      <div style={{ fontSize: "20px", fontWeight: 800 }}>{ad.title}</div>
-                      <div style={{ color: "#bcd0f8", marginTop: "6px" }}>{ad.id} • {ad.audience}</div>
-                    </div>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <div style={{ ...badgeStyle(ad.status), borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 800 }}>{ad.status}</div>
-                      <div style={{ ...badgeStyle(ad.priority), borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 800 }}>{ad.priority}</div>
-                    </div>
-                  </div>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ad title"
+                style={{ padding: "14px 16px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.24)", color: "#ffffff", fontSize: "16px" }}
+              />
 
-                  <p style={{ margin: "0 0 14px", color: "#d9e5ff", lineHeight: 1.7 }}>{ad.body}</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: "12px" }}>
+                <select value={audience} onChange={(e) => setAudience(e.target.value)} style={{ padding: "14px 16px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.24)", color: "#ffffff", fontSize: "16px" }}>
+                  <option>All apps</option>
+                  <option>Rider apps</option>
+                  <option>Driver apps</option>
+                  <option>Owner app</option>
+                </select>
 
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                    {[
-                      ["Edit", "#ffffff", "#09111f"],
-                      ["Delete", "rgba(255,77,184,0.16)", "#ffd1f0"],
-                      ["Preview", "rgba(255,255,255,0.08)", "#ffffff"],
-                    ].map(([label, bg, color]) => (
-                      <div
-                        key={label}
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: "12px",
-                          background: bg,
-                          color,
-                          fontWeight: 800,
-                          border: "1px solid rgba(255,255,255,0.10)",
-                        }}
-                      >
-                        {label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ padding: "14px 16px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.24)", color: "#ffffff", fontSize: "16px" }}>
+                  <option>Draft</option>
+                  <option>Live</option>
+                </select>
+
+                <select value={priority} onChange={(e) => setPriority(e.target.value)} style={{ padding: "14px 16px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.24)", color: "#ffffff", fontSize: "16px" }}>
+                  <option>Normal</option>
+                  <option>High</option>
+                  <option>Urgent</option>
+                </select>
+              </div>
+
+              <textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Ad text"
+                rows={5}
+                style={{ padding: "14px 16px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.24)", color: "#ffffff", fontSize: "16px", resize: "vertical" }}
+              />
+
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <button type="button" onClick={saveAd} style={{ border: "none", cursor: "pointer", padding: "12px 16px", borderRadius: "12px", background: "#ffffff", color: "#09111f", fontWeight: 800 }}>
+                  {editingId ? "Save changes" : "Add ad"}
+                </button>
+                <button type="button" onClick={resetForm} style={{ border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", padding: "12px 16px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", color: "#ffffff", fontWeight: 800 }}>
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
 
@@ -214,26 +324,98 @@ export default function AdminMarqueePage() {
               border: "1px solid rgba(255,255,255,0.10)",
             }}
           >
-            <h2 style={{ marginTop: 0, fontSize: "28px" }}>Authority alert lane</h2>
-            <p style={{ color: "#d9e5ff", lineHeight: 1.7 }}>
-              These are separate from normal ads and should come through proper channels only.
-            </p>
-            <div style={{ display: "grid", gap: "12px", marginTop: "14px" }}>
-              {authorityAlerts.map((alert) => (
-                <div
-                  key={alert.type}
-                  style={{
-                    borderRadius: "18px",
-                    padding: "16px",
-                    background: "rgba(0,0,0,0.24)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <div style={{ fontWeight: 800, fontSize: "18px" }}>{alert.type}</div>
-                  <div style={{ color: "#bcd0f8", marginTop: "8px", lineHeight: 1.7 }}>{alert.length} • {alert.source}</div>
+            <h2 style={{ marginTop: 0, fontSize: "28px" }}>Preview</h2>
+            {previewAd ? (
+              <div
+                style={{
+                  borderRadius: "22px",
+                  padding: "18px",
+                  background: "linear-gradient(135deg, rgba(34,197,94,0.14) 0%, rgba(14,165,233,0.14) 55%, rgba(255,255,255,0.05) 100%)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", marginBottom: "10px" }}>
+                  <div style={{ fontWeight: 800, fontSize: "22px" }}>{previewAd.title}</div>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <div style={{ ...badgeStyle(previewAd.status), borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 800 }}>{previewAd.status}</div>
+                    <div style={{ ...badgeStyle(previewAd.priority), borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 800 }}>{previewAd.priority}</div>
+                  </div>
                 </div>
-              ))}
+                <div style={{ color: "#d9f6ff", fontWeight: 700, marginBottom: "10px" }}>{previewAd.audience}</div>
+                <p style={{ margin: 0, color: "#d9e5ff", lineHeight: 1.8 }}>{previewAd.body}</p>
+              </div>
+            ) : (
+              <div style={{ color: "#d9e5ff", lineHeight: 1.7 }}>Click Preview on an ad card to show it here.</div>
+            )}
+
+            <div style={{ marginTop: "18px" }}>
+              <h3 style={{ marginTop: 0, fontSize: "22px" }}>Authority alert lane</h3>
+              <div style={{ display: "grid", gap: "12px" }}>
+                {authorityAlerts.map((alert) => (
+                  <div
+                    key={alert.type}
+                    style={{
+                      borderRadius: "18px",
+                      padding: "16px",
+                      background: "rgba(0,0,0,0.24)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <div style={{ fontWeight: 800, fontSize: "18px" }}>{alert.type}</div>
+                    <div style={{ color: "#bcd0f8", marginTop: "8px", lineHeight: 1.7 }}>{alert.length} • {alert.source}</div>
+                  </div>
+                ))}
+              </div>
             </div>
+          </div>
+        </section>
+
+        <section
+          style={{
+            borderRadius: "24px",
+            padding: "22px",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.10)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, fontSize: "28px" }}>Current ad list</h2>
+          <div style={{ display: "grid", gap: "12px" }}>
+            {ads.map((ad) => (
+              <div
+                key={ad.id}
+                style={{
+                  borderRadius: "18px",
+                  padding: "18px",
+                  background: "rgba(0,0,0,0.24)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", marginBottom: "10px" }}>
+                  <div>
+                    <div style={{ fontSize: "20px", fontWeight: 800 }}>{ad.title}</div>
+                    <div style={{ color: "#bcd0f8", marginTop: "6px" }}>{ad.id} • {ad.audience}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <div style={{ ...badgeStyle(ad.status), borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 800 }}>{ad.status}</div>
+                    <div style={{ ...badgeStyle(ad.priority), borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 800 }}>{ad.priority}</div>
+                  </div>
+                </div>
+
+                <p style={{ margin: "0 0 14px", color: "#d9e5ff", lineHeight: 1.7 }}>{ad.body}</p>
+
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => openEdit(ad)} style={{ border: "none", cursor: "pointer", padding: "10px 12px", borderRadius: "12px", background: "#ffffff", color: "#09111f", fontWeight: 800 }}>
+                    Edit
+                  </button>
+                  <button type="button" onClick={() => setPreviewId(ad.id)} style={{ border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer", padding: "10px 12px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", color: "#ffffff", fontWeight: 800 }}>
+                    Preview
+                  </button>
+                  <button type="button" onClick={() => deleteAd(ad.id)} style={{ border: "1px solid rgba(255,77,184,0.28)", cursor: "pointer", padding: "10px 12px", borderRadius: "12px", background: "rgba(255,77,184,0.16)", color: "#ffd1f0", fontWeight: 800 }}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       </div>
