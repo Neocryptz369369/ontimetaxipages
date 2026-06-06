@@ -232,7 +232,7 @@ export default function HomePage() {
             <div
               style={{
                 position: "relative",
-                minHeight: "520px",
+                minHeight: "620px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -242,8 +242,8 @@ export default function HomePage() {
                 style={{
                   position: "relative",
                   width: "100%",
-                  maxWidth: "380px",
-                  height: "360px",
+                  maxWidth: "560px",
+                  height: "560px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -256,7 +256,7 @@ export default function HomePage() {
                   priority
                   style={{
                     objectFit: "contain",
-                    padding: "12px 12px 48px 12px",
+                    padding: "10px 10px 36px 10px",
                   }}
                 />
               </div>
