@@ -10,7 +10,7 @@ export default function HomePage() {
         fontFamily: "Arial, Helvetica, sans-serif",
       }}
     >
-      <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "32px 20px 96px" }}>
+      <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "28px 20px 96px" }}>
         <div
           style={{
             display: "flex",
@@ -18,17 +18,38 @@ export default function HomePage() {
             alignItems: "center",
             flexWrap: "wrap",
             gap: "16px",
-            marginBottom: "24px",
+            marginBottom: "20px",
           }}
         >
           <div style={{ fontWeight: 800, fontSize: "24px", color: "#1d4ed8" }}>On-Time Taxi</div>
-          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", fontWeight: 600 }}>
+          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", fontWeight: 700 }}>
             <Link href="/ride" style={{ textDecoration: "none", color: "#334155" }}>Ride</Link>
             <Link href="/get-app" style={{ textDecoration: "none", color: "#334155" }}>Get app</Link>
             <Link href="/cities" style={{ textDecoration: "none", color: "#334155" }}>Cities</Link>
             <Link href="/admin" style={{ textDecoration: "none", color: "#1d4ed8" }}>Admin</Link>
           </div>
         </div>
+
+        <section
+          style={{
+            background: "#b42318",
+            color: "#ffffff",
+            borderRadius: "20px",
+            padding: "18px 20px",
+            marginBottom: "18px",
+            boxShadow: "0 16px 36px rgba(180, 35, 24, 0.25)",
+          }}
+        >
+          <div style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.95 }}>
+            Homepage Update
+          </div>
+          <div style={{ fontSize: "22px", fontWeight: 800, marginTop: "6px" }}>
+            Admin console is now part of the homepage build.
+          </div>
+          <div style={{ fontSize: "16px", lineHeight: 1.6, marginTop: "8px", maxWidth: "900px" }}>
+            This homepage now visibly includes the owner/admin path, not just the ride side of the site.
+          </div>
+        </section>
 
         <section
           style={{
@@ -40,23 +61,6 @@ export default function HomePage() {
             marginBottom: "22px",
           }}
         >
-          <div
-            style={{
-              display: "inline-block",
-              padding: "8px 12px",
-              borderRadius: "999px",
-              background: "#dbeafe",
-              color: "#1d4ed8",
-              fontSize: "12px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              marginBottom: "14px",
-            }}
-          >
-            Live Website Update
-          </div>
-
           <h1 style={{ fontSize: "52px", lineHeight: 1.05, margin: "0 0 16px" }}>
             Get there. On time. Every time.
           </h1>
@@ -88,12 +92,12 @@ export default function HomePage() {
                 textDecoration: "none",
                 background: "#0f172a",
                 color: "#ffffff",
-                fontWeight: 700,
+                fontWeight: 800,
                 padding: "14px 18px",
                 borderRadius: "14px",
               }}
             >
-              Open Admin Console
+              OPEN ADMIN CONSOLE
             </Link>
           </div>
         </section>
@@ -106,7 +110,7 @@ export default function HomePage() {
             padding: "30px 28px",
             boxShadow: "0 20px 48px rgba(15, 23, 42, 0.18)",
             marginBottom: "22px",
-            border: "2px solid #1d4ed8",
+            border: "3px solid #1d4ed8",
           }}
         >
           <div
@@ -123,15 +127,15 @@ export default function HomePage() {
               marginBottom: "16px",
             }}
           >
-            Admin Console Now Visible
+            Admin Console Now Live
           </div>
 
-          <h2 style={{ margin: "0 0 12px", fontSize: "38px", lineHeight: 1.1 }}>
-            Owner and admin controls are now part of the homepage experience.
+          <h2 style={{ margin: "0 0 12px", fontSize: "40px", lineHeight: 1.1 }}>
+            Owner and admin controls are available from this homepage.
           </h2>
 
           <p style={{ margin: 0, fontSize: "18px", lineHeight: 1.7, maxWidth: "860px", color: "#cbd5e1" }}>
-            The admin panel is not just hidden on a deep link anymore. This homepage now clearly shows
+            The admin panel is no longer treated like a hidden back page. This homepage now clearly shows
             the admin path, the owner-control direction, and the system-control build moving forward.
           </p>
 
@@ -183,12 +187,11 @@ export default function HomePage() {
               style={{
                 display: "inline-block",
                 textDecoration: "none",
-                background: "transparent",
-                color: "#93c5fd",
+                background: "#1d4ed8",
+                color: "#ffffff",
                 fontWeight: 800,
                 padding: "14px 18px",
                 borderRadius: "14px",
-                border: "1px solid #334155",
               }}
             >
               Owner Control Area
@@ -224,6 +227,7 @@ export default function HomePage() {
             border: "1px solid #d9e2ec",
             borderRadius: "18px",
             padding: "22px",
+            marginBottom: "18px",
           }}
         >
           <h2 style={{ marginTop: 0 }}>Launch status</h2>
@@ -232,18 +236,18 @@ export default function HomePage() {
           </p>
         </section>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "28px" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "18px" }}>
           <Link
             href="/admin"
             style={{
               display: "inline-block",
               textDecoration: "none",
-              background: "#0f172a",
+              background: "#b42318",
               color: "#ffffff",
               fontWeight: 800,
               padding: "14px 18px",
               borderRadius: "999px",
-              boxShadow: "0 14px 30px rgba(15, 23, 42, 0.28)",
+              boxShadow: "0 14px 30px rgba(180, 35, 24, 0.28)",
             }}
           >
             Admin @
