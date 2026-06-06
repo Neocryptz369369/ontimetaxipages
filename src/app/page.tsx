@@ -3,22 +3,22 @@ import Link from "next/link";
 
 const featureCards = [
   {
-    title: "Marquee Manager",
-    text: "The next live step now shows marquee ad controls, edit actions, delete actions, and authority alerts.",
-    href: "/admin/marquee",
-    button: "Open marquee manager",
-  },
-  {
     title: "Panic Archive",
-    text: "Panic recordings stay separated for rider, driver, and owner review inside the admin lane.",
+    text: "Separated panic-recording archive areas for rider, driver, and owner events are part of the live build.",
     href: "/admin/panic-archive",
     button: "Open panic archive",
   },
   {
-    title: "Get App",
-    text: "Rider and driver app paths stay connected to the same public launch flow.",
-    href: "/get-app",
-    button: "Open get app",
+    title: "Marquee Manager",
+    text: "The homepage now points to a real marquee page where ads can be created, edited, and deleted from admin.",
+    href: "/admin/marquee",
+    button: "Open marquee manager",
+  },
+  {
+    title: "Admin Console",
+    text: "Owner controls, compliance, and review lanes stay visible from the homepage path.",
+    href: "/admin",
+    button: "Open admin console",
   },
   {
     title: "Cities",
@@ -119,7 +119,7 @@ export default function HomePage() {
           style={{
             borderRadius: "34px",
             padding: "34px 26px",
-            background: "linear-gradient(135deg, rgba(255,77,187,0.18) 0%, rgba(38,78,255,0.16) 48%, rgba(0,0,0,0.62) 100%)",
+            background: "linear-gradient(135deg, rgba(34,197,94,0.16) 0%, rgba(14,165,233,0.16) 48%, rgba(0,0,0,0.62) 100%)",
             border: "1px solid rgba(255,255,255,0.12)",
             boxShadow: "0 25px 90px rgba(0,0,0,0.38)",
             overflow: "hidden",
@@ -180,7 +180,7 @@ export default function HomePage() {
                   maxWidth: "720px",
                 }}
               >
-                The homepage now shows the marquee manager as the current live build step, so ad controls are visible from the front page too.
+                The marquee manager is now part of the live homepage flow, and the admin route should take you to a real ad-management page.
               </p>
 
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -224,10 +224,10 @@ export default function HomePage() {
             >
               <div style={{ display: "grid", gap: "12px" }}>
                 {[
-                  "+ New Ad admin control",
-                  "Edit and Delete on ad items",
-                  "authority alerts kept separate",
-                  "homepage-visible marquee progress",
+                  "Real marquee page in admin",
+                  "Create new ad button",
+                  "Edit and delete actions",
+                  "Authority alerts kept separate",
                 ].map((item) => (
                   <div
                     key={item}

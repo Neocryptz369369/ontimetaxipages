@@ -2,25 +2,25 @@ import Link from "next/link";
 
 const adminCards = [
   {
-    title: "Marquee manager",
-    text: "Create, edit, and delete app marquee ads from one admin page.",
-    href: "/admin/marquee",
+    title: "Panic archive",
+    text: "Review rider, driver, and owner panic recordings from one admin lane.",
+    href: "/admin/panic-archive",
+    cta: "Open panic archive",
     tone: "linear-gradient(135deg,#ff4db8 0%,#2f6dff 100%)",
-    cta: "Open marquee manager",
   },
   {
-    title: "Panic archive",
-    text: "Keep rider, driver, and owner panic recordings organized in separate review lanes.",
-    href: "/admin/panic-archive",
-    tone: "linear-gradient(135deg,#1d4ed8 0%,#22d3ee 100%)",
-    cta: "Open panic archive",
+    title: "Marquee manager",
+    text: "Create ads, edit ads, delete ads, and separate them from authority alerts.",
+    href: "/admin/marquee",
+    cta: "Open marquee manager",
+    tone: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%)",
   },
   {
     title: "Supervisor workflow",
-    text: "Keep the supervisor free-ride section ready for the step after marquee.",
+    text: "Keep the supervisor free-ride step ready after marquee work is fixed.",
     href: "/supervisors",
+    cta: "View supervisors",
     tone: "linear-gradient(135deg,#7c3aed 0%,#ec4899 100%)",
-    cta: "Open supervisors",
   },
 ];
 
@@ -60,7 +60,7 @@ export default function AdminPage() {
             </div>
             <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Rider On Time admin console</h1>
             <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "760px" }}>
-              This admin page now points clearly to the marquee manager so ad control is part of the live build.
+              The admin console now has a dedicated marquee manager path so you can actually open the ad area and work with it.
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export default function AdminPage() {
             borderRadius: "28px",
             padding: "26px",
             marginBottom: "22px",
-            background: "linear-gradient(135deg, rgba(255,77,184,0.18) 0%, rgba(47,109,255,0.18) 52%, rgba(255,255,255,0.05) 100%)",
+            background: "linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(14,165,233,0.18) 55%, rgba(255,255,255,0.05) 100%)",
             border: "1px solid rgba(255,255,255,0.12)",
             boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
           }}
@@ -103,11 +103,11 @@ export default function AdminPage() {
               marginBottom: "14px",
             }}
           >
-            Current build step
+            Fixed admin destination
           </div>
-          <h2 style={{ margin: "0 0 10px", fontSize: "34px", lineHeight: 1.08 }}>Admin marquee manager is the live step now</h2>
+          <h2 style={{ margin: "0 0 10px", fontSize: "34px", lineHeight: 1.08 }}>Marquee manager now has its own page</h2>
           <p style={{ margin: 0, color: "#d9e5ff", fontSize: "18px", lineHeight: 1.7, maxWidth: "820px" }}>
-            This step gives Dennis a clear admin page for normal app ads, authority-driven alerts, and edit/delete controls.
+            Use the marquee manager card below to open the ad page directly and work with create, edit, and delete actions.
           </p>
         </section>
 
@@ -116,7 +116,6 @@ export default function AdminPage() {
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
             gap: "16px",
-            marginBottom: "22px",
           }}
         >
           {adminCards.map((card) => (
@@ -150,40 +149,6 @@ export default function AdminPage() {
               </div>
             </div>
           ))}
-        </section>
-
-        <section
-          style={{
-            borderRadius: "24px",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            padding: "24px",
-          }}
-        >
-          <h3 style={{ marginTop: 0, fontSize: "26px" }}>What this admin step now covers</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
-            {[
-              "+ New Ad button",
-              "Edit and Delete actions",
-              "normal ads separated from authority alerts",
-              "homepage-visible marquee progress",
-              "admin route for ad management",
-              "live deploy-ready step",
-            ].map((item) => (
-              <div
-                key={item}
-                style={{
-                  borderRadius: "18px",
-                  padding: "16px",
-                  background: "rgba(0,0,0,0.24)",
-                  color: "#ffffff",
-                  fontWeight: 700,
-                }}
-              >
-                {item}
-              </div>
-            ))}
-          </div>
         </section>
       </div>
     </main>
