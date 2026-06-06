@@ -52,23 +52,27 @@ export default function DrivePage() {
     [completed]
   );
 
+  const allDone = doneCount === screeningSteps.length;
+
   function toggleStep(id: string) {
     setCompleted((current) => {
       const next = { ...current, [id]: !current[id] };
       return next;
     });
+
+    setAgreed(false);
+    setMessage('Checklist updated.');
   }
 
   function markAgreement() {
-    const allDone = Object.values(completed).every(Boolean);
-
     if (!allDone) {
-      setMessage('Finish all 4 compliance checks before agreeing.');
+      setAgreed(false);
+      setMessage('Finish all 4 compliance checks before continuing.');
       return;
     }
 
     setAgreed(true);
-    setMessage('Driver agreement saved.');
+    setMessage('Agreement saved. You can continue now.');
   }
 
   return (
@@ -191,7 +195,7 @@ export default function DrivePage() {
             >
               <div style={{ fontSize: '14px', color: '#d9e5ff', marginBottom: '10px', fontWeight: 700 }}>Current compliance status</div>
               <div style={{ fontSize: '40px', fontWeight: 800 }}>{doneCount}/4</div>
-              <div style={{ marginTop: '12px', borderRadius: '12px', padding: '12px 14px', background: 'rgba(255,255,255,0.08)', color: '#ffffff', fontWeight: 700 }}>
+              <div style={{ marginTop: '12px', borderRadius: '12px', padding: '12px 14px', background: agreed ? 'rgba(34,197,94,0.16)' : 'rgba(255,255,255,0.08)', color: '#ffffff', fontWeight: 700 }}>
                 {message}
               </div>
             </div>
@@ -204,12 +208,11 @@ export default function DrivePage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: '14px',
             marginBottom: '22px',
-          }}
-        >
+          }}>
           {[
             ['Required checks', '4'],
             ['Driver path', 'Screening first'],
-            ['Approval gate', 'All checks done'],
+            ['Approval gate', allDone ? 'Ready' : 'Waiting'],
             ['Agreement', agreed ? 'Saved' : 'Pending'],
           ].map(([label, value]) => (
             <div
@@ -343,10 +346,44 @@ export default function DrivePage() {
                 color: '#09111f',
                 fontWeight: 800,
                 width: '100%',
+                marginBottom: '12px',
               }}
             >
               Agree and continue
             </button>
+
+            {agreed ? (
+              <Link
+                href='/admin'
+                style={{
+                  display: 'block',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                  padding: '14px 18px',
+                  borderRadius: '14px',
+                  background: 'rgba(34,197,94,0.16)',
+                  border: '1px solid rgba(34,197,94,0.28)',
+                  color: '#cbffe0',
+                  fontWeight: 800,
+                }}
+              >
+                Continue to Admin Review
+              </Link>
+            ) : (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '14px 18px',
+                  borderRadius: '14px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#d9e5ff',
+                  fontWeight: 700,
+                }}
+              >
+                Finish all checks to unlock continue
+              </div>
+            )}
           </div>
         </section>
       </div>
