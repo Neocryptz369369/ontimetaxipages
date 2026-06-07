@@ -1,53 +1,8 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
-
-type BrokerStatus = "Ready for broker review" | "Broker reviewing" | "Added to policy";
-
-type DriverRecord = {
-  id: string;
-  name: string;
-  dob: string;
-  licenseNumber: string;
-  licenseFile: string;
-  brokerStatus: BrokerStatus;
-  checkrStatus: string;
-  notes: string;
-};
-
-const initialDrivers: DriverRecord[] = [
-  {
-    id: "DRV-1001",
-    name: "Marcus Hill",
-    dob: "03/14/1988",
-    licenseNumber: "H123-456-789-001",
-    licenseFile: "marcus-hill-license.jpg",
-    brokerStatus: "Ready for broker review",
-    checkrStatus: "Waiting on Checkr later",
-    notes: "",
-  },
-  {
-    id: "DRV-1002",
-    name: "April Woods",
-    dob: "11/02/1991",
-    licenseNumber: "W987-222-451-009",
-    licenseFile: "april-woods-license.jpg",
-    brokerStatus: "Ready for broker review",
-    checkrStatus: "Waiting on Checkr later",
-    notes: "",
-  },
-  {
-    id: "DRV-1003",
-    name: "Tina Brooks",
-    dob: "07/19/1986",
-    licenseNumber: "B555-784-221-111",
-    licenseFile: "tina-brooks-license.jpg",
-    brokerStatus: "Ready for broker review",
-    checkrStatus: "Waiting on Checkr later",
-    notes: "",
-  },
-];
+import { useEffect, useState } from "react";
+import { BrokerStatus, DriverRecord, loadBrokerDrivers, saveBrokerDrivers, stampUpdate } from "../broker-data";
 
 function pillStyle(text: string) {
   if (text.includes("Added")) {
@@ -74,27 +29,61 @@ function pillStyle(text: string) {
 }
 
 export default function BrokerReviewPage() {
-  const [drivers, setDrivers] = useState<DriverRecord[]>(initialDrivers);
-  const [selectedId, setSelectedId] = useState<string>(initialDrivers[0].id);
+  const [drivers, setDrivers] = useState<DriverRecord[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [message, setMessage] = useState("Broker review page ready.");
+
+  useEffect(() => {
+    const loaded = loadBrokerDrivers();
+    setDrivers(loaded);
+    if (loaded.length > 0) {
+      setSelectedId(loaded[0].id);
+    }
+  }, []);
 
   const selectedDriver = drivers.find((driver) => driver.id === selectedId) || drivers[0];
 
+  function persist(nextDrivers: DriverRecord[], nextMessage: string) {
+    setDrivers(nextDrivers);
+    saveBrokerDrivers(nextDrivers);
+    setMessage(nextMessage);
+  }
+
   function updateStatus(nextStatus: BrokerStatus) {
-    setDrivers((current) =>
-      current.map((driver) =>
-        driver.id === selectedDriver.id ? { ...driver, brokerStatus: nextStatus } : driver
-      )
+    if (!selectedDriver) return;
+
+    const nextDrivers = drivers.map((driver) =>
+      driver.id === selectedDriver.id
+        ? {
+            ...driver,
+            brokerStatus: nextStatus,
+            updatedAt: stampUpdate(nextStatus),
+          }
+        : driver
     );
-    setMessage(`${selectedDriver.name} updated to ${nextStatus}.`);
+
+    persist(nextDrivers, `${selectedDriver.name} updated to ${nextStatus}.`);
   }
 
   function updateNotes(notes: string) {
-    setDrivers((current) =>
-      current.map((driver) =>
-        driver.id === selectedDriver.id ? { ...driver, notes } : driver
-      )
+    if (!selectedDriver) return;
+
+    const nextDrivers = drivers.map((driver) =>
+      driver.id === selectedDriver.id
+        ? {
+            ...driver,
+            notes,
+            updatedAt: stampUpdate("Notes updated"),
+          }
+        : driver
     );
+
+    setDrivers(nextDrivers);
+    saveBrokerDrivers(nextDrivers);
+  }
+
+  if (!selectedDriver) {
+    return null;
   }
 
   return (
@@ -114,7 +103,7 @@ export default function BrokerReviewPage() {
             </div>
             <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Broker Driver Review</h1>
             <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "920px" }}>
-              This new page gives the broker a cleaner one-driver-at-a-time review workflow without touching the homepage.
+              Review one driver at a time, add notes, and move drivers into the policy queue without touching the homepage.
             </p>
           </div>
 
@@ -126,10 +115,10 @@ export default function BrokerReviewPage() {
               Back to Broker Dashboard
             </Link>
             <Link
-              href="/broker-account"
-              style={{ textDecoration: "none", color: "#09111f", background: "#ffffff", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
+              href="/broker-account/policy-queue"
+              style={{ textDecoration: "none", color: "#09111f", background: "#cbffe0", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
             >
-              Broker Account
+              Open Policy Queue
             </Link>
           </div>
         </div>
@@ -163,7 +152,7 @@ export default function BrokerReviewPage() {
                 >
                   <div style={{ fontWeight: 800 }}>{driver.name}</div>
                   <div style={{ marginTop: "6px", color: "#bfe8ff", fontSize: "14px" }}>{driver.id}</div>
-                  <div style={{ marginTop: "8px" }}>
+                  <div style={{ marginTop: "8px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <span style={{ ...pillStyle(driver.brokerStatus), borderRadius: "999px", padding: "6px 10px", fontSize: "11px", fontWeight: 800 }}>
                       {driver.brokerStatus}
                     </span>
@@ -188,7 +177,7 @@ export default function BrokerReviewPage() {
               </div>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <span style={{ ...pillStyle(selectedDriver.brokerStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{selectedDriver.brokerStatus}</span>
-                <span style={{ ...pillStyle(selectedDriver.checkrStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{selectedDriver.checkrStatus}</span>
+                <span style={{ ...pillStyle(selectedDriver.screeningStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{selectedDriver.screeningStatus}</span>
               </div>
             </div>
 
@@ -278,9 +267,9 @@ export default function BrokerReviewPage() {
               }}
             >
               <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#dbeafe", marginBottom: "10px" }}>
-                Checkr placeholder
+                Screening placeholder
               </div>
-              This is where the later Checkr pass / fail result can land after the external setup is unblocked.
+              This is where the later background provider result can land after Dennis picks the company and gets access.
             </div>
 
             <div

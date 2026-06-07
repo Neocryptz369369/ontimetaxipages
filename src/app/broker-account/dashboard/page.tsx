@@ -67,7 +67,7 @@ export default function BrokerDashboardPage() {
             </div>
             <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Broker Dashboard</h1>
             <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "920px" }}>
-              This dashboard now works with shared saved broker data. Review a driver, add notes, move them to policy, and see the queue on its own page.
+              This dashboard now shares saved broker data across pages. Review drivers, move them into policy, and track the queue without waiting on an outside screening provider.
             </p>
           </div>
 
@@ -122,7 +122,7 @@ export default function BrokerDashboardPage() {
           <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#dbeafe", marginBottom: "10px" }}>
             Background provider later
           </div>
-          This workflow is useful right now without waiting on any outside screening company. The provider pass/fail result can be connected later.
+          This broker workflow is useful right now without any outside provider. A pass/fail result can be connected later once Dennis chooses the background-screening company.
         </section>
 
         <section style={{ display: "grid", gap: "16px" }}>

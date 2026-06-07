@@ -78,3 +78,9 @@ export function saveBrokerDrivers(drivers: DriverRecord[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(drivers));
 }
+
+export function stampUpdate(text?: string) {
+  const now = new Date();
+  const time = now.toLocaleString();
+  return text ? `${text} • ${time}` : time;
+}
