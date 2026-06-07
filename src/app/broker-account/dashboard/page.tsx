@@ -1,53 +1,8 @@
 'use client';
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-
-type BrokerStatus = "Ready for broker review" | "Broker reviewing" | "Added to policy";
-
-type DriverRecord = {
-  id: string;
-  name: string;
-  dob: string;
-  licenseNumber: string;
-  licenseFile: string;
-  brokerStatus: BrokerStatus;
-  checkrStatus: string;
-  notes: string;
-};
-
-const initialDrivers: DriverRecord[] = [
-  {
-    id: "DRV-1001",
-    name: "Marcus Hill",
-    dob: "03/14/1988",
-    licenseNumber: "H123-456-789-001",
-    licenseFile: "marcus-hill-license.jpg",
-    brokerStatus: "Ready for broker review",
-    checkrStatus: "Waiting on Checkr later",
-    notes: "",
-  },
-  {
-    id: "DRV-1002",
-    name: "April Woods",
-    dob: "11/02/1991",
-    licenseNumber: "W987-222-451-009",
-    licenseFile: "april-woods-license.jpg",
-    brokerStatus: "Ready for broker review",
-    checkrStatus: "Waiting on Checkr later",
-    notes: "",
-  },
-  {
-    id: "DRV-1003",
-    name: "Tina Brooks",
-    dob: "07/19/1986",
-    licenseNumber: "B555-784-221-111",
-    licenseFile: "tina-brooks-license.jpg",
-    brokerStatus: "Ready for broker review",
-    checkrStatus: "Waiting on Checkr later",
-    notes: "",
-  },
-];
+import { useEffect, useMemo, useState } from "react";
+import { DriverRecord, loadBrokerDrivers } from "../broker-data";
 
 function pillStyle(text: string) {
   if (text.includes("Added")) {
@@ -74,7 +29,11 @@ function pillStyle(text: string) {
 }
 
 export default function BrokerDashboardPage() {
-  const [drivers] = useState<DriverRecord[]>(initialDrivers);
+  const [drivers, setDrivers] = useState<DriverRecord[]>([]);
+
+  useEffect(() => {
+    setDrivers(loadBrokerDrivers());
+  }, []);
 
   const readyCount = useMemo(
     () => drivers.filter((driver) => driver.brokerStatus === "Ready for broker review").length,
@@ -108,7 +67,7 @@ export default function BrokerDashboardPage() {
             </div>
             <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Broker Dashboard</h1>
             <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "920px" }}>
-              This dashboard keeps the broker workflow moving now and links into the new detailed broker review page on its own route.
+              This dashboard now works with shared saved broker data. Review a driver, add notes, move them to policy, and see the queue on its own page.
             </p>
           </div>
 
@@ -124,6 +83,12 @@ export default function BrokerDashboardPage() {
               style={{ textDecoration: "none", color: "#09111f", background: "#ffffff", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
             >
               Open Broker Driver Review
+            </Link>
+            <Link
+              href="/broker-account/policy-queue"
+              style={{ textDecoration: "none", color: "#09111f", background: "#cbffe0", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
+            >
+              Open Policy Queue
             </Link>
           </div>
         </div>
@@ -141,6 +106,23 @@ export default function BrokerDashboardPage() {
             <div style={{ fontSize: "12px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#bfe8ff" }}>Added to policy</div>
             <div style={{ fontSize: "34px", fontWeight: 800, marginTop: "10px", color: "#cbffe0" }}>{addedCount}</div>
           </div>
+        </section>
+
+        <section
+          style={{
+            borderRadius: "28px",
+            padding: "24px",
+            background: "linear-gradient(135deg, rgba(125,211,252,0.12) 0%, rgba(168,85,247,0.12) 100%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            marginBottom: "22px",
+            color: "#e6f6ff",
+            lineHeight: 1.8,
+          }}
+        >
+          <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#dbeafe", marginBottom: "10px" }}>
+            Background provider later
+          </div>
+          This workflow is useful right now without waiting on any outside screening company. The provider pass/fail result can be connected later.
         </section>
 
         <section style={{ display: "grid", gap: "16px" }}>
@@ -162,7 +144,7 @@ export default function BrokerDashboardPage() {
                 </div>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <span style={{ ...pillStyle(record.brokerStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{record.brokerStatus}</span>
-                  <span style={{ ...pillStyle(record.checkrStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{record.checkrStatus}</span>
+                  <span style={{ ...pillStyle(record.screeningStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{record.screeningStatus}</span>
                 </div>
               </div>
 
@@ -180,8 +162,8 @@ export default function BrokerDashboardPage() {
                   <div style={{ fontWeight: 700 }}>{record.licenseNumber}</div>
                 </div>
                 <div style={{ borderRadius: "18px", padding: "14px", background: "rgba(0,0,0,0.20)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "8px" }}>License file</div>
-                  <div style={{ fontWeight: 700 }}>{record.licenseFile}</div>
+                  <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "8px" }}>Last update</div>
+                  <div style={{ fontWeight: 700 }}>{record.updatedAt}</div>
                 </div>
               </div>
             </div>
