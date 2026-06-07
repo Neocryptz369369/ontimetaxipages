@@ -1,4 +1,5 @@
 export type BrokerStatus = "Ready for broker review" | "Broker reviewing" | "Added to policy";
+export type DocumentStatus = "Waiting for document check" | "Document checked" | "Document issue found";
 
 export type DriverRecord = {
   id: string;
@@ -7,8 +8,10 @@ export type DriverRecord = {
   licenseNumber: string;
   licenseFile: string;
   brokerStatus: BrokerStatus;
+  documentStatus: DocumentStatus;
   screeningStatus: string;
   notes: string;
+  documentNotes: string;
   updatedAt: string;
 };
 
@@ -22,8 +25,10 @@ export const initialDrivers: DriverRecord[] = [
     licenseNumber: "H123-456-789-001",
     licenseFile: "marcus-hill-license.jpg",
     brokerStatus: "Ready for broker review",
+    documentStatus: "Waiting for document check",
     screeningStatus: "Provider not connected yet",
     notes: "",
+    documentNotes: "",
     updatedAt: "Not updated yet",
   },
   {
@@ -33,8 +38,10 @@ export const initialDrivers: DriverRecord[] = [
     licenseNumber: "W987-222-451-009",
     licenseFile: "april-woods-license.jpg",
     brokerStatus: "Ready for broker review",
+    documentStatus: "Waiting for document check",
     screeningStatus: "Provider not connected yet",
     notes: "",
+    documentNotes: "",
     updatedAt: "Not updated yet",
   },
   {
@@ -44,8 +51,10 @@ export const initialDrivers: DriverRecord[] = [
     licenseNumber: "B555-784-221-111",
     licenseFile: "tina-brooks-license.jpg",
     brokerStatus: "Ready for broker review",
+    documentStatus: "Waiting for document check",
     screeningStatus: "Provider not connected yet",
     notes: "",
+    documentNotes: "",
     updatedAt: "Not updated yet",
   },
 ];

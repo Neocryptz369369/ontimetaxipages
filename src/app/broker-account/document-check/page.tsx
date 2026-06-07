@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BrokerStatus, DriverRecord, loadBrokerDrivers, saveBrokerDrivers, stampUpdate } from "../broker-data";
+import { DocumentStatus, DriverRecord, loadBrokerDrivers, saveBrokerDrivers, stampUpdate } from "../broker-data";
 
 function pillStyle(text: string) {
-  if (text.includes("Added") || text.includes("checked")) {
+  if (text.includes("checked")) {
     return {
       background: "rgba(34,197,94,0.16)",
       color: "#cbffe0",
@@ -13,7 +13,7 @@ function pillStyle(text: string) {
     };
   }
 
-  if (text.includes("reviewing") || text.includes("issue")) {
+  if (text.includes("issue")) {
     return {
       background: "rgba(245,158,11,0.16)",
       color: "#ffe3a6",
@@ -28,10 +28,10 @@ function pillStyle(text: string) {
   };
 }
 
-export default function BrokerReviewPage() {
+export default function BrokerDocumentCheckPage() {
   const [drivers, setDrivers] = useState<DriverRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [message, setMessage] = useState("Broker review page ready.");
+  const [message, setMessage] = useState("Broker document check page ready.");
 
   useEffect(() => {
     const loaded = loadBrokerDrivers();
@@ -43,24 +43,20 @@ export default function BrokerReviewPage() {
 
   const selectedDriver = drivers.find((driver) => driver.id === selectedId) || drivers[0];
 
-  function persist(nextDrivers: DriverRecord[], nextMessage: string) {
+  function updateDocumentStatus(nextStatus: DocumentStatus) {
+    if (!selectedDriver) return;
+    const nextDrivers = drivers.map((driver) =>
+      driver.id === selectedDriver.id ? { ...driver, documentStatus: nextStatus, updatedAt: stampUpdate(nextStatus) } : driver
+    );
     setDrivers(nextDrivers);
     saveBrokerDrivers(nextDrivers);
-    setMessage(nextMessage);
+    setMessage(`${selectedDriver.name} updated to ${nextStatus}.`);
   }
 
-  function updateStatus(nextStatus: BrokerStatus) {
+  function updateDocumentNotes(notes: string) {
     if (!selectedDriver) return;
     const nextDrivers = drivers.map((driver) =>
-      driver.id === selectedDriver.id ? { ...driver, brokerStatus: nextStatus, updatedAt: stampUpdate(nextStatus) } : driver
-    );
-    persist(nextDrivers, `${selectedDriver.name} updated to ${nextStatus}.`);
-  }
-
-  function updateNotes(notes: string) {
-    if (!selectedDriver) return;
-    const nextDrivers = drivers.map((driver) =>
-      driver.id === selectedDriver.id ? { ...driver, notes, updatedAt: stampUpdate("Notes updated") } : driver
+      driver.id === selectedDriver.id ? { ...driver, documentNotes: notes, updatedAt: stampUpdate("Document notes updated") } : driver
     );
     setDrivers(nextDrivers);
     saveBrokerDrivers(nextDrivers);
@@ -73,13 +69,13 @@ export default function BrokerReviewPage() {
       <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "28px 18px 80px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap", marginBottom: "24px" }}>
           <div>
-            <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#8fdcff", marginBottom: "10px" }}>Broker detailed review lane</div>
-            <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Broker Driver Review</h1>
-            <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "920px" }}>Review one driver at a time, add notes, and move drivers into the policy queue without touching the homepage.</p>
+            <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#8fdcff", marginBottom: "10px" }}>Broker document check lane</div>
+            <h1 style={{ margin: 0, fontSize: "42px", lineHeight: 1.05 }}>Broker Document Check</h1>
+            <p style={{ margin: "12px 0 0", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "920px" }}>This page gives the broker a dedicated place to check license documents before moving a driver forward.</p>
           </div>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             <Link href="/broker-account/dashboard" style={{ textDecoration: "none", color: "#ffffff", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Back to Broker Dashboard</Link>
-            <Link href="/broker-account/document-check" style={{ textDecoration: "none", color: "#09111f", background: "#d9f6ff", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Open Document Check</Link>
+            <Link href="/broker-account/review" style={{ textDecoration: "none", color: "#09111f", background: "#ffffff", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Open Broker Driver Review</Link>
             <Link href="/broker-account/policy-queue" style={{ textDecoration: "none", color: "#09111f", background: "#cbffe0", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Open Policy Queue</Link>
           </div>
         </div>
@@ -92,8 +88,8 @@ export default function BrokerReviewPage() {
                 <button key={driver.id} type="button" onClick={() => setSelectedId(driver.id)} style={{ textAlign: "left", border: selectedId === driver.id ? "1px solid rgba(255,255,255,0.22)" : "1px solid rgba(255,255,255,0.10)", cursor: "pointer", borderRadius: "18px", padding: "14px", background: selectedId === driver.id ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.18)", color: "#ffffff" }}>
                   <div style={{ fontWeight: 800 }}>{driver.name}</div>
                   <div style={{ marginTop: "6px", color: "#bfe8ff", fontSize: "14px" }}>{driver.id}</div>
-                  <div style={{ marginTop: "8px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    <span style={{ ...pillStyle(driver.brokerStatus), borderRadius: "999px", padding: "6px 10px", fontSize: "11px", fontWeight: 800 }}>{driver.brokerStatus}</span>
+                  <div style={{ marginTop: "8px" }}>
+                    <span style={{ ...pillStyle(driver.documentStatus), borderRadius: "999px", padding: "6px 10px", fontSize: "11px", fontWeight: 800 }}>{driver.documentStatus}</span>
                   </div>
                 </button>
               ))}
@@ -107,9 +103,7 @@ export default function BrokerReviewPage() {
                 <div style={{ marginTop: "6px", color: "#bfe8ff", fontWeight: 700 }}>{selectedDriver.id}</div>
               </div>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <span style={{ ...pillStyle(selectedDriver.brokerStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{selectedDriver.brokerStatus}</span>
                 <span style={{ ...pillStyle(selectedDriver.documentStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{selectedDriver.documentStatus}</span>
-                <span style={{ ...pillStyle(selectedDriver.screeningStatus), borderRadius: "999px", padding: "8px 12px", fontSize: "12px", fontWeight: 800 }}>{selectedDriver.screeningStatus}</span>
               </div>
             </div>
 
@@ -121,19 +115,14 @@ export default function BrokerReviewPage() {
             </div>
 
             <div style={{ borderRadius: "20px", padding: "18px", background: "rgba(0,0,0,0.20)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: "16px" }}>
-              <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "10px" }}>Broker notes</div>
-              <textarea value={selectedDriver.notes} onChange={(e) => updateNotes(e.target.value)} placeholder="Write broker review notes here..." style={{ width: "100%", minHeight: "140px", padding: "14px 16px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#ffffff", fontSize: "15px", outline: "none", boxSizing: "border-box", resize: "vertical", fontFamily: "Arial, Helvetica, sans-serif" }} />
+              <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "10px" }}>Document notes</div>
+              <textarea value={selectedDriver.documentNotes} onChange={(e) => updateDocumentNotes(e.target.value)} placeholder="Write document check notes here..." style={{ width: "100%", minHeight: "140px", padding: "14px 16px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "#ffffff", fontSize: "15px", outline: "none", boxSizing: "border-box", resize: "vertical", fontFamily: "Arial, Helvetica, sans-serif" }} />
             </div>
 
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
-              <button type="button" onClick={() => updateStatus("Broker reviewing")} style={{ border: "none", cursor: "pointer", color: "#09111f", background: "#ffe3a6", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Mark reviewing</button>
-              <button type="button" onClick={() => updateStatus("Added to policy")} style={{ border: "none", cursor: "pointer", color: "#09111f", background: "#cbffe0", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Mark added to policy</button>
-              <button type="button" onClick={() => updateStatus("Ready for broker review")} style={{ border: "1px solid rgba(255,255,255,0.14)", cursor: "pointer", color: "#ffffff", background: "rgba(255,255,255,0.08)", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Reset status</button>
-            </div>
-
-            <div style={{ borderRadius: "20px", padding: "18px", background: "linear-gradient(135deg, rgba(125,211,252,0.12) 0%, rgba(168,85,247,0.12) 100%)", border: "1px solid rgba(255,255,255,0.12)", color: "#e6f6ff", lineHeight: 1.8, marginBottom: "16px" }}>
-              <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#dbeafe", marginBottom: "10px" }}>Screening placeholder</div>
-              This is where the later background provider result can land after Dennis picks the company and gets access.
+              <button type="button" onClick={() => updateDocumentStatus("Document checked")} style={{ border: "none", cursor: "pointer", color: "#09111f", background: "#cbffe0", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Mark document checked</button>
+              <button type="button" onClick={() => updateDocumentStatus("Document issue found")} style={{ border: "none", cursor: "pointer", color: "#09111f", background: "#ffe3a6", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Mark issue found</button>
+              <button type="button" onClick={() => updateDocumentStatus("Waiting for document check")} style={{ border: "1px solid rgba(255,255,255,0.14)", cursor: "pointer", color: "#ffffff", background: "rgba(255,255,255,0.08)", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}>Reset document status</button>
             </div>
 
             <div style={{ borderRadius: "20px", padding: "16px 18px", background: "rgba(0,0,0,0.22)", border: "1px solid rgba(255,255,255,0.08)", color: "#d9e5ff", lineHeight: 1.7 }}>{message}</div>
