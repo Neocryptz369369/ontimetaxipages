@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>On Time Taxi — Driver</title>
+<style>
+  :root{
+    --red:#e11d2a; --red-dark:#a10f1a; --black:#0d0d0d; --panel:#161616;
+    --panel2:#1f1f1f; --line:#2b2b2b; --text:#f5f5f5; --muted:#9a9a9a;
+    --ok:#2ecc71; --warn:#f1c40f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--black);color:var(--text);padding-bottom:72px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--black);border-bottom:3px solid var(--red);position:sticky;top:0;z-index:20;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:.5px;}
+  .brand .dot{width:22px;height:22px;border-radius:5px;background:repeating-conic-gradient(var(--red) 0 25%, #000 0 50%) 0 0/11px 11px;}
+  .strip{height:8px;background:repeating-linear-gradient(90deg,var(--red) 0 18px,#000 18px 36px);position:sticky;top:56px;z-index:19;}
+  .lang-sel{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:14px;}
+  main{max-width:520px;margin:0 auto;padding:16px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;}
+  .card h2{font-size:16px;margin-bottom:12px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px;}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--text);padding:11px;font-size:15px;}
+  input::placeholder{color:#666;}
+  .btn{width:100%;border:none;border-radius:10px;padding:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px;}
+  .btn-red{background:var(--red);color:#fff;} .btn-red:active{background:var(--red-dark);}
+  .btn-outline{background:transparent;color:var(--text);border:1px solid var(--line);}
+  .btn-ghost{background:var(--panel2);color:var(--text);}
+  .btn-ok{background:var(--ok);color:#08260f;}
+  .row{display:flex;gap:10px;} .row>*{flex:1;}
+  .social{display:flex;gap:10px;margin-top:10px;}
+  .social button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px;font-size:13px;cursor:pointer;}
+  .earnbig{font-size:34px;font-weight:800;color:var(--ok);}
+  .stat{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .map{height:190px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(135deg,#1a1a1a,#242424);display:flex;align-items:center;justify-content:center;color:var(--muted);position:relative;overflow:hidden;}
+  .heat{position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(225,29,42,.6),transparent 70%);}
+  .h1{top:20%;left:20%;} .h2{top:50%;left:60%;}
+  .req{border:1px solid var(--red);border-radius:12px;padding:14px;margin-bottom:12px;background:#1a1113;}
+  .req .top{display:flex;justify-content:space-between;font-weight:700;}
+  .req .meta{font-size:13px;color:var(--muted);margin:6px 0;}
+  .badge{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:12px;margin:3px 3px 0 0;}
+  .badge.ok{color:var(--ok);border-color:var(--ok);}
+  .badge.warn{color:var(--warn);border-color:var(--warn);}
+  .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .switch{position:relative;width:46px;height:26px;} .switch input{display:none;}
+  .slider{position:absolute;inset:0;background:#333;border-radius:26px;transition:.2s;cursor:pointer;}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked+.slider{background:var(--red);} .switch input:checked+.slider:before{transform:translateX(20px);}
+  .alert{background:#241012;border-left:4px solid var(--warn);border-radius:8px;padding:11px;margin-top:10px;font-size:14px;}
+  .upload{border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:13px;margin-top:8px;cursor:pointer;}
+  .status-pill{display:inline-block;padding:6px 14px;border-radius:20px;font-weight:700;font-size:13px;}
+  .online{background:var(--ok);color:#08260f;} .offline{background:#333;color:var(--muted);}
+  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--black);border-top:3px solid var(--red);z-index:30;}
+  .tabbar button{flex:1;background:none;border:none;color:var(--muted);padding:9px 0;font-size:11px;cursor:pointer;}
+  .tabbar button .ico{display:block;font-size:20px;margin-bottom:2px;}
+  .tabbar button.active{color:var(--red);}
+  .view{display:none;} .view.active{display:block;} .hidden{display:none;}
+  .note{font-size:12px;color:var(--muted);margin-top:6px;}
+  .stars{color:#f5c518;letter-spacing:2px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><span class="dot"></span> ON TIME <span style="color:var(--red)">DRIVER</span></div>
+  <select class="lang-sel">
+    <option>English</option><option>Español</option><option>Français</option>
+    <option>中文</option><option>العربية</option><option>Punjabi</option>
+  </select>
+</div>
+<div class="strip"></div>
+
+<main>
+  <section id="view-auth" class="view active">
+    <div class="card">
+      <h2>Driver Sign In</h2>
+      <label>Email</label><input type="email" placeholder="driver@example.com">
+      <label>Password</label><input type="password" placeholder="password">
+      <button class="btn btn-red" onclick="login()">Log In</button>
+      <div class="social">
+        <button onclick="login()">Google</button>
+        <button onclick="login()">Apple</button>
+        <button onclick="login()">Phone</button>
+      </div>
+      <p class="note">New driver? <a href="#" style="color:var(--red)" onclick="go('verify',null);document.getElementById('view-auth').classList.remove('active');document.getElementById('tabbar').style.display='flex';return false;">Start driver application</a></p>
+    </div>
+  </section>
+
+  <section id="view-home" class="view">
+    <div class="card">
+      <div class="row" style="align-items:center;">
+        <div><span class="note">Driver status</span><br><span class="status-pill online" id="statusPill">ONLINE</span></div>
+        <label class="switch" style="flex:0 0 46px;"><input type="checkbox" id="onlineTog" checked onchange="toggleOnline(this)"><span class="slider"></span></label>
+      </div>
+      <label>Vehicle type for this shift</label>
+      <select id="vtype">
+        <option>Standard Car</option><option>SUV</option><option>Van</option>
+        <option>Luxury</option><option>RV</option><option>Delivery Vehicle</option>
+        <option>Moped</option><option>Pedicab</option><option>Tandem Bike</option>
+        <option>Three-Wheel Delivery Bike</option>
+      </select>
+      <div class="alert">Weather alert: Rain expected 4-6 PM. Mopeds & pedicabs auto-disabled during active rain per safety rules.</div>
+      <div style="margin-top:10px;">
+        <span class="badge warn">Charger reminder</span>
+        <span class="badge warn">Helmet required (moped)</span>
+        <span class="badge ok">WiFi available</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Earnings Today</h2>
+      <div class="earnbig">$184.50</div>
+      <div class="stat"><span>Trips completed</span><span>12</span></div>
+      <div class="stat"><span>Online hours</span><span>6.5 h</span></div>
+      <div class="stat"><span>Tips</span><span>$38.00</span></div>
+      <div class="stat" style="border:none;"><span>Surge bonus</span><span>$22.00</span></div>
+      <button class="btn btn-outline" onclick="alert('Cash out to bank (driver payout)')">Cash Out</button>
+    </div>
+
+    <div class="card">
+      <h2>Incoming Ride Requests</h2>
+      <div class="req">
+        <div class="top"><span>Downtown to Airport</span><span style="color:var(--ok)">$28.40</span></div>
+        <div class="meta">4.2 mi · 14 min · Rider 4.9 · Standard</div>
+        <div class="row">
+          <button class="btn btn-ok" onclick="accept(this)">Accept</button>
+          <button class="btn btn-ghost" onclick="decline(this)">Decline</button>
+          <button class="btn btn-outline" onclick="bid()">Bid</button>
+        </div>
+      </div>
+      <div class="req">
+        <div class="top"><span>Mall to Suburb</span><span style="color:var(--ok)">$15.10</span></div>
+        <div class="meta">3.0 mi · 9 min · Rider 4.7 · SUV</div>
+        <div class="row">
+          <button class="btn btn-ok" onclick="accept(this)">Accept</button>
+          <button class="btn btn-ghost" onclick="decline(this)">Decline</button>
+          <button class="btn btn-outline" onclick="bid()">Bid</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-nav" class="view">
+    <div class="card">
+      <h2>Active Trip Navigation</h2>
+      <div class="map"><div class="heat h1"></div><div class="heat h2"></div>Turn-by-turn map + driver heat map</div>
+      <div class="stat" style="margin-top:12px;"><span>Next turn</span><span>Left on Main St · 300 ft</span></div>
+      <div class="stat"><span>ETA</span><span>12:48 PM · 8 min</span></div>
+      <div class="toggle-row"><span>Voice navigation</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>Spoken weather alerts</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+      <div class="toggle-row" style="border:none;"><span>Road condition monitoring</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    </div>
+    <div class="card">
+      <h2>Live Translated Communication</h2>
+      <div class="note">Rider speaks: Spanish · You speak: English</div>
+      <div class="req" style="border-color:var(--line);background:var(--panel2);">
+        <div>Rider: "Estoy en la puerta principal."</div>
+        <div class="note">Translated: "I'm at the main entrance."</div>
+      </div>
+      <button class="btn btn-ghost" onclick="alert('Playing audio translation')">Play Audio Translation</button>
+      <div class="toggle-row" style="border:none;margin-top:8px;"><span>Auto-detect rider language</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    </div>
+    <div class="card">
+      <button class="btn btn-red" onclick="alert('Safety alert sent to dispatch with live GPS')">Safety Alert</button>
+      <p class="note">Sends live location to dispatch & emergency monitoring.</p>
+    </div>
+  </section>
+
+  <section id="view-verify" class="view">
+    <div class="card">
+      <h2>Driver Verification</h2>
+      <div class="stat"><span>Identity verification</span><span class="stars">Verified</span></div>
+      <div class="stat"><span>Background check</span><span style="color:var(--warn)">In review</span></div>
+      <div class="stat" style="border:none;"><span>Two-factor auth</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    </div>
+    <div class="card">
+      <h2>Document Uploads</h2>
+      <label>Driver profile photo</label>
+      <div class="upload" onclick="alert('Open camera / file picker (demo)')">Tap to upload profile photo</div>
+      <label>Driver's license</label>
+      <div class="upload" onclick="alert('Upload license (demo)')">Tap to upload license</div>
+      <label>Vehicle registration</label>
+      <div class="upload" onclick="alert('Upload registration (demo)')">Tap to upload registration</div>
+      <label>Insurance</label>
+      <div class="upload" onclick="alert('Upload insurance (demo)')">Tap to upload insurance</div>
+      <button class="btn btn-red" onclick="alert('Documents submitted for review')">Submit for Review</button>
+    </div>
+    <div class="card">
+      <h2>Ratings & History</h2>
+      <div class="stat"><span>Overall rating</span><span class="stars">★★★★★ 4.92</span></div>
+      <div class="stat"><span>Total trips</span><span>1,204</span></div>
+      <div class="stat" style="border:none;"><span>Acceptance rate</span><span>96%</span></div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabbar" id="tabbar" style="display:none;">
+  <button class="active" data-v="home" onclick="go('home',this)"><span class="ico">Dash</span>Dashboard</button>
+  <button data-v="nav" onclick="go('nav',this)"><span class="ico">Nav</span>Navigate</button>
+  <button data-v="verify" onclick="go('verify',this)"><span class="ico">Prof</span>Profile</button>
+</nav>
+
+<script>
+  function login(){
+    document.getElementById('view-auth').classList.remove('active');
+    document.getElementById('view-home').classList.add('active');
+    document.getElementById('tabbar').style.display='flex';
+  }
+  function go(v,btn){
+    document.querySelectorAll('.view').forEach(function(e){e.classList.remove('active');});
+    document.getElementById('view-'+v).classList.add('active');
+    if(btn){
+      document.querySelectorAll('.tabbar button').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+    }
+    window.scrollTo(0,0);
+  }
+  function toggleOnline(t){
+    var p=document.getElementById('statusPill');
+    if(t.checked){p.textContent='ONLINE';p.className='status-pill online';}
+    else{p.textContent='OFFLINE';p.className='status-pill offline';}
+  }
+  function accept(b){ var c=b.closest('.req'); c.style.opacity=.5; alert('Ride accepted - starting navigation'); go('nav',document.querySelector('.tabbar button[data-v=nav]')); }
+  function decline(b){ b.closest('.req').remove(); }
+  function bid(){ var amt=prompt('Enter your bid amount ($):'); if(amt) alert('Bid of $'+amt+' submitted'); }
+</script>
+</body>
+</html>
