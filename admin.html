@@ -1,33 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>On Time Taxi - Admin</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>On Time Taxi — Admin Panel</title>
+<style>
+  :root{
+    --red:#e11d2a; --red-dark:#a10f1a; --black:#0d0d0d; --panel:#161616;
+    --panel2:#1f1f1f; --line:#2b2b2b; --text:#f5f5f5; --muted:#9a9a9a;
+    --ok:#2ecc71; --warn:#f1c40f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--black);color:var(--text);}
+  .checkerbar{height:8px;background:repeating-linear-gradient(90deg,var(--red) 0 18px,#000 18px 36px);}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:var(--black);border-bottom:3px solid var(--red);}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:.5px;}
+  .brand .dot{width:24px;height:24px;border-radius:6px;background:repeating-conic-gradient(var(--red) 0 25%, #000 0 50%) 0 0/12px 12px;}
+  .admin-tag{font-size:12px;background:var(--red);padding:4px 10px;border-radius:20px;font-weight:700;}
+  .layout{display:flex;min-height:calc(100vh - 65px);}
+  .side{width:210px;background:var(--panel);border-right:1px solid var(--line);padding:14px 0;flex-shrink:0;}
+  .side a{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--muted);text-decoration:none;font-size:14px;cursor:pointer;border-left:3px solid transparent;}
+  .side a:hover{background:var(--panel2);color:var(--text);}
+  .side a.active{color:var(--text);border-left-color:var(--red);background:#1c1315;}
+  .content{flex:1;padding:22px;overflow:auto;}
+  h1{font-size:20px;margin-bottom:4px;} .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .kpi .n{font-size:26px;font-weight:800;} .kpi .l{font-size:12px;color:var(--muted);margin-top:4px;}
+  .kpi.red .n{color:var(--red);} .kpi.ok .n{color:var(--ok);} .kpi.warn .n{color:var(--warn);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px;}
+  .card h2{font-size:15px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;}
+  .pill{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+  .p-ok{background:rgba(46,204,113,.15);color:var(--ok);}
+  .p-warn{background:rgba(241,196,15,.15);color:var(--warn);}
+  .p-red{background:rgba(225,29,42,.15);color:var(--red);}
+  .btn{border:none;border-radius:7px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;margin-right:6px;}
+  .b-ok{background:var(--ok);color:#08260f;} .b-red{background:var(--red);color:#fff;} .b-ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line);}
+  .map{height:220px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(135deg,#1a1a1a,#242424);display:flex;align-items:center;justify-content:center;color:var(--muted);position:relative;overflow:hidden;}
+  .dot-live{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red);}
+  .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .switch{position:relative;width:46px;height:26px;} .switch input{display:none;}
+  .slider{position:absolute;inset:0;background:#333;border-radius:26px;transition:.2s;cursor:pointer;}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked+.slider{background:var(--red);} .switch input:checked+.slider:before{transform:translateX(20px);}
+  input,select{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:9px;font-size:14px;}
+  .view{display:none;} .view.active{display:block;}
+  #gate{position:fixed;inset:0;background:var(--black);display:flex;align-items:center;justify-content:center;z-index:100;}
+  .gate-box{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--red);border-radius:14px;padding:28px;width:340px;}
+  .gate-box h2{color:var(--red);margin-bottom:16px;text-align:center;}
+  .gate-box label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px;}
+  .gate-box input{width:100%;}
+  .gate-box .btn{width:100%;padding:12px;margin-top:16px;font-size:15px;}
+</style>
 </head>
 <body>
-    <h1>On Time Taxi</h1>
-    <h2>Admin Dashboard</h2>
-    
-    <section>
-        <h3>Add to Home Screen</h3>
-        <p><strong>iOS (Safari):</strong> Tap the Share button at the bottom, then select 'Add to Home Screen'.</p>
-        <p><strong>Android (Chrome):</strong> Tap the three-dot menu at the top right, then select 'Install app' or 'Add to Home screen'.</p>
+
+<div id="gate">
+  <div class="gate-box">
+    <div class="brand" style="justify-content:center;margin-bottom:6px;"><span class="dot"></span> ON TIME <span style="color:var(--red)">ADMIN</span></div>
+    <h2>Secure Admin Login</h2>
+    <label>Admin Email</label><input type="email" id="aEmail" placeholder="admin@ontimetaxi.com">
+    <label>Password</label><input type="password" id="aPwd" placeholder="password">
+    <label>2FA Code</label><input type="text" id="a2fa" maxlength="6" placeholder="6-digit code">
+    <button class="btn b-red" onclick="adminLogin()">Sign In</button>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;text-align:center;">Authorized staff only. All access is logged.</p>
+  </div>
+</div>
+
+<header>
+  <div class="brand"><span class="dot"></span> ON TIME TAXI <span class="admin-tag">ADMIN</span></div>
+  <div style="font-size:13px;color:var(--muted);">Signed in as <b style="color:var(--text)">admin@ontimetaxi.com</b></div>
+</header>
+<div class="checkerbar"></div>
+
+<div class="layout">
+  <nav class="side">
+    <a class="active" onclick="nav('dash',this)">Dashboard</a>
+    <a onclick="nav('live',this)">Live Monitoring</a>
+    <a onclick="nav('drivers',this)">Drivers</a>
+    <a onclick="nav('riders',this)">Riders</a>
+    <a onclick="nav('docs',this)">Document Review</a>
+    <a onclick="nav('disputes',this)">Disputes & Refunds</a>
+    <a onclick="nav('pricing',this)">Pricing & Surge</a>
+    <a onclick="nav('weather',this)">Weather Controls</a>
+    <a onclick="nav('dispatch',this)">Delivery Dispatch</a>
+    <a onclick="nav('settings',this)">System & Translation</a>
+  </nav>
+
+  <div class="content">
+    <section id="v-dash" class="view active">
+      <h1>Dashboard</h1><div class="sub">Revenue & ride analytics overview</div>
+      <div class="grid">
+        <div class="kpi ok"><div class="n">$12,480</div><div class="l">Revenue today</div></div>
+        <div class="kpi red"><div class="n">318</div><div class="l">Rides today</div></div>
+        <div class="kpi"><div class="n">146</div><div class="l">Active drivers</div></div>
+        <div class="kpi warn"><div class="n">7</div><div class="l">Open disputes</div></div>
+      </div>
+      <div class="card">
+        <h2>Revenue Analytics (7 days)</h2>
+        <div class="map" style="height:160px;">Revenue chart</div>
+      </div>
+      <div class="card">
+        <h2>Fraud Detection Alerts</h2>
+        <table>
+          <tr><th>Account</th><th>Signal</th><th>Risk</th><th>Action</th></tr>
+          <tr><td>rider_8821</td><td>Multiple failed cards</td><td><span class="pill p-red">High</span></td><td><button class="btn b-red" onclick="alert('Account flagged')">Review</button></td></tr>
+          <tr><td>driver_204</td><td>GPS spoofing suspected</td><td><span class="pill p-warn">Medium</span></td><td><button class="btn b-ghost" onclick="alert('Investigating')">Review</button></td></tr>
+        </table>
+      </div>
     </section>
 
-    <hr>
-    <section id="config">
-        <h3>Configuration</h3>
-        <script>
-            // Placeholder for future rebranding
-            // To rebrand to 'Rriter, On Time', update the variable below:
-            const brandConfig = {
-                currentName: "On Time Taxi",
-                futureName: "Rriter, On Time"
-            };
-            console.log("Current Branding:", brandConfig.currentName);
-        </script>
-        <p>Current Branding: On Time Taxi</p>
+    <section id="v-live" class="view">
+      <h1>Live Ride Monitoring</h1><div class="sub">Real-time map, emergencies & active trips</div>
+      <div class="card">
+        <div class="map">
+          <span class="dot-live" style="top:30%;left:25%;"></span>
+          <span class="dot-live" style="top:55%;left:60%;"></span>
+          <span class="dot-live" style="top:40%;left:75%;"></span>
+          Live driver heat map & active rides
+        </div>
+      </div>
+      <div class="card">
+        <h2>Emergency / SOS Monitoring</h2>
+        <table>
+          <tr><th>Trip</th><th>Type</th><th>Status</th><th>Action</th></tr>
+          <tr><td>#48210</td><td>SOS triggered</td><td><span class="pill p-red">Active</span></td><td><button class="btn b-red" onclick="alert('Dispatching help')">Respond</button></td></tr>
+        </table>
+      </div>
     </section>
+
+    <section id="v-drivers" class="view">
+      <h1>Driver Management</h1><div class="sub">Approvals, suspensions & bans</div>
+      <div class="card">
+        <table>
+          <tr><th>Driver</th><th>Vehicle</th><th>Rating</th><th>Status</th><th>Actions</th></tr>
+          <tr><td>Marcus D.</td><td>Standard</td><td>4.92</td><td><span class="pill p-ok">Active</span></td><td><button class="btn b-ghost" onclick="alert('Suspend driver')">Suspend</button><button class="btn b-red" onclick="alert('Ban driver')">Ban</button></td></tr>
+          <tr><td>Priya S.</td><td>SUV</td><td>4.88</td><td><span class="pill p-warn">Pending</span></td><td><button class="btn b-ok" onclick="alert('Driver approved')">Approve</button><button class="btn b-red" onclick="alert('Rejected')">Reject</button></td></tr>
+          <tr><td>Leo T.</td><td>Moped</td><td>4.70</td><td><span class="pill p-ok">Active</span></td><td><button class="btn b-ghost" onclick="alert('Suspend driver')">Suspend</button><button class="btn b-red" onclick="alert('Ban driver')">Ban</button></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="v-riders" class="view">
+      <h1>Rider Management</h1><div class="sub">Accounts & business riders</div>
+      <div class="card">
+        <table>
+          <tr><th>Rider</th><th>Type</th><th>Trips</th><th>Status</th><th>Actions</th></tr>
+          <tr><td>Jane K.</td><td>Personal</td><td>84</td><td><span class="pill p-ok">Good</span></td><td><button class="btn b-ghost" onclick="alert('View')">View</button></td></tr>
+          <tr><td>Acme Corp</td><td>Business</td><td>612</td><td><span class="pill p-ok">Good</span></td><td><button class="btn b-ghost" onclick="alert('View')">View</button></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="v-docs" class="view">
+      <h1>Document Review</h1><div class="sub">Licenses, insurance & registration</div>
+      <div class="card">
+        <table>
+          <tr><th>Driver</th><th>Document</th><th>Status</th><th>Action</th></tr>
+          <tr><td>Priya S.</td><td>Insurance</td><td><span class="pill p-warn">Pending</span></td><td><button class="btn b-ok" onclick="alert('Approved')">Approve</button><button class="btn b-red" onclick="alert('Rejected')">Reject</button></td></tr>
+          <tr><td>Leo T.</td><td>Registration</td><td><span class="pill p-ok">Verified</span></td><td><button class="btn b-ghost" onclick="alert('View doc')">View</button></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="v-disputes" class="view">
+      <h1>Disputes & Refunds</h1><div class="sub">Resolve issues & control refunds</div>
+      <div class="card">
+        <table>
+          <tr><th>Case</th><th>Rider</th><th>Amount</th><th>Actions</th></tr>
+          <tr><td>#D-771</td><td>Jane K.</td><td>$18.40</td><td><button class="btn b-ok" onclick="alert('Refund issued')">Refund</button><button class="btn b-ghost" onclick="alert('Denied')">Deny</button></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="v-pricing" class="view">
+      <h1>Pricing & Surge Controls</h1><div class="sub">Base rates & surge multipliers</div>
+      <div class="card">
+        <div class="toggle-row"><span>Base fare ($)</span><input type="number" value="12.50" style="width:100px;"></div>
+        <div class="toggle-row"><span>Per mile ($)</span><input type="number" value="1.75" style="width:100px;"></div>
+        <div class="toggle-row"><span>Surge multiplier</span><input type="number" value="1.0" step="0.1" style="width:100px;"></div>
+        <div class="toggle-row" style="border:none;"><span>Enable auto-surge by demand</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        <button class="btn b-red" style="margin-top:14px;" onclick="alert('Pricing updated')">Save Pricing</button>
+      </div>
+    </section>
+
+    <section id="v-weather" class="view">
+      <h1>Weather Shutdown Controls</h1><div class="sub">Auto-disable unsafe vehicles</div>
+      <div class="card">
+        <div class="toggle-row"><span>Auto-disable mopeds in rain</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="toggle-row"><span>Auto-disable pedicabs in snow</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="toggle-row"><span>Spoken pickup weather alerts</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="toggle-row" style="border:none;"><span>Passenger weather warnings</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        <button class="btn b-red" style="margin-top:14px;" onclick="alert('Emergency shutdown of all light vehicles')">Emergency Weather Shutdown</button>
+      </div>
+    </section>
+
+    <section id="v-dispatch" class="view">
+      <h1>Delivery Dispatch</h1><div class="sub">Food, grocery, package & multi-stop</div>
+      <div class="card">
+        <table>
+          <tr><th>Order</th><th>Type</th><th>Status</th><th>Action</th></tr>
+          <tr><td>#F-902</td><td>Food</td><td><span class="pill p-warn">Unassigned</span></td><td><button class="btn b-red" onclick="alert('Dispatched to nearest driver')">Dispatch</button></td></tr>
+          <tr><td>#P-118</td><td>Package (multi-stop)</td><td><span class="pill p-ok">In transit</span></td><td><button class="btn b-ghost" onclick="alert('Track')">Track</button></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="v-settings" class="view">
+      <h1>System & Translation</h1><div class="sub">Notifications, languages & AI</div>
+      <div class="card">
+        <h2>Push Notification System</h2>
+        <input placeholder="Broadcast message to all users" style="width:70%;">
+        <button class="btn b-red" onclick="alert('Notification sent')">Send</button>
+      </div>
+      <div class="card">
+        <h2>Translation Management</h2>
+        <div class="toggle-row"><span>Auto-detect language</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="toggle-row" style="border:none;"><span>Real-time voice translation</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+      </div>
+      <div class="card">
+        <h2>AI Systems (Future)</h2>
+        <div class="toggle-row"><span>AI dispatch assistant</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+        <div class="toggle-row"><span>AI fraud detection</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+        <div class="toggle-row" style="border:none;"><span>AI route optimization</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  function adminLogin(){ document.getElementById('gate').style.display='none'; }
+  function nav(v,el){
+    document.querySelectorAll('.view').forEach(function(e){e.classList.remove('active');});
+    document.getElementById('v-'+v).classList.add('active');
+    document.querySelectorAll('.side a').forEach(function(a){a.classList.remove('active');});
+    el.classList.add('active');
+    document.querySelector('.content').scrollTo(0,0);
+  }
+</script>
 </body>
 </html>
