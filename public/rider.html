@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>On Time Taxi — Rider</title>
+<style>
+  :root{
+    --red:#e11d2a; --red-dark:#a10f1a; --black:#0d0d0d; --panel:#161616;
+    --panel2:#1f1f1f; --line:#2b2b2b; --text:#f5f5f5; --muted:#9a9a9a; --ok:#2ecc71;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--black);color:var(--text);padding-bottom:72px;}
+  .checker{
+    background-image:
+      linear-gradient(45deg,var(--red) 25%,transparent 25%),
+      linear-gradient(-45deg,var(--red) 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,var(--red) 75%),
+      linear-gradient(-45deg,transparent 75%,var(--red) 75%);
+    background-size:28px 28px;
+    background-position:0 0,0 14px,14px -14px,-14px 0;
+    background-color:var(--black);
+  }
+  header{position:sticky;top:0;z-index:20;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--black);border-bottom:3px solid var(--red);}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:.5px;}
+  .brand .dot{width:22px;height:22px;border-radius:5px;background:
+      repeating-conic-gradient(var(--red) 0 25%, #000 0 50%) 0 0/11px 11px;}
+  .lang-sel{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:14px;}
+  .strip{height:8px;background:repeating-linear-gradient(90deg,var(--red) 0 18px,#000 18px 36px);}
+  main{max-width:520px;margin:0 auto;padding:16px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;}
+  .card h2{font-size:16px;margin-bottom:12px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px;}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--text);padding:11px;font-size:15px;}
+  input::placeholder{color:#666;}
+  .btn{width:100%;border:none;border-radius:10px;padding:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px;}
+  .btn-red{background:var(--red);color:#fff;} .btn-red:active{background:var(--red-dark);}
+  .btn-outline{background:transparent;color:var(--text);border:1px solid var(--line);}
+  .btn-ghost{background:var(--panel2);color:var(--text);}
+  .row{display:flex;gap:10px;} .row>*{flex:1;}
+  .social{display:flex;gap:10px;margin-top:10px;}
+  .social button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px;font-size:13px;cursor:pointer;}
+  .map{height:190px;border-radius:12px;border:1px solid var(--line);position:relative;overflow:hidden;
+       background:linear-gradient(135deg,#1a1a1a,#242424);display:flex;align-items:center;justify-content:center;color:var(--muted);}
+  .map .pin{position:absolute;font-size:26px;}
+  .pin.a{top:30%;left:25%;} .pin.b{top:60%;left:70%;}
+  .chip{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:7px 13px;font-size:13px;margin:4px 4px 0 0;cursor:pointer;}
+  .chip.active{background:var(--red);border-color:var(--red);color:#fff;}
+  .vehicle{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;}
+  .vehicle .v{min-width:90px;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 6px;cursor:pointer;}
+  .vehicle .v.sel{border-color:var(--red);background:#241012;}
+  .vehicle .v .ico{font-size:24px;} .vehicle .v .nm{font-size:12px;margin-top:4px;}
+  .fare{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px dashed var(--red);border-radius:10px;padding:12px;margin-top:12px;}
+  .fare .big{font-size:22px;font-weight:800;color:var(--red);}
+  .hist-item{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .stars{color:#f5c518;letter-spacing:2px;}
+  .sos{background:var(--red);color:#fff;border:none;border-radius:12px;padding:16px;font-size:18px;font-weight:800;width:100%;letter-spacing:1px;box-shadow:0 0 0 3px rgba(225,29,42,.25);}
+  .chat{height:150px;overflow-y:auto;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;}
+  .msg{margin:6px 0;padding:8px 11px;border-radius:9px;max-width:80%;font-size:14px;}
+  .msg.me{background:var(--red);color:#fff;margin-left:auto;} .msg.them{background:#2a2a2a;}
+  .msg .tr{display:block;font-size:11px;color:#ffd;opacity:.8;margin-top:3px;}
+  .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;}
+  .switch{position:relative;width:46px;height:26px;} .switch input{display:none;}
+  .slider{position:absolute;inset:0;background:#333;border-radius:26px;transition:.2s;cursor:pointer;}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked+.slider{background:var(--red);} .switch input:checked+.slider:before{transform:translateX(20px);}
+  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--black);border-top:3px solid var(--red);z-index:30;}
+  .tabbar button{flex:1;background:none;border:none;color:var(--muted);padding:9px 0;font-size:11px;cursor:pointer;}
+  .tabbar button .ico{display:block;font-size:20px;margin-bottom:2px;}
+  .tabbar button.active{color:var(--red);}
+  .view{display:none;} .view.active{display:block;}
+  .hidden{display:none;}
+  .note{font-size:12px;color:var(--muted);margin-top:6px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span> ON TIME <span style="color:var(--red)">TAXI</span></div>
+    <select class="lang-sel" id="langSel" onchange="setLang(this.value)">
+      <option value="en">English</option><option value="es">Español</option>
+      <option value="fr">Français</option><option value="zh">中文</option>
+      <option value="ar">العربية</option><option value="hi">हिन्दी</option>
+    </select>
+  </div>
+  <div class="strip"></div>
+</header>
+
+<main>
+  <section id="view-auth" class="view active">
+    <div class="card">
+      <h2>Rider Sign In</h2>
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com">
+      <label>Password</label>
+      <input type="password" id="pwd" placeholder="password">
+      <button class="btn btn-red" onclick="login()">Log In</button>
+      <div class="social">
+        <button onclick="social('Google')">Google</button>
+        <button onclick="social('Apple')">Apple</button>
+        <button onclick="social('Facebook')">Facebook</button>
+      </div>
+      <button class="btn btn-outline" onclick="showPhone()">Continue with Phone Number</button>
+      <p class="note">New here? <a href="#" style="color:var(--red)" onclick="alert('Sign up flow')">Create a rider account</a></p>
+    </div>
+    <div class="card hidden" id="phoneCard">
+      <h2>Phone Verification</h2>
+      <label>Phone Number</label>
+      <input type="tel" id="phone" placeholder="+1 555 123 4567">
+      <button class="btn btn-ghost" onclick="alert('Verification code sent (demo)')">Send Code</button>
+      <label>Enter 6-digit code</label>
+      <input type="text" id="otp" maxlength="6" placeholder="______">
+      <button class="btn btn-red" onclick="login()">Verify & Continue</button>
+    </div>
+  </section>
+
+  <section id="view-home" class="view">
+    <div class="card">
+      <div class="map">
+        <span class="pin a">A</span><span class="pin b">B</span>
+        Live GPS Map (Google Maps)
+      </div>
+    </div>
+    <div class="card">
+      <h2>Request a Ride</h2>
+      <label>Pickup</label>
+      <input id="pickup" placeholder="Current location" value="Current location">
+      <label>Destination</label>
+      <input id="dest" placeholder="Where to?">
+      <label>Favorite locations</label>
+      <div>
+        <span class="chip" onclick="setDest('Home')">Home</span>
+        <span class="chip" onclick="setDest('Work')">Work</span>
+        <span class="chip" onclick="setDest('Airport')">Airport</span>
+        <span class="chip" onclick="setDest('Gym')">Gym</span>
+      </div>
+      <label>Vehicle type</label>
+      <div class="vehicle" id="vehicles">
+        <div class="v sel" onclick="pickV(this,'Standard',1)"><div class="ico">Car</div><div class="nm">Standard</div></div>
+        <div class="v" onclick="pickV(this,'SUV',1.4)"><div class="ico">SUV</div><div class="nm">SUV</div></div>
+        <div class="v" onclick="pickV(this,'Van',1.6)"><div class="ico">Van</div><div class="nm">Van</div></div>
+        <div class="v" onclick="pickV(this,'Luxury',2)"><div class="ico">Lux</div><div class="nm">Luxury</div></div>
+        <div class="v" onclick="pickV(this,'RV',2.5)"><div class="ico">RV</div><div class="nm">RV</div></div>
+        <div class="v" onclick="pickV(this,'Moped',0.6)"><div class="ico">Moped</div><div class="nm">Moped</div></div>
+        <div class="v" onclick="pickV(this,'Pedicab',0.7)"><div class="ico">Pedi</div><div class="nm">Pedicab</div></div>
+        <div class="v" onclick="pickV(this,'Delivery',0.9)"><div class="ico">Pkg</div><div class="nm">Delivery</div></div>
+      </div>
+      <div class="fare">
+        <div>Estimated fare<br><span class="note">Surge x1.0 · <span id="vname">Standard</span></span></div>
+        <div class="big" id="fare">$12.50</div>
+      </div>
+      <button class="btn btn-red" onclick="requestRide()">Request Ride</button>
+      <button class="btn btn-outline" onclick="alert('Schedule ride for later (demo)')">Schedule for Later</button>
+    </div>
+    <div class="card">
+      <h2>Delivery</h2>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="alert('Food delivery')">Food</button>
+        <button class="btn btn-ghost" onclick="alert('Grocery delivery')">Grocery</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="alert('Package delivery')">Package</button>
+        <button class="btn btn-ghost" onclick="alert('Large item / multi-stop')">Large Item</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-trip" class="view">
+    <div class="card">
+      <h2>Your Driver</h2>
+      <div class="hist-item"><span>Marcus D. · Toyota Camry · ABC-123</span><span class="stars">★★★★★</span></div>
+      <div class="map" style="margin-top:12px;"><span class="pin a">Car</span>Real-time driver tracking</div>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn btn-ghost" onclick="alert('Calling driver')">Call</button>
+        <button class="btn btn-ghost" onclick="alert('Sharing trip with trusted contacts')">Share Trip</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>In-App Chat · Live Translation</h2>
+      <div class="chat" id="chatBox">
+        <div class="msg them">Hola, estoy a 2 minutos.<span class="tr">Translated: Hi, I am 2 minutes away.</span></div>
+        <div class="msg me">Great, I'll be outside.</div>
+      </div>
+      <div class="row">
+        <input id="chatIn" placeholder="Type a message...">
+        <button class="btn btn-red" style="margin-top:0;flex:0 0 70px;" onclick="sendChat()">Send</button>
+      </div>
+      <div class="toggle-row"><span>Audio playback of translations</span>
+        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+      <div class="toggle-row" style="border:none;"><span>Voice translation during ride</span>
+        <label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+    </div>
+    <div class="card">
+      <button class="sos" onclick="sos()">EMERGENCY / SOS</button>
+      <p class="note">Alerts local authorities & your trusted contacts with live GPS.</p>
+    </div>
+  </section>
+
+  <section id="view-account" class="view">
+    <div class="card">
+      <h2>Payment Methods</h2>
+      <div class="hist-item"><span>Visa •••• 4242</span><span class="stars">Default</span></div>
+      <div class="hist-item"><span>Apple Pay</span><span></span></div>
+      <div class="hist-item"><span>Google Pay</span><span></span></div>
+      <div class="hist-item"><span>Cash</span><span></span></div>
+      <button class="btn btn-outline" onclick="alert('Add payment method - enter card yourself in secure form')">Add Payment Method</button>
+      <button class="btn btn-ghost" onclick="alert('Enter promo code')">Apply Promo Code</button>
+    </div>
+    <div class="card">
+      <h2>Ride History</h2>
+      <div class="hist-item"><span>Airport to Home · Jun 28</span><span class="stars">★★★★★</span></div>
+      <div class="hist-item"><span>Home to Work · Jun 27</span><span class="stars">★★★★☆</span></div>
+      <div class="hist-item"><span>Mall to Gym · Jun 25</span><span class="stars">★★★★★</span></div>
+    </div>
+    <div class="card">
+      <h2>Preferences & Accessibility</h2>
+      <div class="toggle-row"><span>Push notifications</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>Multi-language interface</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>Accessibility voice mode</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+      <div class="toggle-row" style="border:none;"><span>Two-factor authentication</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    </div>
+    <div class="card">
+      <h2>Weather & Safety</h2>
+      <p class="note">Current pickup weather: Clear, 72F. All vehicle types available.</p>
+      <p class="note">Rain/snow shutdown rules auto-disable mopeds & pedicabs for your safety.</p>
+    </div>
+    <button class="btn btn-outline" onclick="logout()">Log Out</button>
+  </section>
+</main>
+
+<nav class="tabbar" id="tabbar" style="display:none;">
+  <button class="active" data-v="home" onclick="go('home',this)"><span class="ico">Ride</span>Ride</button>
+  <button data-v="trip" onclick="go('trip',this)"><span class="ico">Trip</span>Trip</button>
+  <button data-v="account" onclick="go('account',this)"><span class="ico">Acct</span>Account</button>
+</nav>
+
+<script>
+  var vmult = 1, base = 12.5;
+  function login(){
+    document.getElementById('view-auth').classList.remove('active');
+    document.getElementById('view-home').classList.add('active');
+    document.getElementById('tabbar').style.display='flex';
+  }
+  function logout(){ location.reload(); }
+  function social(p){ alert('Signing in with '+p+' (OAuth demo)'); login(); }
+  function showPhone(){ document.getElementById('phoneCard').classList.remove('hidden'); }
+  function go(v,btn){
+    document.querySelectorAll('.view').forEach(function(e){e.classList.remove('active');});
+    document.getElementById('view-'+v).classList.add('active');
+    document.querySelectorAll('.tabbar button').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    window.scrollTo(0,0);
+  }
+  function setDest(x){ document.getElementById('dest').value=x; calc(); }
+  function pickV(el,name,m){
+    document.querySelectorAll('.vehicle .v').forEach(function(v){v.classList.remove('sel');});
+    el.classList.add('sel'); vmult=m; document.getElementById('vname').textContent=name; calc();
+  }
+  function calc(){ document.getElementById('fare').textContent = '$'+(base*vmult).toFixed(2); }
+  function requestRide(){ go('trip',document.querySelector('.tabbar button[data-v=trip]')); alert('Finding your driver...'); }
+  function sendChat(){
+    var i=document.getElementById('chatIn'); if(!i.value)return;
+    var box=document.getElementById('chatBox');
+    var d=document.createElement('div'); d.className='msg me'; d.textContent=i.value;
+    box.appendChild(d); i.value=''; box.scrollTop=box.scrollHeight;
+  }
+  function sos(){ if(confirm('Send SOS with your live location to authorities and trusted contacts?')) alert('SOS sent. Help is on the way.'); }
+  function setLang(l){ }
+</script>
+</body>
+</html>
