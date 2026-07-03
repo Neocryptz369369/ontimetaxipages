@@ -37,10 +37,10 @@ const sections = [
 ];
 
 const CHECKER =
-  "repeating-conic-gradient(#e11414 0% 25%, #000000 0% 50%) 50% / 28px 28px";
+  "repeating-conic-gradient(#e01221 0% 25%, #000000 0% 50%) 50% / 28px 28px";
 
 const FRAME_CHECKER =
-  "repeating-conic-gradient(#e11414 0% 25%, #000000 0% 50%) 50% / 34px 34px";
+  "repeating-conic-gradient(#e01221 0% 25%, #000000 0% 50%) 50% / 34px 34px";
 function Frame() {
   const bar = {
     position: "fixed" as const,
