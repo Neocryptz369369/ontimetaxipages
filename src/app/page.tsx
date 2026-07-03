@@ -94,7 +94,7 @@ export default function HomePage() {
                   lineHeight: 1.1,
                 }}
               >
-                Rider On Time
+                On Time Taxi
               </div>
               <div
                 style={{
