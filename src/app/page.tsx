@@ -189,7 +189,7 @@ export default function HomePage() {
                   marginBottom: "14px",
                 }}
               >
-                Main public page
+                
               </div>
               <h1 style={{ margin: "0 0 12px", fontSize: "48px", lineHeight: 1.02 }}>
                 Get there. On Time. Every time.
