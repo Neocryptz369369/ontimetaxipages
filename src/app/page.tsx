@@ -103,7 +103,7 @@ export default function HomePage() {
                   marginTop: "4px",
                 }}
               >
-                Back to the main public-facing homepage look
+                
               </div>
             </div>
           </div>
