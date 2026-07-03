@@ -112,8 +112,7 @@ export default function AdminPage() {
           >
             <div
               style={{
-                height: "8px",
-                borderRadius: "6px",
+                height: "14px",
                 background: CHECKER,
                 marginBottom: "22px",
               }}
@@ -214,8 +213,7 @@ export default function AdminPage() {
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "56px 40px 70px" }}>
         <div
           style={{
-            height: "12px",
-            borderRadius: "8px",
+            height: "14px",
             background: CHECKER,
             marginBottom: "26px",
           }}
@@ -291,7 +289,7 @@ export default function AdminPage() {
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: "6px",
+                  height: "14px",
                   background: CHECKER,
                 }}
               />
