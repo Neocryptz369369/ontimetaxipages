@@ -304,7 +304,7 @@ export default function HomePage() {
             New work now lives on its own pages
           </h2>
           <p style={{ margin: "0 0 18px", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "860px" }}>
-            These links are still available, but they no longer take over the homepage. That keeps the homepage looking like the real public site while the internal build steps continue on separate routes.
+            
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
