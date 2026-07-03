@@ -37,7 +37,28 @@ const sections = [
 ];
 
 const CHECKER =
-  "repeating-conic-gradient(#e11414 0% 25%, #000000 0% 50%) 50% / 22px 22px";
+  "repeating-conic-gradient(#e11414 0% 25%, #000000 0% 50%) 50% / 28px 28px";
+
+const FRAME_CHECKER =
+  "repeating-conic-gradient(#e11414 0% 25%, #000000 0% 50%) 50% / 34px 34px";
+function Frame() {
+  const bar = {
+    position: "fixed" as const,
+    background: FRAME_CHECKER,
+    zIndex: 50,
+    pointerEvents: "none" as const,
+  };
+  const t = 34;
+  return (
+    <>
+      <div style={{ ...bar, top: 0, left: 0, right: 0, height: t }} />
+      <div style={{ ...bar, bottom: 0, left: 0, right: 0, height: t }} />
+      <div style={{ ...bar, top: 0, bottom: 0, left: 0, width: t }} />
+      <div style={{ ...bar, top: 0, bottom: 0, right: 0, width: t }} />
+    </>
+  );
+}
+
 
 export default function AdminPage() {
   const [username, setUsername] = useState("");
@@ -67,6 +88,7 @@ export default function AdminPage() {
   if (!isLoggedIn) {
     return (
       <main style={shell}>
+      <Frame />
         <div
           style={{
             minHeight: "100vh",
@@ -188,7 +210,8 @@ export default function AdminPage() {
 
   return (
     <main style={shell}>
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px 24px 64px" }}>
+      <Frame />
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "56px 40px 70px" }}>
         <div
           style={{
             height: "12px",
@@ -297,14 +320,6 @@ export default function AdminPage() {
           ))}
         </div>
 
-        <div
-          style={{
-            height: "12px",
-            borderRadius: "8px",
-            background: CHECKER,
-            marginTop: "40px",
-          }}
-        />
         <div
           style={{
             marginTop: "44px",
