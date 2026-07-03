@@ -298,10 +298,10 @@ export default function HomePage() {
           }}
         >
           <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#8fdcff", marginBottom: "12px" }}>
-            Separate workflow pages
+            
           </div>
           <h2 style={{ margin: "0 0 10px", fontSize: "34px", lineHeight: 1.08 }}>
-            New work now lives on its own pages
+            
           </h2>
           <p style={{ margin: "0 0 18px", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "860px" }}>
             
