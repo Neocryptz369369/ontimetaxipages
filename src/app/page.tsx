@@ -66,8 +66,8 @@ export default function HomePage() {
               }}
             >
               <Image
-                src="/rider-on-time-logo.jpg"
-                alt="Rider On Time logo"
+                src="/ontimetaxi-logo.png"
+                alt="On Time Taxi logo"
                 width={78}
                 height={78}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -273,8 +273,8 @@ export default function HomePage() {
                   }}
                 >
                   <Image
-                    src="/rider-on-time-logo.jpg"
-                    alt="Rider On Time large logo"
+                    src="/ontimetaxi-logo.png"
+                    alt="On Time Taxi large logo"
                     fill
                     priority
                     style={{
