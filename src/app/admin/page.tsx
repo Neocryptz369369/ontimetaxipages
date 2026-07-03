@@ -37,7 +37,7 @@ const sections = [
 ];
 
 const CHECKER =
-  "repeating-conic-gradient(#111111 0% 25%, #1c1c1c 0% 50%) 50% / 24px 24px";
+  "repeating-conic-gradient(#e11414 0% 25%, #000000 0% 50%) 50% / 22px 22px";
 
 export default function AdminPage() {
   const [username, setUsername] = useState("");
@@ -297,6 +297,14 @@ export default function AdminPage() {
           ))}
         </div>
 
+        <div
+          style={{
+            height: "12px",
+            borderRadius: "8px",
+            background: CHECKER,
+            marginTop: "40px",
+          }}
+        />
         <div
           style={{
             marginTop: "44px",
