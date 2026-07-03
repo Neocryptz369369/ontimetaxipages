@@ -195,7 +195,7 @@ export default function HomePage() {
                 Get there. On Time. Every time.
               </h1>
               <p style={{ margin: 0, color: "#d9e5ff", fontSize: "18px", lineHeight: 1.8, maxWidth: "720px" }}>
-                This homepage is back to being the public front door for Rider On Time. The newer internal workflow steps still exist, but they now belong on their own separate pages instead of replacing the homepage.
+                
               </p>
 
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "20px" }}>
