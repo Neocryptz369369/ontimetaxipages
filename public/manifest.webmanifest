@@ -1,0 +1,31 @@
+{
+  "name": "On Time Taxi",
+  "short_name": "On Time Taxi",
+  "description": "Request a ride, track your driver, and pay your way with On-Time Taxi.",
+  "start_url": "/get-app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05070f",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "/ontimetaxi-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ontimetaxi-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/ontimetaxi-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
