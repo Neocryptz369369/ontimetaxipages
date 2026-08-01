@@ -106,170 +106,52 @@ const variants: Record<string, Variant> = {
 
 const platformNames: Record<string, string> = { iphone: 'iPhone', android: 'Android' }
 
+const responsiveCss = `
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; overflow-x: hidden; }
+  .ott-shell { max-width: 1120px; margin: 0 auto; padding: 0 20px 80px; }
+  .ott-nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; flex-wrap: wrap; gap: 10px; }
+  .ott-navlinks { display: flex; gap: 18px; font-size: 14px; font-weight: 600; }
+  .ott-hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center; padding: 32px 0 8px; }
+  .ott-title { font-size: 56px; line-height: 1.05; margin: 18px 0 16px; font-weight: 800; letter-spacing: -0.03em; }
+  .ott-lead { font-size: 17px; line-height: 1.6; color: #c2cbe0; max-width: 520px; }
+  .ott-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .ott-btn { display: inline-block; padding: 15px 26px; border-radius: 14px; font-weight: 800; font-size: 16px; text-decoration: none; text-align: center; }
+  .ott-btn-primary { background: #ffd21f; color: #0b1020; }
+  .ott-btn-secondary { background: rgba(255,255,255,0.08); color: #f4f6fb; border: 1px solid rgba(255,255,255,0.16); }
+  .ott-phonewrap { display: flex; justify-content: center; }
+  .ott-phone { width: 100%; max-width: 250px; border-radius: 36px; background: linear-gradient(160deg, #1b2540, #0c1224); border: 9px solid #05070f; box-shadow: 0 30px 70px rgba(0,0,0,0.55); padding: 16px; }
+  .ott-map { height: 260px; border-radius: 18px; background: linear-gradient(135deg, #24407a 0%, #1a2c55 40%, #12203f 100%); position: relative; overflow: hidden; }
+  .ott-pin { position: absolute; top: 46%; left: 50%; transform: translateX(-50%); font-size: 28px; }
+  .ott-phonecard { margin-top: 14px; background: #0f1830; border-radius: 16px; padding: 14px; border: 1px solid rgba(255,255,255,0.08); }
+  .ott-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 20px; }
+  .ott-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 20px; }
+  .ott-sectiontitle { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-top: 60px; }
+  .ott-installcard { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 22px; margin-top: 20px; max-width: 720px; }
+  .ott-step { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+  .ott-step:first-child { border-top: none; }
+  .ott-stepnum { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 999px; background: #ffd21f; color: #0b1020; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .ott-steptext { font-size: 16px; line-height: 1.5; color: #e6ebf6; padding-top: 3px; }
+  @media (max-width: 720px) {
+    .ott-hero { grid-template-columns: 1fr; gap: 26px; padding: 20px 0 8px; }
+    .ott-phonewrap { order: -1; }
+    .ott-title { font-size: 38px; }
+    .ott-lead { font-size: 16px; }
+    .ott-btn { flex: 1 1 auto; }
+    .ott-navlinks { gap: 14px; font-size: 13px; }
+    .ott-shell { padding: 0 16px 64px; }
+    .ott-phone { max-width: 230px; }
+    .ott-map { height: 220px; }
+    .ott-sectiontitle { font-size: 22px; margin-top: 48px; }
+  }
+`;
+
 const pageStyle: CSSProperties = {
   minHeight: '100vh',
   margin: 0,
   background: 'linear-gradient(180deg, #05070f 0%, #0b1020 55%, #0f1830 100%)',
   color: '#f4f6fb',
   fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-}
-
-const shellStyle: CSSProperties = {
-  maxWidth: 1120,
-  margin: '0 auto',
-  padding: '0 24px 96px',
-}
-
-const navStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '26px 0',
-}
-
-const brandStyle: CSSProperties = { fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em', color: '#ffd21f' }
-
-const navLinksStyle: CSSProperties = { display: 'flex', gap: 22, fontSize: 15, fontWeight: 600 }
-const navLinkStyle: CSSProperties = { color: '#c9d2e6', textDecoration: 'none' }
-
-const heroStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-  gap: 48,
-  alignItems: 'center',
-  padding: '48px 0 24px',
-}
-
-const badgeStyle: CSSProperties = {
-  display: 'inline-block',
-  padding: '7px 16px',
-  borderRadius: 999,
-  background: 'rgba(255, 210, 31, 0.14)',
-  color: '#ffd21f',
-  fontSize: 13,
-  fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-}
-
-const titleStyle: CSSProperties = {
-  fontSize: 'clamp(38px, 6vw, 62px)',
-  lineHeight: 1.05,
-  margin: '20px 0 18px',
-  fontWeight: 800,
-  letterSpacing: '-0.03em',
-}
-
-const leadStyle: CSSProperties = { fontSize: 18, lineHeight: 1.6, color: '#c2cbe0', maxWidth: 520 }
-
-const ctaRowStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 30 }
-
-const primaryButtonStyle: CSSProperties = {
-  display: 'inline-block',
-  padding: '15px 28px',
-  borderRadius: 14,
-  background: '#ffd21f',
-  color: '#0b1020',
-  fontWeight: 800,
-  fontSize: 16,
-  textDecoration: 'none',
-}
-
-const secondaryButtonStyle: CSSProperties = {
-  display: 'inline-block',
-  padding: '15px 28px',
-  borderRadius: 14,
-  background: 'rgba(255,255,255,0.08)',
-  color: '#f4f6fb',
-  fontWeight: 700,
-  fontSize: 16,
-  textDecoration: 'none',
-  border: '1px solid rgba(255,255,255,0.16)',
-}
-
-const phoneWrapStyle: CSSProperties = { display: 'flex', justifyContent: 'center' }
-
-const phoneStyle: CSSProperties = {
-  width: 270,
-  height: 540,
-  borderRadius: 40,
-  background: 'linear-gradient(160deg, #1b2540, #0c1224)',
-  border: '10px solid #05070f',
-  boxShadow: '0 40px 90px rgba(0,0,0,0.55)',
-  padding: 18,
-  position: 'relative',
-  overflow: 'hidden',
-}
-
-const phoneMapStyle: CSSProperties = {
-  height: 300,
-  borderRadius: 20,
-  background: 'linear-gradient(135deg, #24407a 0%, #1a2c55 40%, #12203f 100%)',
-  position: 'relative',
-  overflow: 'hidden',
-}
-
-const phonePinStyle: CSSProperties = {
-  position: 'absolute',
-  top: 130,
-  left: '50%',
-  transform: 'translateX(-50%)',
-  fontSize: 30,
-}
-
-const phoneCardStyle: CSSProperties = {
-  marginTop: 16,
-  background: '#0f1830',
-  borderRadius: 18,
-  padding: 16,
-  border: '1px solid rgba(255,255,255,0.08)',
-}
-
-const gridStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-  gap: 18,
-  marginTop: 24,
-}
-
-const cardStyle: CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 18,
-  padding: '22px 22px',
-}
-
-const sectionTitleStyle: CSSProperties = { fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', marginTop: 72 }
-
-const installCardStyle: CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 22,
-  padding: '28px 28px',
-  marginTop: 22,
-  maxWidth: 720,
-}
-
-const stepStyle: CSSProperties = {
-  display: 'flex',
-  gap: 16,
-  alignItems: 'flex-start',
-  padding: '14px 0',
-  borderTop: '1px solid rgba(255,255,255,0.07)',
-}
-
-const stepNumStyle: CSSProperties = {
-  flex: '0 0 auto',
-  width: 30,
-  height: 30,
-  borderRadius: 999,
-  background: '#ffd21f',
-  color: '#0b1020',
-  fontWeight: 800,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: 15,
 }
 
 type PageProps = { params: { platform: string; role: string } }
@@ -296,39 +178,42 @@ export default function AppDetailPage({ params }: PageProps) {
 
   return (
     <main style={pageStyle}>
-      <div style={shellStyle}>
-        <nav style={navStyle}>
-          <Link href="/" style={{ ...brandStyle, textDecoration: 'none' }}>
+      <style dangerouslySetInnerHTML={{ __html: responsiveCss }} />
+      <div className="ott-shell">
+        <nav className="ott-nav">
+          <Link href="/" style={{ fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em', color: '#ffd21f', textDecoration: 'none' }}>
             On-Time Taxi
           </Link>
-          <div style={navLinksStyle}>
-            <Link href="/" style={navLinkStyle}>Home</Link>
-            <Link href="/get-app" style={navLinkStyle}>Get app</Link>
-            <Link href={v.webAppHref} style={navLinkStyle}>Open web app</Link>
+          <div className="ott-navlinks">
+            <Link href="/" style={{ color: '#c9d2e6', textDecoration: 'none' }}>Home</Link>
+            <Link href="/get-app" style={{ color: '#c9d2e6', textDecoration: 'none' }}>Get app</Link>
+            <Link href={v.webAppHref} style={{ color: '#c9d2e6', textDecoration: 'none' }}>Open web app</Link>
           </div>
         </nav>
 
-        <section style={heroStyle}>
+        <section className="ott-hero">
           <div>
-            <span style={badgeStyle}>{v.badge}</span>
-            <h1 style={titleStyle}>{v.title}</h1>
-            <p style={leadStyle}>{v.lead}</p>
-            <div style={ctaRowStyle}>
-              <a href="#install" style={primaryButtonStyle}>
+            <span style={{ display: 'inline-block', padding: '7px 16px', borderRadius: 999, background: 'rgba(255,210,31,0.14)', color: '#ffd21f', fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {v.badge}
+            </span>
+            <h1 className="ott-title">{v.title}</h1>
+            <p className="ott-lead">{v.lead}</p>
+            <div className="ott-cta">
+              <a href="#install" className="ott-btn ott-btn-primary">
                 How to install on {phoneName}
               </a>
-              <Link href={v.webAppHref} style={secondaryButtonStyle}>
+              <Link href={v.webAppHref} className="ott-btn ott-btn-secondary">
                 Open the web app
               </Link>
             </div>
           </div>
 
-          <div style={phoneWrapStyle}>
-            <div style={phoneStyle}>
-              <div style={phoneMapStyle}>
-                <div style={phonePinStyle}>{v.kind === 'rider' ? '\uD83D\uDCCD' : '\uD83E\uDDED'}</div>
+          <div className="ott-phonewrap">
+            <div className="ott-phone">
+              <div className="ott-map">
+                <div className="ott-pin">{v.kind === 'rider' ? '\uD83D\uDCCD' : '\uD83E\uDDED'}</div>
               </div>
-              <div style={phoneCardStyle}>
+              <div className="ott-phonecard">
                 <div style={{ fontSize: 13, color: '#8ea0c4', fontWeight: 700 }}>
                   {v.kind === 'rider' ? 'DRIVER ARRIVING' : 'NEW RIDE REQUEST'}
                 </div>
@@ -343,10 +228,10 @@ export default function AppDetailPage({ params }: PageProps) {
           </div>
         </section>
 
-        <h2 style={sectionTitleStyle}>What you get</h2>
-        <div style={gridStyle}>
+        <h2 className="ott-sectiontitle">What you get</h2>
+        <div className="ott-grid">
           {v.features.map((f) => (
-            <div key={f.label} style={cardStyle}>
+            <div key={f.label} className="ott-card">
               <div style={{ fontSize: 30 }}>{f.icon}</div>
               <div style={{ fontSize: 18, fontWeight: 800, marginTop: 10 }}>{f.label}</div>
               <p style={{ color: '#b7c1d9', lineHeight: 1.55, marginTop: 6 }}>{f.desc}</p>
@@ -354,24 +239,24 @@ export default function AppDetailPage({ params }: PageProps) {
           ))}
         </div>
 
-        <h2 id="install" style={sectionTitleStyle}>
+        <h2 id="install" className="ott-sectiontitle">
           Install on your {phoneName}
         </h2>
-        <div style={installCardStyle}>
+        <div className="ott-installcard">
           {v.installSteps.map((s, i) => (
-            <div key={i} style={i === 0 ? { ...stepStyle, borderTop: 'none' } : stepStyle}>
-              <div style={stepNumStyle}>{i + 1}</div>
-              <div style={{ fontSize: 16, lineHeight: 1.5, color: '#e6ebf6', paddingTop: 3 }}>{s}</div>
+            <div key={i} className="ott-step">
+              <div className="ott-stepnum">{i + 1}</div>
+              <div className="ott-steptext">{s}</div>
             </div>
           ))}
-          <div style={{ marginTop: 22 }}>
-            <Link href={v.webAppHref} style={primaryButtonStyle}>
+          <div style={{ marginTop: 20 }}>
+            <Link href={v.webAppHref} className="ott-btn ott-btn-primary" style={{ display: 'inline-block' }}>
               Open the web app now
             </Link>
           </div>
         </div>
 
-        <p style={{ marginTop: 40, color: '#7f8dab', fontSize: 14, maxWidth: 720, lineHeight: 1.6 }}>
+        <p style={{ marginTop: 36, color: '#7f8dab', fontSize: 14, maxWidth: 720, lineHeight: 1.6 }}>
           On-Time Taxi installs straight from your browser as a home-screen app. No App Store or Google Play
           download is needed while we finish testing.
         </p>
