@@ -14,11 +14,11 @@ type Vehicle = {
 }
 
 const vehicles: Vehicle[] = [
-  { id: 'standard', name: 'Standard', icon: '\uD83D\uDE97', perMile: 1.75, base: 3.0, eta: 3, desc: 'Everyday rides, up to 4 riders' },
-  { id: 'suv', name: 'SUV', icon: '\uD83D\uDE99', perMile: 2.4, base: 4.5, eta: 5, desc: 'Extra room, up to 6 riders' },
-  { id: 'van', name: 'Van', icon: '\uD83D\uDE90', perMile: 2.9, base: 6.0, eta: 7, desc: 'Groups and luggage, up to 8' },
-  { id: 'luxury', name: 'Luxury', icon: '\uD83D\uDE98', perMile: 3.8, base: 8.0, eta: 6, desc: 'Premium cars, top-rated drivers' },
-  { id: 'moped', name: 'Moped', icon: '\uD83D\uDEF5', perMile: 1.1, base: 2.0, eta: 2, desc: 'Fast solo trips, weather permitting' },
+  { id: 'standard', name: 'Standard', icon: '🚗', perMile: 1.75, base: 3.0, eta: 3, desc: 'Everyday rides, up to 4 riders' },
+  { id: 'suv', name: 'SUV', icon: '🚙', perMile: 2.4, base: 4.5, eta: 5, desc: 'Extra room, up to 6 riders' },
+  { id: 'van', name: 'Van', icon: '🚐', perMile: 2.9, base: 6.0, eta: 7, desc: 'Groups and luggage, up to 8' },
+  { id: 'luxury', name: 'Luxury', icon: '🚘', perMile: 3.8, base: 8.0, eta: 6, desc: 'Premium cars, top-rated drivers' },
+  { id: 'moped', name: 'Moped', icon: '🛵', perMile: 1.1, base: 2.0, eta: 2, desc: 'Fast solo trips, weather permitting' },
 ]
 
 const STAGE = { PLAN: 'plan', SEARCHING: 'searching', ONWAY: 'onway' } as const
@@ -31,6 +31,7 @@ function estimateMiles(pickup: string, dropoff: string): number {
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000
   return Math.round((2 + (h % 90) / 10) * 10) / 10
 }
+
 const css = `
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; overflow-x: hidden; }
@@ -117,7 +118,7 @@ export default function RidePage() {
         </nav>
 
         <div className="rp-map">
-          <div className="rp-pin">{stage === STAGE.ONWAY ? '\uD83D\uDE97' : '\uD83D\uDCCD'}</div>
+          <div className="rp-pin">{stage === STAGE.ONWAY ? '🚗' : '📍'}</div>
           <div className="rp-route" />
         </div>
 
@@ -138,7 +139,7 @@ export default function RidePage() {
                     <div style={{ fontSize: 26 }}>{v.icon}</div>
                     <div className="rp-vehname">{v.name}</div>
                     <div className="rp-vehdesc">{v.desc}</div>
-                    <div className="rp-vehfare">{fareFor(v) > 0 ? '$' + fareFor(v).toFixed(2) : '\u2014'}</div>
+                    <div className="rp-vehfare">{fareFor(v) > 0 ? '$' + fareFor(v).toFixed(2) : '—'}</div>
                   </div>
                 ))}
               </div>
@@ -147,7 +148,7 @@ export default function RidePage() {
             <div className="rp-card">
               <div className="rp-farebox">
                 <div>
-                  <div className="rp-muted">{vehicle.name + ' \u2022 ' + (miles > 0 ? miles + ' mi' : 'enter your trip')}</div>
+                  <div className="rp-muted">{vehicle.name + ' • ' + (miles > 0 ? miles + ' mi' : 'enter your trip')}</div>
                   <div className="rp-farebig">{'$' + fare.toFixed(2)}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -165,7 +166,7 @@ export default function RidePage() {
         {stage === STAGE.SEARCHING && (
           <div className="rp-card" style={{ textAlign: 'center' }}>
             <div className="rp-spin" />
-            <div style={{ fontWeight: 800, fontSize: 18, marginTop: 8 }}>Finding your driver\u2026</div>
+            <div style={{ fontWeight: 800, fontSize: 18, marginTop: 8 }}>Finding your driver...</div>
             <div className="rp-muted" style={{ marginTop: 6 }}>
               {'Matching you with a nearby ' + vehicle.name.toLowerCase() + ' driver'}
             </div>
@@ -177,10 +178,10 @@ export default function RidePage() {
           <div className="rp-card">
             <div style={{ fontWeight: 800, fontSize: 18 }}>Your driver is on the way</div>
             <div className="rp-row" style={{ borderTop: 'none' }}>
-              <div className="rp-avatar">\uD83E\uDDD1\u200D\u2708\uFE0F</div>
+              <div className="rp-avatar">🧑</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800 }}>{'Marcus \u2022 ' + vehicle.name}</div>
-                <div className="rp-muted">\u2B50 4.9 \u2022 Yellow \u2022 Plate OT-2245</div>
+                <div style={{ fontWeight: 800 }}>{'Marcus • ' + vehicle.name}</div>
+                <div className="rp-muted">{'⭐ 4.9 • Yellow • Plate OT-2245'}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontWeight: 800, fontSize: 22, color: '#ffd21f' }}>{eta}</div>
@@ -190,7 +191,7 @@ export default function RidePage() {
             <div className="rp-row">
               <div style={{ flex: 1 }}>
                 <div className="rp-muted">Trip</div>
-                <div style={{ fontWeight: 700 }}>{pickup + ' \u2192 ' + dropoff}</div>
+                <div style={{ fontWeight: 700 }}>{pickup + ' → ' + dropoff}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="rp-muted">Fare</div>
@@ -202,7 +203,7 @@ export default function RidePage() {
         )}
 
         <p className="rp-muted" style={{ marginTop: 22, textAlign: 'center' }}>
-          Demo ride flow \u2022 live driver matching and payments connect next.
+          {'Demo ride flow • live driver matching and payments connect next.'}
         </p>
       </div>
     </div>
