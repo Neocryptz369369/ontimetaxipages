@@ -3,335 +3,378 @@ import { notFound } from 'next/navigation'
 import type { CSSProperties } from 'react'
 
 type Variant = {
+  kind: 'rider' | 'driver'
+  platform: 'iphone' | 'android'
   badge: string
   title: string
   lead: string
-  installHeading: string
   installSteps: string[]
-  features: string[]
-  accountNotes: string[]
+  features: { icon: string; label: string; desc: string }[]
+  webAppHref: string
 }
 
 const variants: Record<string, Variant> = {
   'android-rider': {
-    badge: 'Android Rider',
-    title: 'Get the Android Rider app.',
+    kind: 'rider',
+    platform: 'android',
+    badge: 'Android \u2022 Rider',
+    title: 'Your ride, on time. Every time.',
     lead:
-      'This page is the website-first path for riders using Android. It gives a cleaner next step after the chooser page and keeps the install flow inside your website for now.',
-    installHeading: 'Android Rider install flow',
+      'Request a ride in seconds, watch your driver arrive on a live map, and pay your way. Install On-Time Taxi on your Android phone and it opens full screen like a real app.',
     installSteps: [
-      'Open this page from the Get app chooser page.',
-      'Review the Android Rider notes and install path here first.',
-      'Use this page as the website-controlled handoff point until store publishing happens later.',
+      'Open this page in Chrome on your Android phone.',
+      'Tap the three-dot menu in the top-right corner.',
+      'Tap "Install app" (or "Add to Home screen").',
+      'Tap "Install" to confirm \u2014 the On-Time Taxi icon lands on your home screen.',
+      'Open it from your home screen and sign in to start riding.',
     ],
     features: [
-      'Made for riders using Android devices.',
-      'Keeps the app flow on the website for now.',
-      'Acts as the rider-specific page after the chooser screen.',
+      { icon: '\uD83D\uDCCD', label: 'Request a ride', desc: 'Set pickup and drop-off and get matched to a nearby driver fast.' },
+      { icon: '\uD83D\uDDFA\uFE0F', label: 'Live tracking', desc: 'Follow your driver on a real-time map with an accurate arrival time.' },
+      { icon: '\uD83D\uDCB3', label: 'Pay your way', desc: 'Card, Apple Pay, Google Pay, or cash \u2014 with tipping built in.' },
+      { icon: '\uD83C\uDF10', label: 'Any language', desc: 'Live translated chat and spoken translation between you and your driver.' },
     ],
-    accountNotes: [
-      'Rider login and rider account data should later line up with the admin console.',
-      'Customer ID numbers should remain permanent once assigned.',
-      'The rider should be able to easily find the customer ID inside the rider app.',
-    ],
-  },
-  'android-driver': {
-    badge: 'Android Driver',
-    title: 'Get the Android Driver app.',
-    lead:
-      'This page is the website-first path for drivers using Android. It gives drivers a clear place to land after the chooser page without sending them to Google Play yet.',
-    installHeading: 'Android Driver install flow',
-    installSteps: [
-      'Open this page from the Get app chooser page.',
-      'Review the Android Driver notes and install path here first.',
-      'Keep the handoff website-based until store publishing happens later.',
-    ],
-    features: [
-      'Made for drivers using Android devices.',
-      'Separates driver install guidance from rider guidance.',
-      'Supports the larger driver/admin workflow that is being tracked now.',
-    ],
-    accountNotes: [
-      'Driver login and driver data should later line up with the admin console.',
-      'Driver ID numbers should remain permanent once assigned.',
-      'The driver should be able to easily find the driver ID inside the driver app.',
-    ],
+    webAppHref: '/ride',
   },
   'iphone-rider': {
-    badge: 'iPhone Rider',
-    title: 'Get the iPhone Rider app.',
+    kind: 'rider',
+    platform: 'iphone',
+    badge: 'iPhone \u2022 Rider',
+    title: 'Your ride, on time. Every time.',
     lead:
-      'This page is the website-first path for riders using iPhone. It keeps the rider flow simple and separate while the website build continues.',
-    installHeading: 'iPhone Rider install flow',
+      'Request a ride in seconds, watch your driver arrive on a live map, and pay your way. Add On-Time Taxi to your iPhone and it opens full screen like a real app.',
     installSteps: [
-      'Open this page from the Get app chooser page.',
-      'Review the iPhone Rider notes and install path here first.',
-      'Use this page as the rider handoff until App Store publishing happens later.',
+      'Open this page in Safari on your iPhone (it must be Safari, not Chrome).',
+      'Tap the Share button \u2014 the square with an up arrow at the bottom of the screen.',
+      'Scroll down and tap "Add to Home Screen".',
+      'Tap "Add" in the top-right corner.',
+      'Open On-Time Taxi from your home screen and sign in to start riding.',
     ],
     features: [
-      'Made for riders using iPhone devices.',
-      'Keeps rider install guidance separate from driver guidance.',
-      'Stays inside the website-first rollout for now.',
+      { icon: '\uD83D\uDCCD', label: 'Request a ride', desc: 'Set pickup and drop-off and get matched to a nearby driver fast.' },
+      { icon: '\uD83D\uDDFA\uFE0F', label: 'Live tracking', desc: 'Follow your driver on a real-time map with an accurate arrival time.' },
+      { icon: '\uD83D\uDCB3', label: 'Pay your way', desc: 'Card, Apple Pay, Google Pay, or cash \u2014 with tipping built in.' },
+      { icon: '\uD83C\uDF10', label: 'Any language', desc: 'Live translated chat and spoken translation between you and your driver.' },
     ],
-    accountNotes: [
-      'Rider login and rider account data should later line up with the admin console.',
-      'Customer ID numbers should remain permanent once assigned.',
-      'The rider should be able to easily find the customer ID inside the rider app.',
+    webAppHref: '/ride',
+  },
+  'android-driver': {
+    kind: 'driver',
+    platform: 'android',
+    badge: 'Android \u2022 Driver',
+    title: 'Drive. Deliver. Get paid.',
+    lead:
+      'Accept rides, follow turn-by-turn navigation, and track your earnings in one place. Install the On-Time Taxi driver app on your Android phone to get started.',
+    installSteps: [
+      'Open this page in Chrome on your Android phone.',
+      'Tap the three-dot menu in the top-right corner.',
+      'Tap "Install app" (or "Add to Home screen").',
+      'Tap "Install" to confirm.',
+      'Open it from your home screen and sign in with your driver account.',
     ],
+    features: [
+      { icon: '\uD83D\uDCB0', label: 'Earnings dashboard', desc: 'See trips, tips, and payouts update in real time.' },
+      { icon: '\uD83E\uDDED', label: 'Navigation', desc: 'Turn-by-turn maps with spoken voice guidance.' },
+      { icon: '\uD83D\uDD14', label: 'Ride requests', desc: 'Accept or decline requests and manage your ride queue.' },
+      { icon: '\u26A1', label: 'Go online anytime', desc: 'Flip your availability on and off whenever you want to drive.' },
+    ],
+    webAppHref: '/driver-onboarding',
   },
   'iphone-driver': {
-    badge: 'iPhone Driver',
-    title: 'Get the iPhone Driver app.',
+    kind: 'driver',
+    platform: 'iphone',
+    badge: 'iPhone \u2022 Driver',
+    title: 'Drive. Deliver. Get paid.',
     lead:
-      'This page is the website-first path for drivers using iPhone. It gives the driver side its own path and keeps the website flow organized before full release.',
-    installHeading: 'iPhone Driver install flow',
+      'Accept rides, follow turn-by-turn navigation, and track your earnings in one place. Add the On-Time Taxi driver app to your iPhone to get started.',
     installSteps: [
-      'Open this page from the Get app chooser page.',
-      'Review the iPhone Driver notes and install path here first.',
-      'Use this page as the driver handoff until App Store publishing happens later.',
+      'Open this page in Safari on your iPhone (it must be Safari, not Chrome).',
+      'Tap the Share button \u2014 the square with an up arrow at the bottom of the screen.',
+      'Scroll down and tap "Add to Home Screen".',
+      'Tap "Add" in the top-right corner.',
+      'Open the app from your home screen and sign in with your driver account.',
     ],
     features: [
-      'Made for drivers using iPhone devices.',
-      'Keeps the driver path separate from rider pages.',
-      'Supports the larger admin and driver workflow already being tracked.',
+      { icon: '\uD83D\uDCB0', label: 'Earnings dashboard', desc: 'See trips, tips, and payouts update in real time.' },
+      { icon: '\uD83E\uDDED', label: 'Navigation', desc: 'Turn-by-turn maps with spoken voice guidance.' },
+      { icon: '\uD83D\uDD14', label: 'Ride requests', desc: 'Accept or decline requests and manage your ride queue.' },
+      { icon: '\u26A1', label: 'Go online anytime', desc: 'Flip your availability on and off whenever you want to drive.' },
     ],
-    accountNotes: [
-      'Driver login and driver data should later line up with the admin console.',
-      'Driver ID numbers should remain permanent once assigned.',
-      'The driver should be able to easily find the driver ID inside the driver app.',
-    ],
+    webAppHref: '/driver-onboarding',
   },
 }
 
-const platformLabels: Record<string, string> = {
-  android: 'Android',
-  iphone: 'iPhone',
-}
-
-const roleLabels: Record<string, string> = {
-  rider: 'Rider',
-  driver: 'Driver',
-}
+const platformNames: Record<string, string> = { iphone: 'iPhone', android: 'Android' }
 
 const pageStyle: CSSProperties = {
   minHeight: '100vh',
-  background: 'linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)',
-  color: '#0f172a',
-  fontFamily: 'Arial, Helvetica, sans-serif',
+  margin: 0,
+  background: 'linear-gradient(180deg, #05070f 0%, #0b1020 55%, #0f1830 100%)',
+  color: '#f4f6fb',
+  fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
 }
 
 const shellStyle: CSSProperties = {
-  maxWidth: '1180px',
+  maxWidth: 1120,
   margin: '0 auto',
-  padding: '32px 20px 72px',
+  padding: '0 24px 96px',
 }
 
 const navStyle: CSSProperties = {
   display: 'flex',
-  justifyContent: 'space-between',
   alignItems: 'center',
-  gap: '16px',
-  marginBottom: '28px',
-  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  padding: '26px 0',
 }
 
-const navLinksStyle: CSSProperties = {
-  display: 'flex',
-  gap: '14px',
-  flexWrap: 'wrap',
-  fontSize: '14px',
-  fontWeight: 600,
-}
+const brandStyle: CSSProperties = { fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em', color: '#ffd21f' }
+
+const navLinksStyle: CSSProperties = { display: 'flex', gap: 22, fontSize: 15, fontWeight: 600 }
+const navLinkStyle: CSSProperties = { color: '#c9d2e6', textDecoration: 'none' }
 
 const heroStyle: CSSProperties = {
-  background: '#ffffff',
-  border: '1px solid #dbe7ff',
-  borderRadius: '28px',
-  padding: '32px',
-  boxShadow: '0 22px 60px rgba(15, 23, 42, 0.08)',
-  marginBottom: '24px',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+  gap: 48,
+  alignItems: 'center',
+  padding: '48px 0 24px',
 }
 
 const badgeStyle: CSSProperties = {
   display: 'inline-block',
-  padding: '8px 12px',
-  borderRadius: '999px',
-  background: '#dbeafe',
-  color: '#1d4ed8',
-  fontSize: '12px',
+  padding: '7px 16px',
+  borderRadius: 999,
+  background: 'rgba(255, 210, 31, 0.14)',
+  color: '#ffd21f',
+  fontSize: 13,
   fontWeight: 700,
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  marginBottom: '16px',
 }
 
 const titleStyle: CSSProperties = {
-  fontSize: 'clamp(34px, 6vw, 56px)',
+  fontSize: 'clamp(38px, 6vw, 62px)',
   lineHeight: 1.05,
-  margin: '0 0 14px',
+  margin: '20px 0 18px',
+  fontWeight: 800,
+  letterSpacing: '-0.03em',
 }
 
-const leadStyle: CSSProperties = {
-  margin: 0,
-  fontSize: '18px',
-  lineHeight: 1.7,
-  color: '#334155',
-  maxWidth: '820px',
-}
+const leadStyle: CSSProperties = { fontSize: 18, lineHeight: 1.6, color: '#c2cbe0', maxWidth: 520 }
 
-const gridStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-  gap: '20px',
-  marginBottom: '24px',
-}
-
-const cardStyle: CSSProperties = {
-  background: '#ffffff',
-  border: '1px solid #dbe7ff',
-  borderRadius: '24px',
-  padding: '24px',
-  boxShadow: '0 20px 48px rgba(15, 23, 42, 0.07)',
-}
-
-const cardHeadingStyle: CSSProperties = {
-  fontSize: '22px',
-  margin: '0 0 14px',
-}
-
-const listStyle: CSSProperties = {
-  margin: 0,
-  paddingLeft: '20px',
-  color: '#334155',
-  lineHeight: 1.8,
-}
-
-const calloutStyle: CSSProperties = {
-  marginTop: '22px',
-  padding: '18px 20px',
-  borderRadius: '18px',
-  background: '#eff6ff',
-  border: '1px solid #bfdbfe',
-  color: '#1e3a8a',
-  lineHeight: 1.6,
-}
-
-const footerActionsStyle: CSSProperties = {
-  display: 'flex',
-  gap: '14px',
-  flexWrap: 'wrap',
-  marginTop: '28px',
-}
+const ctaRowStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 30 }
 
 const primaryButtonStyle: CSSProperties = {
   display: 'inline-block',
+  padding: '15px 28px',
+  borderRadius: 14,
+  background: '#ffd21f',
+  color: '#0b1020',
+  fontWeight: 800,
+  fontSize: 16,
   textDecoration: 'none',
-  background: '#1d4ed8',
-  color: '#ffffff',
-  fontWeight: 700,
-  padding: '14px 18px',
-  borderRadius: '14px',
 }
 
 const secondaryButtonStyle: CSSProperties = {
   display: 'inline-block',
-  textDecoration: 'none',
-  background: '#eff6ff',
-  color: '#1d4ed8',
+  padding: '15px 28px',
+  borderRadius: 14,
+  background: 'rgba(255,255,255,0.08)',
+  color: '#f4f6fb',
   fontWeight: 700,
-  padding: '14px 18px',
-  borderRadius: '14px',
-  border: '1px solid #bfdbfe',
+  fontSize: 16,
+  textDecoration: 'none',
+  border: '1px solid rgba(255,255,255,0.16)',
 }
 
-type PageProps = {
-  params: {
-    platform: string
-    role: string
-  }
+const phoneWrapStyle: CSSProperties = { display: 'flex', justifyContent: 'center' }
+
+const phoneStyle: CSSProperties = {
+  width: 270,
+  height: 540,
+  borderRadius: 40,
+  background: 'linear-gradient(160deg, #1b2540, #0c1224)',
+  border: '10px solid #05070f',
+  boxShadow: '0 40px 90px rgba(0,0,0,0.55)',
+  padding: 18,
+  position: 'relative',
+  overflow: 'hidden',
+}
+
+const phoneMapStyle: CSSProperties = {
+  height: 300,
+  borderRadius: 20,
+  background: 'linear-gradient(135deg, #24407a 0%, #1a2c55 40%, #12203f 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+}
+
+const phonePinStyle: CSSProperties = {
+  position: 'absolute',
+  top: 130,
+  left: '50%',
+  transform: 'translateX(-50%)',
+  fontSize: 30,
+}
+
+const phoneCardStyle: CSSProperties = {
+  marginTop: 16,
+  background: '#0f1830',
+  borderRadius: 18,
+  padding: 16,
+  border: '1px solid rgba(255,255,255,0.08)',
+}
+
+const gridStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+  gap: 18,
+  marginTop: 24,
+}
+
+const cardStyle: CSSProperties = {
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 18,
+  padding: '22px 22px',
+}
+
+const sectionTitleStyle: CSSProperties = { fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', marginTop: 72 }
+
+const installCardStyle: CSSProperties = {
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 22,
+  padding: '28px 28px',
+  marginTop: 22,
+  maxWidth: 720,
+}
+
+const stepStyle: CSSProperties = {
+  display: 'flex',
+  gap: 16,
+  alignItems: 'flex-start',
+  padding: '14px 0',
+  borderTop: '1px solid rgba(255,255,255,0.07)',
+}
+
+const stepNumStyle: CSSProperties = {
+  flex: '0 0 auto',
+  width: 30,
+  height: 30,
+  borderRadius: 999,
+  background: '#ffd21f',
+  color: '#0b1020',
+  fontWeight: 800,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: 15,
+}
+
+type PageProps = { params: { platform: string; role: string } }
+
+export function generateStaticParams() {
+  return [
+    { platform: 'iphone', role: 'rider' },
+    { platform: 'android', role: 'rider' },
+    { platform: 'iphone', role: 'driver' },
+    { platform: 'android', role: 'driver' },
+  ]
 }
 
 export default function AppDetailPage({ params }: PageProps) {
-  const platform = params.platform.toLowerCase()
-  const role = params.role.toLowerCase()
-
-  if (!platformLabels[platform] || !roleLabels[role]) {
-    notFound()
-  }
-
-  const key = `${platform}-${role}`
+  const key = params.platform + '-' + params.role
   const variant = variants[key]
 
   if (!variant) {
     notFound()
   }
 
+  const v = variant
+  const phoneName = platformNames[v.platform]
+
   return (
     <main style={pageStyle}>
       <div style={shellStyle}>
-        <div style={navStyle}>
-          <Link href="/" style={{ textDecoration: 'none', color: '#1d4ed8', fontWeight: 800, fontSize: '20px' }}>
+        <nav style={navStyle}>
+          <Link href="/" style={{ ...brandStyle, textDecoration: 'none' }}>
             On-Time Taxi
           </Link>
           <div style={navLinksStyle}>
-            <Link href="/" style={{ textDecoration: 'none', color: '#334155' }}>Ride</Link>
-            <Link href="/ride" style={{ textDecoration: 'none', color: '#334155' }}>Book</Link>
-            <Link href="/get-app" style={{ textDecoration: 'none', color: '#1d4ed8' }}>Get app</Link>
+            <Link href="/" style={navLinkStyle}>Home</Link>
+            <Link href="/get-app" style={navLinkStyle}>Get app</Link>
+            <Link href={v.webAppHref} style={navLinkStyle}>Open web app</Link>
+          </div>
+        </nav>
+
+        <section style={heroStyle}>
+          <div>
+            <span style={badgeStyle}>{v.badge}</span>
+            <h1 style={titleStyle}>{v.title}</h1>
+            <p style={leadStyle}>{v.lead}</p>
+            <div style={ctaRowStyle}>
+              <a href="#install" style={primaryButtonStyle}>
+                How to install on {phoneName}
+              </a>
+              <Link href={v.webAppHref} style={secondaryButtonStyle}>
+                Open the web app
+              </Link>
+            </div>
+          </div>
+
+          <div style={phoneWrapStyle}>
+            <div style={phoneStyle}>
+              <div style={phoneMapStyle}>
+                <div style={phonePinStyle}>{v.kind === 'rider' ? '\uD83D\uDCCD' : '\uD83E\uDDED'}</div>
+              </div>
+              <div style={phoneCardStyle}>
+                <div style={{ fontSize: 13, color: '#8ea0c4', fontWeight: 700 }}>
+                  {v.kind === 'rider' ? 'DRIVER ARRIVING' : 'NEW RIDE REQUEST'}
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, marginTop: 6 }}>
+                  {v.kind === 'rider' ? '3 min away' : '$14.50 \u2022 4.2 mi'}
+                </div>
+                <div style={{ marginTop: 12, height: 40, borderRadius: 12, background: '#ffd21f', color: '#0b1020', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {v.kind === 'rider' ? 'Track ride' : 'Accept'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <h2 style={sectionTitleStyle}>What you get</h2>
+        <div style={gridStyle}>
+          {v.features.map((f) => (
+            <div key={f.label} style={cardStyle}>
+              <div style={{ fontSize: 30 }}>{f.icon}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, marginTop: 10 }}>{f.label}</div>
+              <p style={{ color: '#b7c1d9', lineHeight: 1.55, marginTop: 6 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <h2 id="install" style={sectionTitleStyle}>
+          Install on your {phoneName}
+        </h2>
+        <div style={installCardStyle}>
+          {v.installSteps.map((s, i) => (
+            <div key={i} style={i === 0 ? { ...stepStyle, borderTop: 'none' } : stepStyle}>
+              <div style={stepNumStyle}>{i + 1}</div>
+              <div style={{ fontSize: 16, lineHeight: 1.5, color: '#e6ebf6', paddingTop: 3 }}>{s}</div>
+            </div>
+          ))}
+          <div style={{ marginTop: 22 }}>
+            <Link href={v.webAppHref} style={primaryButtonStyle}>
+              Open the web app now
+            </Link>
           </div>
         </div>
 
-        <section style={heroStyle}>
-          <div style={badgeStyle}>{variant.badge}</div>
-          <h1 style={titleStyle}>{variant.title}</h1>
-          <p style={leadStyle}>{variant.lead}</p>
-
-          <div style={calloutStyle}>
-            <strong>Owner app note:</strong> Dennis&apos;s own app stays on its own admin-console-only path.
-            These public pages are only for rider and driver app flows.
-          </div>
-        </section>
-
-        <section style={gridStyle}>
-          <article style={cardStyle}>
-            <h2 style={cardHeadingStyle}>{variant.installHeading}</h2><ol style={listStyle}>
-              {variant.installSteps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-          </article>
-
-          <article style={cardStyle}>
-            <h2 style={cardHeadingStyle}>What this page covers</h2><ul style={listStyle}>
-              {variant.features.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-
-          <article style={cardStyle}>
-            <h2 style={cardHeadingStyle}>Account and admin alignment</h2><ul style={listStyle}>
-              {variant.accountNotes.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-        </section>
-
-        <section style={heroStyle}>
-          <h2 style={{ marginTop: 0, fontSize: '28px' }}>Next build direction</h2>
-          <p style={leadStyle}>
-            After these public pages are in place, the next website path is the admin page and then the owner-app admin-console route.
-          </p>
-
-          <div style={footerActionsStyle}>
-            <Link href="/get-app" style={primaryButtonStyle}>
-              Back to Get app chooser
-            </Link>
-            <Link href="/" style={secondaryButtonStyle}>
-              Back to homepage
-            </Link>
-          </div>
-        </section>
+        <p style={{ marginTop: 40, color: '#7f8dab', fontSize: 14, maxWidth: 720, lineHeight: 1.6 }}>
+          On-Time Taxi installs straight from your browser as a home-screen app. No App Store or Google Play
+          download is needed while we finish testing.
+        </p>
       </div>
     </main>
   )
