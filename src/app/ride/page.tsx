@@ -17,7 +17,7 @@ function loadMaps(): Promise<any> {
   mapsPromise = new Promise((resolve, reject) => {
     if (!MAPS_KEY) { reject('missing key'); return }
     const s = document.createElement('script')
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + MAPS_KEY + '&libraries=places'
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + MAPS_KEY + '&libraries=places&loading=async'
     s.async = true
     s.defer = true
     s.onload = () => resolve((window as any).google)
@@ -46,42 +46,47 @@ export default function RidePage() {
   const pickupRef = useRef<HTMLInputElement | null>(null)
   const dropoffRef = useRef<HTMLInputElement | null>(null)
   const mapObj = useRef<any>(null)
+  const inited = useRef(false)
 
   useEffect(() => {
     let cancelled = false
-    loadMaps().then((google) => {
-      if (cancelled) return
-      setMapsReady(true)
-      if (mapRef.current && !mapObj.current) {
-        mapObj.current = new google.maps.Map(mapRef.current, {
-          center: { lat: 40.7128, lng: -74.006 },
-          zoom: 12,
-          disableDefaultUI: true,
-          gestureHandling: 'greedy',
-          styles: [{ elementType: 'geometry', stylers: [{ color: '#12203f' }] }, { elementType: 'labels.text.fill', stylers: [{ color: '#8ea0c4' }] }, { elementType: 'labels.text.stroke', stylers: [{ color: '#0b1020' }] }, { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1a2c55' }] }, { featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0c1326' }] }],
-        })
-      }
-      const opts = { fields: ['formatted_address', 'geometry', 'name'] }
-      if (pickupRef.current) {
-        const ac = new google.maps.places.Autocomplete(pickupRef.current, opts)
-        ac.addListener('place_changed', () => {
-          const p = ac.getPlace()
-          const val = p.formatted_address || p.name || ''
-          if (val) setPickup(val)
-          if (p.geometry && p.geometry.location && mapObj.current) { mapObj.current.setCenter(p.geometry.location); mapObj.current.setZoom(14) }
-        })
-      }
-      if (dropoffRef.current) {
-        const ac = new google.maps.places.Autocomplete(dropoffRef.current, opts)
-        ac.addListener('place_changed', () => {
-          const p = ac.getPlace()
-          const val = p.formatted_address || p.name || ''
-          if (val) setDropoff(val)
-        })
-      }
-    }).catch(() => { if (!cancelled) setMapsError(true) })
+    loadMaps().then(() => { if (!cancelled) setMapsReady(true) }).catch(() => { if (!cancelled) setMapsError(true) })
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    if (!mapsReady || mapsError || inited.current) return
+    const google = (window as any).google
+    if (!google || !google.maps) return
+    inited.current = true
+    if (mapRef.current && !mapObj.current) {
+      mapObj.current = new google.maps.Map(mapRef.current, {
+        center: { lat: 40.7128, lng: -74.006 },
+        zoom: 12,
+        disableDefaultUI: true,
+        gestureHandling: 'greedy',
+        styles: [{ elementType: 'geometry', stylers: [{ color: '#12203f' }] }, { elementType: 'labels.text.fill', stylers: [{ color: '#8ea0c4' }] }, { elementType: 'labels.text.stroke', stylers: [{ color: '#0b1020' }] }, { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1a2c55' }] }, { featureType: 'poi', stylers: [{ visibility: 'off' }] }, { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0c1326' }] }],
+      })
+    }
+    const opts = { fields: ['formatted_address', 'geometry', 'name'] }
+    if (pickupRef.current) {
+      const ac = new google.maps.places.Autocomplete(pickupRef.current, opts)
+      ac.addListener('place_changed', () => {
+        const p = ac.getPlace()
+        const val = p.formatted_address || p.name || ''
+        if (val) setPickup(val)
+        if (p.geometry && p.geometry.location && mapObj.current) { mapObj.current.setCenter(p.geometry.location); mapObj.current.setZoom(14) }
+      })
+    }
+    if (dropoffRef.current) {
+      const ac = new google.maps.places.Autocomplete(dropoffRef.current, opts)
+      ac.addListener('place_changed', () => {
+        const p = ac.getPlace()
+        const val = p.formatted_address || p.name || ''
+        if (val) setDropoff(val)
+      })
+    }
+  }, [mapsReady, mapsError])
 
   const miles = estimateMiles(pickup, dropoff)
   const fare = miles > 0 ? BASE_FARE + miles * PER_MILE : 0
