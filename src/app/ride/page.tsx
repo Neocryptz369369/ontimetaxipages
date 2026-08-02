@@ -17,7 +17,7 @@ function loadMaps(): Promise<any> {
   mapsPromise = new Promise((resolve, reject) => {
     if (!MAPS_KEY) { reject('missing key'); return }
     const s = document.createElement('script')
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + MAPS_KEY + '&libraries=places&loading=async'
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + MAPS_KEY + '&libraries=places'
     s.async = true
     s.defer = true
     s.onload = () => resolve((window as any).google)
@@ -57,7 +57,7 @@ export default function RidePage() {
   useEffect(() => {
     if (!mapsReady || mapsError || inited.current) return
     const google = (window as any).google
-    if (!google || !google.maps) return
+    if (!google || !google.maps || typeof google.maps.Map !== 'function') return
     inited.current = true
     if (mapRef.current && !mapObj.current) {
       mapObj.current = new google.maps.Map(mapRef.current, {
