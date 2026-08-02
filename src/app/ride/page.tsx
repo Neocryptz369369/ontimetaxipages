@@ -82,7 +82,12 @@ export default function RidePage() {
     })
     const m = mapRef.current
     m.on('load', () => m.resize())
-    setTimeout(() => { try { m.resize() } catch (e) {} }, 300)
+    m.on('idle', () => m.resize())
+    ;[100, 400, 800, 1500].forEach(d => setTimeout(() => { try { m.resize() } catch (e) {} }, d))
+    if (typeof ResizeObserver !== 'undefined' && mapDivRef.current) {
+      const ro = new ResizeObserver(() => { try { m.resize() } catch (e) {} })
+      ro.observe(mapDivRef.current)
+    }
   }, [mapsReady])
 
   useEffect(() => {
