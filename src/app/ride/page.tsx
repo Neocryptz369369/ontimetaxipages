@@ -57,6 +57,8 @@ export default function RidePage() {
   const [dropoffSug, setDropoffSug] = useState<any[]>([])
   const [stage, setStage] = useState<Stage>(STAGE.PLAN)
   const [miles, setMiles] = useState(0)
+  const [paying, setPaying] = useState(false)
+  const [payError, setPayError] = useState('')
   const [mapsReady, setMapsReady] = useState(false)
   const mapDivRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<any>(null)
@@ -137,6 +139,28 @@ export default function RidePage() {
     setDropoffSug([])
   }
 
+  async function startCheckout() {
+    setPayError('')
+    setPaying(true)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fare, pickup, dropoff, miles }),
+      })
+      const data = await res.json()
+      if (data && data.url) {
+        window.location.href = data.url
+        return
+      }
+      setPayError((data && data.error) || 'Could not start checkout. Please try again.')
+      setPaying(false)
+    } catch (e) {
+      setPayError('Network error. Please try again.')
+      setPaying(false)
+    }
+  }
+
   const fare = miles > 0 ? BASE_FARE + PER_MILE * miles : BASE_FARE
 
   return (
@@ -183,7 +207,8 @@ export default function RidePage() {
                 <div className="rp-farebig">${fare.toFixed(2)}</div>
                 <div className="rp-rate">$5.00 base + $2.00 per mile{miles > 0 ? ' \u00b7 ' + miles.toFixed(1) + ' mi' : ''}</div>
               </div>
-              <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord} onClick={() => setStage(STAGE.SEARCHING)}>Request On Time Taxi</button>
+              <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord || paying} onClick={startCheckout}>{paying ? 'Processing...' : 'Request On Time Taxi'}</button>
+              {payError && <div className="rp-payerr">{payError}</div>}
             </>
           )}
 
@@ -238,6 +263,7 @@ export default function RidePage() {
         .rp-farebox { display: flex; align-items: baseline; justify-content: space-between; margin: 16px 0; }
         .rp-farebig { font-size: 30px; font-weight: 800; color: #f5b301; }
         .rp-rate { font-size: 12px; color: #888; text-align: right; }
+        .rp-payerr { color: #ff6b6b; font-size: 13px; margin-top: 10px; text-align: center; }
         .rp-btn { width: 100%; background: #f5b301; color: #111; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 6px; }
         .rp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .rp-ghost { background: transparent; color: #bbb; border: 1px solid #2a2a2e; margin-top: 10px; }
