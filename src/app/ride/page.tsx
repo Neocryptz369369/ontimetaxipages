@@ -80,6 +80,9 @@ export default function RidePage() {
       center: [-74.006, 40.7128],
       zoom: 11,
     })
+    const m = mapRef.current
+    m.on('load', () => m.resize())
+    setTimeout(() => { try { m.resize() } catch (e) {} }, 300)
   }, [mapsReady])
 
   useEffect(() => {
