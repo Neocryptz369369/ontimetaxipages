@@ -1,17 +1,8 @@
 'use client'
-
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-type Vehicle = {
-  id: string
-  name: string
-  icon: string
-  perMile: number
-  base: number
-  eta: number
-  desc: string
-}
+type Vehicle = { id: string; name: string; icon: string; perMile: number; base: number; eta: number; desc: string }
 
 const vehicles: Vehicle[] = [
   { id: 'standard', name: 'Standard', icon: '🚗', perMile: 1.75, base: 3.0, eta: 3, desc: 'Everyday rides, up to 4 riders' },
@@ -22,17 +13,109 @@ const vehicles: Vehicle[] = [
 ]
 
 const STAGE = { PLAN: 'plan', SEARCHING: 'searching', ONWAY: 'onway' } as const
-type Stage = (typeof STAGE)[keyof typeof STAGE]
+type Stage = typeof STAGE[keyof typeof STAGE]
+
+const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+
+let mapsPromise: Promise<any> | null = null
+function loadMaps(): Promise<any> {
+  if (typeof window === 'undefined') return Promise.reject('no window')
+  if ((window as any).google && (window as any).google.maps) return Promise.resolve((window as any).google)
+  if (mapsPromise) return mapsPromise
+  mapsPromise = new Promise((resolve, reject) => {
+    if (!MAPS_KEY) { reject('missing key'); return }
+    const s = document.createElement('script')
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + MAPS_KEY + '&libraries=places'
+    s.async = true
+    s.defer = true
+    s.onload = () => resolve((window as any).google)
+    s.onerror = () => reject('script error')
+    document.head.appendChild(s)
+  })
+  return mapsPromise
+}
 
 function estimateMiles(pickup: string, dropoff: string): number {
   if (!pickup.trim() || !dropoff.trim()) return 0
-  const s = (pickup + '|' + dropoff).toLowerCase()
+  const s = (pickup + dropoff).toLowerCase()
   let h = 0
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000
+  for (let i = 0; i < s.length; i++) { h = (h + s.charCodeAt(i) * (i + 1)) % 100000 }
   return Math.round((2 + (h % 90) / 10) * 10) / 10
 }
 
-const css = `
+export default function RidePage() {
+  const [pickup, setPickup] = useState('')
+  const [dropoff, setDropoff] = useState('')
+  const [vehicleId, setVehicleId] = useState('standard')
+  const [stage, setStage] = useState<Stage>(STAGE.PLAN)
+  const [eta, setEta] = useState(0)
+  const [mapsReady, setMapsReady] = useState(false)
+  const [mapsError, setMapsError] = useState(false)
+  const mapRef = useRef<HTMLDivElement | null>(null)
+  const pickupRef = useRef<HTMLInputElement | null>(null)
+  const dropoffRef = useRef<HTMLInputElement | null>(null)
+  const mapObj = useRef<any>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    loadMaps().then((google) => {
+      if (cancelled) return
+      setMapsReady(true)
+      if (mapRef.current && !mapObj.current) {
+        mapObj.current = new google.maps.Map(mapRef.current, {
+          center: { lat: 40.7128, lng: -74.006 },
+          zoom: 12,
+          disableDefaultUI: true,
+          gestureHandling: 'greedy',
+          styles: [{ elementType: 'geometry', stylers: [{ color: '#12203f' }] }, { elementType: 'labels.text.fill', stylers: [{ color: '#8ea0c4' }] }, { elementType: 'labels.text.stroke', stylers: [{ color: '#0b1020' }] }, { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1a2c55' }] }, { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0c1326' }] }],
+        })
+      }
+      if (pickupRef.current) {
+        const ac = new google.maps.places.Autocomplete(pickupRef.current, { fields: ['formatted_address', 'geometry', 'name'] })
+        ac.addListener('place_changed', () => {
+          const p = ac.getPlace()
+          const val = p.formatted_address || p.name || ''
+          if (val) setPickup(val)
+          if (p.geometry && p.geometry.location && mapObj.current) { mapObj.current.setCenter(p.geometry.location); mapObj.current.setZoom(14) }
+        })
+      }
+      if (dropoffRef.current) {
+        const ac = new google.maps.places.Autocomplete(dropoffRef.current, { fields: ['formatted_address', 'geometry', 'name'] })
+        ac.addListener('place_changed', () => {
+          const p = ac.getPlace()
+          const val = p.formatted_address || p.name || ''
+          if (val) setDropoff(val)
+        })
+      }
+    }).catch(() => { if (!cancelled) setMapsError(true) })
+    return () => { cancelled = true }
+  }, [])
+
+  const vehicle = vehicles.find((v) => v.id === vehicleId) || vehicles[0]
+  const miles = estimateMiles(pickup, dropoff)
+  const fare = miles > 0 ? vehicle.base + miles * vehicle.perMile : 0
+  const canRequest = pickup.trim().length > 0 && dropoff.trim().length > 0
+
+  useEffect(() => {
+    if (stage === STAGE.SEARCHING) {
+      const t = setTimeout(() => { setStage(STAGE.ONWAY); setEta(vehicle.eta) }, 2600)
+      return () => clearTimeout(t)
+    }
+  }, [stage, vehicle.eta])
+
+  useEffect(() => {
+    if (stage === STAGE.ONWAY && eta > 0) {
+      const t = setTimeout(() => setEta((e) => e - 1), 4000)
+      return () => clearTimeout(t)
+    }
+  }, [stage, eta])
+
+  function request() { if (canRequest) setStage(STAGE.SEARCHING) }
+  function cancel() { setStage(STAGE.PLAN); setEta(0) }
+
+  return (
+    <div className="rp-wrap">
+      <style dangerouslySetInnerHTML={{ __html: `
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; overflow-x: hidden; }
   .rp-wrap { min-height: 100vh; background: linear-gradient(180deg, #05070f 0%, #0b1020 60%, #0f1830 100%); color: #f4f6fb; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
@@ -41,8 +124,7 @@ const css = `
   .rp-brand { font-weight: 800; font-size: 20px; color: #ffd21f; text-decoration: none; }
   .rp-navlink { color: #c9d2e6; text-decoration: none; font-size: 14px; font-weight: 600; }
   .rp-map { height: 210px; border-radius: 20px; background: linear-gradient(135deg, #24407a 0%, #1a2c55 45%, #12203f 100%); position: relative; overflow: hidden; margin-top: 6px; }
-  .rp-pin { position: absolute; top: 44%; left: 50%; transform: translateX(-50%); font-size: 30px; }
-  .rp-route { position: absolute; left: 24px; right: 24px; bottom: 22px; height: 3px; background: repeating-linear-gradient(90deg, #ffd21f 0 12px, transparent 12px 20px); border-radius: 3px; }
+  .rp-mapreal { height: 210px; border-radius: 20px; overflow: hidden; margin-top: 6px; background: #12203f; }
   .rp-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 20px; padding: 18px; margin-top: 16px; }
   .rp-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: #8ea0c4; text-transform: uppercase; margin-bottom: 6px; }
   .rp-input { width: 100%; padding: 14px; border-radius: 13px; border: 1px solid rgba(255,255,255,0.14); background: #0c1326; color: #f4f6fb; font-size: 16px; outline: none; }
@@ -63,102 +145,56 @@ const css = `
   .rp-spin { width: 42px; height: 42px; border-radius: 999px; border: 4px solid rgba(255,255,255,0.15); border-top-color: #ffd21f; animation: rpspin 0.9s linear infinite; margin: 8px auto; }
   @keyframes rpspin { to { transform: rotate(360deg); } }
   .rp-muted { color: #9fabc6; font-size: 13px; }
-`;
-
-export default function RidePage() {
-  const [pickup, setPickup] = useState('')
-  const [dropoff, setDropoff] = useState('')
-  const [vehicleId, setVehicleId] = useState('standard')
-  const [stage, setStage] = useState<Stage>(STAGE.PLAN)
-  const [eta, setEta] = useState(0)
-
-  const miles = estimateMiles(pickup, dropoff)
-  const vehicle = vehicles.find((v) => v.id === vehicleId) || vehicles[0]
-  const fare = miles > 0 ? vehicle.base + miles * vehicle.perMile : 0
-  const canRequest = pickup.trim().length > 1 && dropoff.trim().length > 1
-
-  function fareFor(v: Vehicle): number {
-    return miles > 0 ? v.base + miles * v.perMile : 0
-  }
-
-  function requestRide() {
-    if (!canRequest) return
-    setStage(STAGE.SEARCHING)
-  }
-
-  function reset() {
-    setStage(STAGE.PLAN)
-    setEta(0)
-  }
-
-  useEffect(() => {
-    if (stage === STAGE.SEARCHING) {
-      const t = setTimeout(() => {
-        setEta(vehicle.eta)
-        setStage(STAGE.ONWAY)
-      }, 2600)
-      return () => clearTimeout(t)
-    }
-  }, [stage, vehicle.eta])
-
-  useEffect(() => {
-    if (stage === STAGE.ONWAY) {
-      const t = setInterval(() => setEta((e) => (e > 1 ? e - 1 : 1)), 4000)
-      return () => clearInterval(t)
-    }
-  }, [stage])
-
-  return (
-    <div className="rp-wrap">
-      <style dangerouslySetInnerHTML={{ __html: css }} />
+` }} />
       <div className="rp-shell">
         <nav className="rp-nav">
           <Link href="/" className="rp-brand">On-Time Taxi</Link>
           <Link href="/get-app" className="rp-navlink">Get app</Link>
         </nav>
 
-        <div className="rp-map">
-          <div className="rp-pin">{stage === STAGE.ONWAY ? '🚗' : '📍'}</div>
-          <div className="rp-route" />
-        </div>
+        {mapsReady && !mapsError ? (
+          <div className="rp-mapreal" ref={mapRef} />
+        ) : (
+          <div className="rp-map"><div className="rp-pin">📍</div><div className="rp-route" /></div>
+        )}
 
         {stage === STAGE.PLAN && (
           <>
             <div className="rp-card">
               <div className="rp-label">Pickup</div>
-              <input className="rp-input" placeholder="Enter pickup location" value={pickup} onChange={(e) => setPickup(e.target.value)} />
+              <input ref={pickupRef} className="rp-input" placeholder="Enter pickup location" value={pickup} onChange={(e) => setPickup(e.target.value)} />
               <div className="rp-label" style={{ marginTop: 14 }}>Drop-off</div>
-              <input className="rp-input" placeholder="Where to?" value={dropoff} onChange={(e) => setDropoff(e.target.value)} />
+              <input ref={dropoffRef} className="rp-input" placeholder="Where to?" value={dropoff} onChange={(e) => setDropoff(e.target.value)} />
             </div>
 
-            <div style={{ marginTop: 18 }}>
-              <div className="rp-label">Choose a ride</div>
-              <div className="rp-veh">
-                {vehicles.map((v) => (
+            <div className="rp-label" style={{ marginTop: 20 }}>Choose a ride</div>
+            <div className="rp-veh">
+              {vehicles.map((v) => {
+                const m = estimateMiles(pickup, dropoff)
+                const f = m > 0 ? v.base + m * v.perMile : 0
+                return (
                   <div key={v.id} className={'rp-vehcard' + (v.id === vehicleId ? ' sel' : '')} onClick={() => setVehicleId(v.id)}>
-                    <div style={{ fontSize: 26 }}>{v.icon}</div>
+                    <div style={{ fontSize: 24 }}>{v.icon}</div>
                     <div className="rp-vehname">{v.name}</div>
                     <div className="rp-vehdesc">{v.desc}</div>
-                    <div className="rp-vehfare">{fareFor(v) > 0 ? '$' + fareFor(v).toFixed(2) : '—'}</div>
+                    <div className="rp-vehfare">{f > 0 ? '$' + f.toFixed(2) : '—'}</div>
                   </div>
-                ))}
-              </div>
+                )
+              })}
             </div>
 
             <div className="rp-card">
               <div className="rp-farebox">
                 <div>
-                  <div className="rp-muted">{vehicle.name + ' • ' + (miles > 0 ? miles + ' mi' : 'enter your trip')}</div>
-                  <div className="rp-farebig">{'$' + fare.toFixed(2)}</div>
+                  <div className="rp-muted">{vehicle.name}{miles > 0 ? ' • ' + miles + ' mi' : ' • enter your trip'}</div>
+                  <div className="rp-farebig">{fare > 0 ? '$' + fare.toFixed(2) : '$0.00'}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div className="rp-muted">Pickup in</div>
-                  <div style={{ fontWeight: 800, fontSize: 18 }}>{vehicle.eta + ' min'}</div>
+                  <div style={{ fontWeight: 700 }}>{vehicle.eta} min</div>
                 </div>
               </div>
-              <button className="rp-btn" onClick={requestRide} disabled={!canRequest}>
-                {canRequest ? 'Request ' + vehicle.name : 'Enter pickup & drop-off'}
-              </button>
+              <button className="rp-btn" disabled={!canRequest} onClick={request}>{canRequest ? 'Request ' + vehicle.name : 'Enter pickup & drop-off'}</button>
             </div>
           </>
         )}
@@ -166,45 +202,32 @@ export default function RidePage() {
         {stage === STAGE.SEARCHING && (
           <div className="rp-card" style={{ textAlign: 'center' }}>
             <div className="rp-spin" />
-            <div style={{ fontWeight: 800, fontSize: 18, marginTop: 8 }}>Finding your driver...</div>
-            <div className="rp-muted" style={{ marginTop: 6 }}>
-              {'Matching you with a nearby ' + vehicle.name.toLowerCase() + ' driver'}
-            </div>
-            <button className="rp-ghost" onClick={reset}>Cancel</button>
+            <div className="rp-muted">Matching you with a nearby {vehicle.name} driver</div>
+            <button className="rp-ghost" onClick={cancel}>Cancel</button>
           </div>
         )}
 
         {stage === STAGE.ONWAY && (
           <div className="rp-card">
-            <div style={{ fontWeight: 800, fontSize: 18 }}>Your driver is on the way</div>
             <div className="rp-row" style={{ borderTop: 'none' }}>
               <div className="rp-avatar">🧑</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800 }}>{'Marcus • ' + vehicle.name}</div>
-                <div className="rp-muted">{'⭐ 4.9 • Yellow • Plate OT-2245'}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 800, fontSize: 22, color: '#ffd21f' }}>{eta}</div>
-                <div className="rp-muted">min away</div>
+              <div>
+                <div style={{ fontWeight: 700 }}>Marcus • {vehicle.name}</div>
+                <div className="rp-muted"><span style={{ color: '#ffd21f' }}>⭐ 4.9</span> • Yellow • Plate OT-2245</div>
               </div>
             </div>
             <div className="rp-row">
-              <div style={{ flex: 1 }}>
-                <div className="rp-muted">Trip</div>
-                <div style={{ fontWeight: 700 }}>{pickup + ' → ' + dropoff}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="rp-muted">Fare</div>
-                <div style={{ fontWeight: 800 }}>{'$' + fare.toFixed(2)}</div>
-              </div>
+              <div className="rp-muted">{pickup} → {dropoff}</div>
             </div>
-            <button className="rp-ghost" onClick={reset}>Cancel ride</button>
+            <div className="rp-farebox">
+              <div className="rp-muted">Arriving in {eta > 0 ? eta : 1} min</div>
+              <div style={{ fontWeight: 800 }}>${fare.toFixed(2)}</div>
+            </div>
+            <button className="rp-ghost" onClick={cancel}>Cancel ride</button>
           </div>
         )}
 
-        <p className="rp-muted" style={{ marginTop: 22, textAlign: 'center' }}>
-          {'Demo ride flow • live driver matching and payments connect next.'}
-        </p>
+        <div className="rp-muted" style={{ textAlign: 'center', marginTop: 18 }}>Demo ride flow • live driver matching and payments connect next.</div>
       </div>
     </div>
   )
