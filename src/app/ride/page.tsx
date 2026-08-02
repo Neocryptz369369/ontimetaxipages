@@ -31,7 +31,7 @@ function loadMapbox(): Promise<any> {
 
 async function geocode(q: string): Promise<any[]> {
   if (!q || !MAPBOX_TOKEN) return []
-  const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=5&access_token=' + MAPBOX_TOKEN
+  const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=5&country=us&proximity=-85.7550,38.3981&access_token=' + MAPBOX_TOKEN
   try {
     const r = await fetch(url)
     const j = await r.json()
@@ -77,8 +77,8 @@ export default function RidePage() {
     mapRef.current = new mapboxgl.Map({
       container: mapDivRef.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-74.006, 40.7128],
-      zoom: 11,
+      center: [-85.7550, 38.3981],
+      zoom: 12,
     })
     const m = mapRef.current
     m.on('load', () => m.resize())
