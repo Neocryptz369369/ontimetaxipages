@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
   params.append('mode', 'payment')
   params.append('success_url', origin + '/ride/success?session_id={CHECKOUT_SESSION_ID}')
   params.append('cancel_url', origin + '/ride?canceled=1')
-  params.append('automatic_payment_methods[enabled]', 'true')
   params.append('line_items[0][quantity]', '1')
   params.append('line_items[0][price_data][currency]', 'usd')
   params.append('line_items[0][price_data][unit_amount]', String(amount))
