@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/ride';
+  const next = params?.get('next') || '/ride';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
