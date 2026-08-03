@@ -5,6 +5,26 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
+async function uploadPendingPhoto(userId: string) {
+  try {
+    const raw = sessionStorage.getItem('pendingPhoto');
+    if (!raw) return;
+    const { name, type, dataUrl } = JSON.parse(raw);
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const ext = (name.split('.').pop() || 'jpg').toLowerCase();
+    const path = userId + '/avatar.' + ext;
+    const { error: upErr } = await supabase.storage
+      .from('profile-photos')
+      .upload(path, blob, { upsert: true, contentType: type });
+    if (upErr) throw upErr;
+    await supabase.from('profiles').update({ photo_url: path }).eq('id', userId);
+    sessionStorage.removeItem('pendingPhoto');
+  } catch {
+    // Non-fatal: user can add their photo later from their account.
+  }
+}
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -21,11 +41,13 @@ function LoginForm() {
     if (!email.trim() || !password) { setError('Please enter your email and password.'); return; }
     setLoading(true);
     try {
-      const { error: signErr } = await supabase.auth.signInWithPassword({
+      const { data, error: signErr } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (signErr) throw signErr;
+      const userId = data.user?.id;
+      if (userId) await uploadPendingPhoto(userId);
       router.push(next);
     } catch (err: any) {
       setError(err?.message || 'Could not sign in. Please check your details.');
