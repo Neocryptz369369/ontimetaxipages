@@ -4,6 +4,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 
+async function uploadPhoto(userId: string, photo: File) {
+  const ext = (photo.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = userId + '/avatar.' + ext;
+  const { error: upErr } = await supabase.storage
+    .from('profile-photos')
+    .upload(path, photo, { upsert: true, contentType: photo.type });
+  if (upErr) throw upErr;
+  const { error: updErr } = await supabase
+    .from('profiles')
+    .update({ photo_url: path })
+    .eq('id', userId);
+  if (updErr) throw updErr;
+}
+
 export default function SignUpPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -40,23 +54,23 @@ export default function SignUpPage() {
       });
       if (signErr) throw signErr;
       const userId = data.user?.id;
-      if (!userId) throw new Error('Account could not be created. Please try again.');
 
-      const ext = (photo.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = userId + '/avatar.' + ext;
-      const { error: upErr } = await supabase.storage
-        .from('profile-photos')
-        .upload(path, photo, { upsert: true, contentType: photo.type });
-      if (upErr) throw upErr;
-
-      const { error: profErr } = await supabase.from('profiles').insert({
-        id: userId,
-        full_name: fullName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        photo_url: path,
-      });
-      if (profErr) throw profErr;
+      // The profile row is created automatically by a database trigger.
+      // If we already have a session (email confirmation disabled), upload the
+      // photo now. Otherwise stash it and upload on first sign-in.
+      if (data.session && userId) {
+        await uploadPhoto(userId, photo);
+      } else {
+        try {
+          const reader = new FileReader();
+          const dataUrl: string = await new Promise((res, rej) => {
+            reader.onload = () => res(reader.result as string);
+            reader.onerror = rej;
+            reader.readAsDataURL(photo);
+          });
+          sessionStorage.setItem('pendingPhoto', JSON.stringify({ name: photo.name, type: photo.type, dataUrl }));
+        } catch {}
+      }
 
       setDone(true);
     } catch (err: any) {
@@ -77,7 +91,7 @@ export default function SignUpPage() {
             <div style={{ textAlign: 'center' }}>
               <h1 style={{ color: '#0f172a', fontSize: 22, margin: '0 0 12px' }}>Check your email</h1>
               <p style={{ color: '#475569', lineHeight: 1.6, margin: '0 0 20px' }}>
-                We sent a confirmation link to <strong>{email}</strong>. Please confirm your email address, then sign in to book your ride.
+                We sent a confirmation link to <strong>{email}</strong>. Please confirm your email address, then sign in to finish setting up your account and book your ride.
               </p>
               <Link href="/login" style={{ display: 'inline-block', background: '#2563eb', color: '#fff', padding: '12px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>Go to sign in</Link>
             </div>
