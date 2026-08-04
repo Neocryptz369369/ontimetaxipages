@@ -365,10 +365,10 @@ export default function RidePage() {
           {stage === STAGE.ONWAY && (
             <div>
               <div className="rp-row">
-                <div className="rp-avatar">M</div>
+                <div className="rp-avatar">D</div>
                 <div>
-                  <div style={{ fontWeight: 700 }}>Marcus &middot; On-Time Taxi</div>
-                  <div className="rp-muted">4.9 stars &middot; Yellow cab &middot; Plate OT-2245</div>
+                  <div style={{ fontWeight: 700 }}>Dennis &middot; On Time Taxi</div>
+                  <div className="rp-muted">Your On Time Taxi driver</div>
                 </div>
               </div>
               <div className="rp-tripline">${fare.toFixed(2)} \u00b7 {miles.toFixed(1)} mi \u00b7 On the way</div>
