@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
+import { supabase } from '@/lib/supabase'
 
 const BASE_FARE = 5.0
 const PER_MILE = 2.0
@@ -57,6 +58,19 @@ export default function RidePage() {
   const [dropoffSug, setDropoffSug] = useState<any[]>([])
   const [stage, setStage] = useState<Stage>(STAGE.PLAN)
   const [miles, setMiles] = useState(0)
+  const [baseFare, setBaseFare] = useState(BASE_FARE)
+  const [perMile, setPerMile] = useState(PER_MILE)
+
+  useEffect(() => {
+    let alive = true
+    supabase.from('app_settings').select('base_fee, per_mile').eq('id', 1).single().then(({ data }) => {
+      if (alive && data) {
+        if (data.base_fee != null) setBaseFare(Number(data.base_fee))
+        if (data.per_mile != null) setPerMile(Number(data.per_mile))
+      }
+    })
+    return () => { alive = false }
+  }, [])
   const [paying, setPaying] = useState(false)
   const [payError, setPayError] = useState('')
   const [mapsReady, setMapsReady] = useState(false)
@@ -161,7 +175,7 @@ export default function RidePage() {
     }
   }
 
-  const fare = miles > 0 ? BASE_FARE + PER_MILE * miles : BASE_FARE
+  const fare = miles > 0 ? baseFare + perMile * miles : baseFare
 
   return (
     <div className="rp-wrap">
@@ -205,7 +219,7 @@ export default function RidePage() {
 
               <div className="rp-farebox">
                 <div className="rp-farebig">${fare.toFixed(2)}</div>
-                <div className="rp-rate">$5.00 base + $2.00 per mile{miles > 0 ? ' \u00b7 ' + miles.toFixed(1) + ' mi' : ''}</div>
+                <div className="rp-rate">${baseFare.toFixed(2)} base + ${perMile.toFixed(2)} per mile{miles > 0 ? ' \u00b7 ' + miles.toFixed(1) + ' mi' : ''}</div>
               </div>
               <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord || paying} onClick={startCheckout}>{paying ? 'Processing...' : 'Request On Time Taxi'}</button>
               {payError && <div className="rp-payerr">{payError}</div>}
