@@ -1,10 +1,30 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
+
+const ADMIN_MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+let adminMapboxPromise: Promise<any> | null = null;
+function loadAdminMapbox(): Promise<any> {
+  if (typeof window === "undefined") return Promise.reject("no window");
+  if ((window as any).mapboxgl) return Promise.resolve((window as any).mapboxgl);
+  if (adminMapboxPromise) return adminMapboxPromise;
+  adminMapboxPromise = new Promise((resolve, reject) => {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css";
+    document.head.appendChild(css);
+    const s = document.createElement("script");
+    s.src = "https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js";
+    s.onload = () => resolve((window as any).mapboxgl);
+    s.onerror = () => reject("failed to load mapbox");
+    document.head.appendChild(s);
+  });
+  return adminMapboxPromise;
+}
 
 const sections = [
   {
@@ -74,6 +94,15 @@ export default function AdminPage() {
   const [priceMsg, setPriceMsg] = useState("");
   const [incoming, setIncoming] = useState<any[]>([]);
   const [rideMsg, setRideMsg] = useState("");
+  const [activeDrive, setActiveDrive] = useState<any>(null);
+  const [riderPos, setRiderPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [driveGeoError, setDriveGeoError] = useState("");
+  const adminMapsReady = useRef<boolean>(false);
+  const adminMapDivRef = useRef<HTMLDivElement | null>(null);
+  const adminMapRef = useRef<any>(null);
+  const adminRiderMarkerRef = useRef<any>(null);
+  const adminDriverMarkerRef = useRef<any>(null);
+  const adminWatchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -120,6 +149,117 @@ export default function AdminPage() {
     };
   }, [isLoggedIn]);
 
+  // Load Mapbox once the driver is logged in
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let alive = true;
+    loadAdminMapbox()
+      .then(() => { if (alive) adminMapsReady.current = true; })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [isLoggedIn]);
+
+  // On login, resume any ride already accepted/picked_up so the map reappears after refresh
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let alive = true;
+    supabase
+      .from("rides")
+      .select("*")
+      .in("status", ["accepted", "picked_up"])
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (!alive) return;
+        const ride = data && data[0] ? data[0] : null;
+        if (ride) {
+          setActiveDrive(ride);
+          if (ride.rider_lat != null && ride.rider_lng != null) {
+            setRiderPos({ lat: ride.rider_lat, lng: ride.rider_lng });
+          }
+        }
+      });
+    return () => { alive = false; };
+  }, [isLoggedIn]);
+
+  // While driving an active ride: stream driver GPS out, receive rider GPS in
+  useEffect(() => {
+    if (!activeDrive) return;
+    let channel: any = null;
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      adminWatchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setDriveGeoError("");
+          supabase
+            .from("rides")
+            .update({ driver_lat: lat, driver_lng: lng, updated_at: new Date().toISOString() })
+            .eq("id", activeDrive.id)
+            .then(() => {});
+        },
+        () => { setDriveGeoError("Location access is off. Turn it on so the rider can see you."); },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+      );
+    }
+    channel = supabase
+      .channel("drive-track-" + activeDrive.id)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rides", filter: "id=eq." + activeDrive.id }, (payload: any) => {
+        const r = payload.new;
+        setActiveDrive(r);
+        if (r.rider_lat != null && r.rider_lng != null) setRiderPos({ lat: r.rider_lat, lng: r.rider_lng });
+      })
+      .subscribe();
+    return () => {
+      if (adminWatchIdRef.current != null && typeof navigator !== "undefined" && navigator.geolocation) navigator.geolocation.clearWatch(adminWatchIdRef.current);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [activeDrive ? activeDrive.id : null]);
+
+  // Build the map once its container is on screen
+  useEffect(() => {
+    if (!activeDrive || !adminMapsReady.current || !adminMapDivRef.current || adminMapRef.current) return;
+    const mapboxgl = (window as any).mapboxgl;
+    if (!mapboxgl) return;
+    mapboxgl.accessToken = ADMIN_MAPBOX_TOKEN;
+    adminMapRef.current = new mapboxgl.Map({
+      container: adminMapDivRef.current,
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: [-85.755, 38.3981],
+      zoom: 12,
+    });
+    const m = adminMapRef.current;
+    m.on("load", () => m.resize());
+  }, [activeDrive, driveGeoError]);
+
+  // Draw / move the rider + driver pins
+  useEffect(() => {
+    const mapboxgl = (window as any).mapboxgl;
+    const m = adminMapRef.current;
+    if (!mapboxgl || !m || !activeDrive) return;
+    if (activeDrive.driver_lat != null && activeDrive.driver_lng != null) {
+      const c: [number, number] = [activeDrive.driver_lng, activeDrive.driver_lat];
+      if (!adminDriverMarkerRef.current) adminDriverMarkerRef.current = new mapboxgl.Marker({ color: "#d81b1b" }).setLngLat(c).addTo(m);
+      else adminDriverMarkerRef.current.setLngLat(c);
+    }
+    if (riderPos) {
+      const c: [number, number] = [riderPos.lng, riderPos.lat];
+      if (!adminRiderMarkerRef.current) adminRiderMarkerRef.current = new mapboxgl.Marker({ color: "#1a73e8" }).setLngLat(c).addTo(m);
+      else adminRiderMarkerRef.current.setLngLat(c);
+    }
+    if (riderPos && activeDrive.driver_lat != null) {
+      try {
+        const b = new mapboxgl.LngLatBounds();
+        b.extend([activeDrive.driver_lng, activeDrive.driver_lat]);
+        b.extend([riderPos.lng, riderPos.lat]);
+        m.fitBounds(b, { padding: 80, maxZoom: 15, duration: 500 });
+      } catch (e) {}
+    } else if (riderPos) {
+      try { m.easeTo({ center: [riderPos.lng, riderPos.lat], zoom: 14, duration: 500 }); } catch (e) {}
+    }
+  }, [activeDrive, riderPos]);
+
+
   async function acceptRide(id: string) {
     setRideMsg("");
     const { error: acceptError } = await supabase
@@ -132,6 +272,13 @@ export default function AdminPage() {
     }
     setIncoming((prev) => prev.filter((r) => r.id !== id));
     setRideMsg("Ride accepted.");
+    const { data: acceptedRide } = await supabase.from("rides").select("*").eq("id", id).single();
+    if (acceptedRide) {
+      setActiveDrive(acceptedRide);
+      if (acceptedRide.rider_lat != null && acceptedRide.rider_lng != null) {
+        setRiderPos({ lat: acceptedRide.rider_lat, lng: acceptedRide.rider_lng });
+      }
+    }
   }
 
   async function savePrices() {
@@ -498,6 +645,36 @@ export default function AdminPage() {
             Preview: a 5-mile ride costs ${(Number(baseFee || 0) + Number(perMile || 0) * 5).toFixed(2)}.
           </p>
         </div>
+
+        {activeDrive && (
+          <div
+            style={{
+              marginTop: "32px",
+              padding: "28px",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "linear-gradient(180deg, rgba(40,8,8,0.6), rgba(20,4,4,0.6))",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+              <h2 style={{ margin: 0, fontSize: "18px", color: "#fff" }}>Current ride — live location</h2>
+            </div>
+            <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
+              {activeDrive.profiles?.full_name ? activeDrive.profiles.full_name + " • " : ""}
+              {activeDrive.pickup ? "Pickup: " + activeDrive.pickup : ""}
+            </p>
+            <div
+              ref={adminMapDivRef}
+              style={{ width: "100%", height: "320px", borderRadius: "12px", overflow: "hidden", background: "#111" }}
+            />
+            <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: "12px", marginBottom: 0 }}>
+              {riderPos ? "Rider location is live (blue). Your location is red." : "Waiting for the rider's location..."}
+            </p>
+            {driveGeoError && (
+              <p style={{ color: "#ffb4b4", fontSize: "13px", marginTop: "6px", marginBottom: 0 }}>{driveGeoError}</p>
+            )}
+          </div>
+        )}
 
         <div
           style={{
