@@ -97,7 +97,7 @@ export default function AdminPage() {
   const [activeDrive, setActiveDrive] = useState<any>(null);
   const [riderPos, setRiderPos] = useState<{ lat: number; lng: number } | null>(null);
   const [driveGeoError, setDriveGeoError] = useState("");
-  const adminMapsReady = useRef<boolean>(false);
+  const [adminMapsReady, setAdminMapsReady] = useState(false);
   const adminMapDivRef = useRef<HTMLDivElement | null>(null);
   const adminMapRef = useRef<any>(null);
   const adminRiderMarkerRef = useRef<any>(null);
@@ -154,7 +154,7 @@ export default function AdminPage() {
     if (!isLoggedIn) return;
     let alive = true;
     loadAdminMapbox()
-      .then(() => { if (alive) adminMapsReady.current = true; })
+      .then(() => { if (alive) setAdminMapsReady(true); })
       .catch(() => {});
     return () => { alive = false; };
   }, [isLoggedIn]);
@@ -218,7 +218,7 @@ export default function AdminPage() {
 
   // Build the map once its container is on screen
   useEffect(() => {
-    if (!activeDrive || !adminMapsReady.current || !adminMapDivRef.current || adminMapRef.current) return;
+    if (!activeDrive || !adminMapsReady || !adminMapDivRef.current || adminMapRef.current) return;
     const mapboxgl = (window as any).mapboxgl;
     if (!mapboxgl) return;
     mapboxgl.accessToken = ADMIN_MAPBOX_TOKEN;
@@ -230,7 +230,9 @@ export default function AdminPage() {
     });
     const m = adminMapRef.current;
     m.on("load", () => m.resize());
-  }, [activeDrive, driveGeoError]);
+    setTimeout(() => { try { m.resize(); } catch (e) {} }, 300);
+    setTimeout(() => { try { m.resize(); } catch (e) {} }, 1000);
+  }, [activeDrive, adminMapsReady]);
 
   // Draw / move the rider + driver pins
   useEffect(() => {
