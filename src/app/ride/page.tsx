@@ -153,6 +153,11 @@ export default function RidePage() {
     setDropoffSug([])
   }
 
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
+
   async function startCheckout() {
     setPayError('')
     setPaying(true)
@@ -199,6 +204,7 @@ export default function RidePage() {
         <nav className="rp-nav">
           <Link href="/" className="rp-brand">On Time Taxi</Link>
           <Link href="/" className="rp-navlink">Home</Link>
+          <button type="button" onClick={handleSignOut} className="rp-navlink" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Sign out</button>
         </nav>
 
         <div className="rp-map">
