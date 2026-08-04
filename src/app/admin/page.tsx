@@ -72,6 +72,8 @@ export default function AdminPage() {
   const [perMile, setPerMile] = useState("2.00");
   const [savingPrice, setSavingPrice] = useState(false);
   const [priceMsg, setPriceMsg] = useState("");
+  const [incoming, setIncoming] = useState<any[]>([]);
+  const [rideMsg, setRideMsg] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -95,6 +97,42 @@ export default function AdminPage() {
         }
       });
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    async function loadRides() {
+      const { data } = await supabase
+        .from("rides")
+        .select("id, pickup, dropoff, fare, status, created_at, rider_id, profiles(full_name, phone, photo_url)")
+        .eq("status", "requested")
+        .order("created_at", { ascending: true });
+      setIncoming(data || []);
+    }
+    loadRides();
+    const channel = supabase
+      .channel("rides-incoming")
+      .on("postgres_changes", { event: "*", schema: "public", table: "rides" }, () => {
+        loadRides();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isLoggedIn]);
+
+  async function acceptRide(id: string) {
+    setRideMsg("");
+    const { error: acceptError } = await supabase
+      .from("rides")
+      .update({ status: "accepted" })
+      .eq("id", id);
+    if (acceptError) {
+      setRideMsg("Could not accept the ride. Please try again.");
+      return;
+    }
+    setIncoming((prev) => prev.filter((r) => r.id !== id));
+    setRideMsg("Ride accepted.");
+  }
 
   async function savePrices() {
     const b = Number(baseFee);
@@ -459,6 +497,95 @@ export default function AdminPage() {
           <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: "16px", marginBottom: 0 }}>
             Preview: a 5-mile ride costs ${(Number(baseFee || 0) + Number(perMile || 0) * 5).toFixed(2)}.
           </p>
+        </div>
+
+        <div
+          style={{
+            marginTop: "32px",
+            padding: "28px",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "linear-gradient(180deg, rgba(40,6,6,0.6), rgba(10,0,0,0.4))",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 17h14M6 17l1-5a3 3 0 0 1 3-2h4a3 3 0 0 1 3 2l1 5" />
+              <circle cx="7.5" cy="17.5" r="1.5" />
+              <circle cx="16.5" cy="17.5" r="1.5" />
+            </svg>
+            <h2 style={{ margin: 0, fontSize: "18px", color: "#fff" }}>Incoming rides</h2>
+          </div>
+          <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
+            New ride requests appear here in real time. Accept one to pick it up.
+          </p>
+          {rideMsg ? (
+            <p style={{ color: "#ffd7d7", fontSize: "13px", marginBottom: "12px" }}>{rideMsg}</p>
+          ) : null}
+          {incoming.length === 0 ? (
+            <p style={{ color: "#c98f8f", fontSize: "14px" }}>No ride requests right now.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {incoming.map((r) => (
+                <div
+                  key={r.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {r.profiles && r.profiles.photo_url ? (
+                    <img
+                      src={r.profiles.photo_url}
+                      alt=""
+                      style={{ width: "52px", height: "52px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: "#fff", fontSize: "15px", fontWeight: 600 }}>
+                      {r.profiles ? r.profiles.full_name : "Rider"}
+                    </div>
+                    <div style={{ color: "#c98f8f", fontSize: "13px" }}>
+                      {r.profiles ? r.profiles.phone : ""}
+                    </div>
+                    <div style={{ color: "#e9c7c7", fontSize: "13px", marginTop: "6px" }}>
+                      <strong>From:</strong> {r.pickup}
+                    </div>
+                    <div style={{ color: "#e9c7c7", fontSize: "13px" }}>
+                      <strong>To:</strong> {r.dropoff}
+                    </div>
+                    <div style={{ color: "#fff", fontSize: "13px", marginTop: "6px" }}>
+                      Fare: ${Number(r.fare || 0).toFixed(2)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => acceptRide(r.id)}
+                    style={{
+                      flexShrink: 0,
+                      padding: "10px 18px",
+                      borderRadius: "10px",
+                      border: "none",
+                      cursor: "pointer",
+                      background: "#e11d1d",
+                      color: "#fff",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Accept / Pick up
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div
