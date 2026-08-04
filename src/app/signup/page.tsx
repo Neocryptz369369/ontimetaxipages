@@ -50,7 +50,10 @@ export default function SignUpPage() {
       const { data, error: signErr } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { full_name: fullName.trim(), phone: phone.trim() } },
+        options: {
+          data: { full_name: fullName.trim(), phone: phone.trim() },
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
       });
       if (signErr) throw signErr;
       const userId = data.user?.id;
