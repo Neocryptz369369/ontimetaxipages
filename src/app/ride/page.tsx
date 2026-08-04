@@ -157,6 +157,22 @@ export default function RidePage() {
     setPayError('')
     setPaying(true)
     try {
+      // record the ride request so the driver can see it
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const rideFare = miles > 0 ? baseFare + perMile * miles : baseFare
+          await supabase.from('rides').insert({
+            rider_id: user.id,
+            pickup,
+            dropoff,
+            fare: rideFare,
+            status: 'requested',
+          })
+        }
+      } catch (rideErr) {
+        // non-blocking: continue to checkout even if ride logging fails
+      }
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
