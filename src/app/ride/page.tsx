@@ -372,6 +372,26 @@ export default function RidePage() {
                 </div>
               </div>
               <div className="rp-tripline">${fare.toFixed(2)} \u00b7 {miles.toFixed(1)} mi \u00b7 On the way</div>
+              {activeRide && !activeRide.rider_confirmed_pickup && activeRide.status !== 'picked_up' && (
+                <button
+                  className="rp-btn"
+                  style={{ background: '#1a7f37', color: '#fff', width: '100%', marginBottom: 10 }}
+                  onClick={async () => {
+                    const bothNow = activeRide.driver_confirmed_pickup === true
+                    const patch = bothNow
+                      ? { rider_confirmed_pickup: true, status: 'picked_up' }
+                      : { rider_confirmed_pickup: true }
+                    const { data } = await supabase.from('rides').update(patch).eq('id', activeRide.id).select('*')
+                    if (data && data[0]) setActiveRide(data[0])
+                  }}
+                >I&rsquo;m in the car &mdash; confirm pickup</button>
+              )}
+              {activeRide && activeRide.rider_confirmed_pickup && activeRide.status !== 'picked_up' && (
+                <div className="rp-tripline" style={{ color: '#1a7f37' }}>Pickup confirmed &middot; waiting for your driver to confirm&hellip;</div>
+              )}
+              {activeRide && activeRide.status === 'picked_up' && (
+                <div className="rp-tripline" style={{ color: '#1a7f37', fontWeight: 700 }}>You&rsquo;re picked up &middot; on your way</div>
+              )}
               <button className="rp-btn rp-ghost" onClick={() => setStage(STAGE.PLAN)}>Cancel ride</button>
             </div>
           )}
