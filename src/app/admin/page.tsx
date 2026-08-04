@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
+const ADMIN_EMAIL = "neocryptz@yahoo.com";
+
 const sections = [
   {
     title: "Panic archive",
@@ -72,6 +74,14 @@ export default function AdminPage() {
   const [priceMsg, setPriceMsg] = useState("");
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user && (data.user.email || "").toLowerCase() === ADMIN_EMAIL) {
+        setIsLoggedIn(true);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     if (!isLoggedIn) return;
     supabase
       .from("app_settings")
@@ -110,13 +120,26 @@ export default function AdminPage() {
   }
 
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (username.trim() === "" || password.trim() === "") {
-      setError("Enter your username and password first.");
+      setError("Enter your email and password first.");
       return;
     }
     setError("");
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: username.trim(),
+      password,
+    });
+    if (signInError || !data.user) {
+      setError("Invalid email or password.");
+      return;
+    }
+    if ((data.user.email || "").toLowerCase() !== ADMIN_EMAIL) {
+      await supabase.auth.signOut();
+      setError("This account is not authorized for admin access.");
+      return;
+    }
     setIsLoggedIn(true);
   }
 
@@ -181,10 +204,10 @@ export default function AdminPage() {
             </p>
 
             <label style={{ display: "block", fontSize: "13px", marginBottom: "6px", color: "#ffd7d7" }}>
-              Username
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="off"
