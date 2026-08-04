@@ -78,6 +78,13 @@ export default function RidePage() {
   const mapRef = useRef<any>(null)
   const pickMarkerRef = useRef<any>(null)
   const dropMarkerRef = useRef<any>(null)
+  const [activeRide, setActiveRide] = useState<any>(null)
+  const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [geoError, setGeoError] = useState('')
+  const riderMarkerRef = useRef<any>(null)
+  const driverMarkerRef = useRef<any>(null)
+  const watchIdRef = useRef<number | null>(null)
+
 
   useEffect(() => {
     let alive = true
@@ -198,6 +205,88 @@ export default function RidePage() {
 
   const fare = miles > 0 ? baseFare + perMile * miles : baseFare
 
+  // Live tracking: find the rider's active ride, stream their GPS, and receive the driver's GPS
+  useEffect(() => {
+    let alive = true
+    let channel: any = null
+
+    async function boot() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || !alive) return
+      const { data } = await supabase
+        .from('rides')
+        .select('*')
+        .eq('rider_id', user.id)
+        .in('status', ['accepted', 'picked_up'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (!alive) return
+      const ride = data && data[0] ? data[0] : null
+      setActiveRide(ride)
+      if (!ride) return
+      setStage(STAGE.ONWAY)
+      if (ride.driver_lat != null && ride.driver_lng != null) {
+        setDriverPos({ lat: ride.driver_lat, lng: ride.driver_lng })
+      }
+
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) => {
+            const lat = pos.coords.latitude
+            const lng = pos.coords.longitude
+            setGeoError('')
+            supabase.from('rides').update({ rider_lat: lat, rider_lng: lng, updated_at: new Date().toISOString() }).eq('id', ride.id).then(() => {})
+          },
+          () => { setGeoError('Location access is off. Turn it on so your driver can find you.') },
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+        )
+      }
+
+      channel = supabase
+        .channel('ride-track-' + ride.id)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: 'id=eq.' + ride.id }, (payload: any) => {
+          const r = payload.new
+          setActiveRide(r)
+          if (r.driver_lat != null && r.driver_lng != null) setDriverPos({ lat: r.driver_lat, lng: r.driver_lng })
+        })
+        .subscribe()
+    }
+    boot()
+
+    return () => {
+      alive = false
+      if (watchIdRef.current != null && typeof navigator !== 'undefined' && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current)
+      if (channel) supabase.removeChannel(channel)
+    }
+  }, [])
+
+  // Draw rider + driver pins on the existing map while tracking
+  useEffect(() => {
+    const mapboxgl = (window as any).mapboxgl
+    const m = mapRef.current
+    if (!mapboxgl || !m || !activeRide) return
+    if (activeRide.rider_lat != null && activeRide.rider_lng != null) {
+      const c: [number, number] = [activeRide.rider_lng, activeRide.rider_lat]
+      if (!riderMarkerRef.current) riderMarkerRef.current = new mapboxgl.Marker({ color: '#1a73e8' }).setLngLat(c).addTo(m)
+      else riderMarkerRef.current.setLngLat(c)
+    }
+    if (driverPos) {
+      const c: [number, number] = [driverPos.lng, driverPos.lat]
+      if (!driverMarkerRef.current) driverMarkerRef.current = new mapboxgl.Marker({ color: '#d81b1b' }).setLngLat(c).addTo(m)
+      else driverMarkerRef.current.setLngLat(c)
+    }
+    if (driverPos && activeRide.rider_lat != null) {
+      try {
+        const b = new mapboxgl.LngLatBounds()
+        b.extend([activeRide.rider_lng, activeRide.rider_lat])
+        b.extend([driverPos.lng, driverPos.lat])
+        m.fitBounds(b, { padding: 80, maxZoom: 15, duration: 500 })
+      } catch (e) {}
+    } else if (activeRide.rider_lat != null) {
+      try { m.easeTo({ center: [activeRide.rider_lng, activeRide.rider_lat], zoom: 14, duration: 500 }) } catch (e) {}
+    }
+  }, [activeRide, driverPos])
+
   return (
     <div className="rp-wrap">
       <div className="rp-shell">
@@ -213,6 +302,19 @@ export default function RidePage() {
         </div>
 
         <div className="rp-card">
+          {activeRide && (
+            <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(216,27,27,0.12)', border: '1px solid rgba(216,27,27,0.35)' }}>
+              <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                {activeRide.status === 'picked_up' ? 'You are on your way' : 'Your driver is on the way'}
+              </div>
+              <div style={{ fontSize: '13px', opacity: 0.85 }}>
+                {driverPos ? 'Live location updating on the map above.' : 'Waiting for your driver location...'}
+              </div>
+              {geoError && (
+                <div style={{ fontSize: '13px', color: '#ffb4b4', marginTop: '6px' }}>{geoError}</div>
+              )}
+            </div>
+          )}
           {stage === STAGE.PLAN && (
             <>
               <div className="rp-label">Where to?</div>
