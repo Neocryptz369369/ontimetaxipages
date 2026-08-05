@@ -194,8 +194,13 @@ export default function RidePage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const rideFare = miles > 0 ? baseFare + perMile * miles : baseFare
+          const meta = (user.user_metadata || {})
+          const riderName = meta.full_name || meta.name || user.email || ''
+          const riderPhone = meta.phone || meta.phone_number || ''
           await supabase.from('rides').insert({
             rider_id: user.id,
+            rider_name: riderName,
+            rider_phone: riderPhone,
             pickup,
             dropoff,
             fare: rideFare,
