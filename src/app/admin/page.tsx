@@ -712,6 +712,24 @@ export default function AdminPage() {
           {activeDrive && activeDrive.status === "picked_up" && (
             <p style={{ color: "#7fd18f", fontSize: "14px", fontWeight: 700, marginTop: "12px", marginBottom: 0 }}>Trip in progress</p>
           )}
+          {activeDrive && activeDrive.status === "picked_up" && (
+            <button
+              onClick={async () => {
+                const { data } = await supabase
+                  .from("rides")
+                  .update({ status: "completed" })
+                  .eq("id", activeDrive.id)
+                  .select("*");
+                if (data && data[0]) setActiveDrive(data[0]);
+              }}
+              style={{ width: "100%", marginTop: "16px", padding: "14px", borderRadius: "12px", border: "none", background: "#8a1220", color: "#fff", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
+            >
+              Rider dropped off &mdash; complete ride
+            </button>
+          )}
+          {activeDrive && activeDrive.status === "completed" && (
+            <p style={{ color: "#7fd18f", fontSize: "14px", fontWeight: 700, marginTop: "12px", marginBottom: 0 }}>Ride completed</p>
+          )}
           </div>
         )}
 
