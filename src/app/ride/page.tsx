@@ -421,6 +421,7 @@ export default function RidePage() {
                 <div>
                   <div style={{ fontWeight: 700 }}>Dennis &middot; On Time Taxi</div>
                   <div className="rp-muted">Your On Time Taxi driver</div>
+                <a href="tel:+19302164166" className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: (930) 216-4166</a>
                 </div>
               </div>
               <div className="rp-tripline">${fare.toFixed(2)} \u00b7 {miles.toFixed(1)} mi \u00b7 On the way</div>
@@ -444,7 +445,22 @@ export default function RidePage() {
               {activeRide && activeRide.status === 'picked_up' && (
                 <div className="rp-tripline" style={{ color: '#1a7f37', fontWeight: 700 }}>You&rsquo;re picked up &middot; on your way</div>
               )}
-              <button className="rp-btn rp-ghost" onClick={() => setStage(STAGE.PLAN)}>Cancel ride</button>
+              <button
+                className="rp-btn rp-ghost"
+                onClick={async () => {
+                  try {
+                    if (activeRide && activeRide.id) {
+                      await supabase.from('rides').update({ status: 'canceled' }).eq('id', activeRide.id)
+                    }
+                  } catch (err) {}
+                  if (watchIdRef.current != null && typeof navigator !== 'undefined' && navigator.geolocation) {
+                    navigator.geolocation.clearWatch(watchIdRef.current)
+                    watchIdRef.current = null
+                  }
+                  setActiveRide(null)
+                  setStage(STAGE.PLAN)
+                }}
+              >Cancel ride</button>
             </div>
           )}
         </div>
