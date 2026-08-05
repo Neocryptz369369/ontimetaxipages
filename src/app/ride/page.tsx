@@ -131,7 +131,27 @@ export default function RidePage() {
     if (!map || !mapboxgl) return
     if (pickupCoord) {
       if (pickMarkerRef.current) pickMarkerRef.current.remove()
-      pickMarkerRef.current = new mapboxgl.Marker({ color: '#111' }).setLngLat(pickupCoord).addTo(map)
+      pickMarkerRef.current = new mapboxgl.Marker({ color: '#111', draggable: true }).setLngLat(pickupCoord).addTo(map)
+      pickMarkerRef.current.on('dragend', async () => {
+        const ll = pickMarkerRef.current.getLngLat()
+        const lng = ll.lng
+        const lat = ll.lat
+        setPickupCoord([lng, lat])
+        try {
+          if (MAPBOX_TOKEN) {
+            const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN
+            const res = await fetch(url)
+            const json = await res.json()
+            const name = json && json.features && json.features[0] ? json.features[0].place_name : ''
+            setPickup(name || (lat.toFixed(5) + ', ' + lng.toFixed(5)))
+          } else {
+            setPickup(lat.toFixed(5) + ', ' + lng.toFixed(5))
+          }
+        } catch (err) {
+          setPickup(lat.toFixed(5) + ', ' + lng.toFixed(5))
+        }
+        setPickupSug([])
+      })
     }
     if (dropoffCoord) {
       if (dropMarkerRef.current) dropMarkerRef.current.remove()
@@ -373,6 +393,34 @@ export default function RidePage() {
                   }, () => { alert('Could not get your location. Please allow location access.') })
                 }}
               >Use my current location</button>
+              <button
+                type="button"
+                className="rp-btn rp-ghost"
+                style={{ marginTop: 8, marginLeft: 8, fontSize: '13px', padding: '8px 12px' }}
+                onClick={async () => {
+                  const map = mapRef.current
+                  if (!map) { alert('Map is still loading, please try again.'); return }
+                  const c = map.getCenter()
+                  const lng = c.lng
+                  const lat = c.lat
+                  setPickupCoord([lng, lat])
+                  try {
+                    if (MAPBOX_TOKEN) {
+                      const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN
+                      const res = await fetch(url)
+                      const json = await res.json()
+                      const name = json && json.features && json.features[0] ? json.features[0].place_name : ''
+                      setPickup(name || (lat.toFixed(5) + ', ' + lng.toFixed(5)))
+                    } else {
+                      setPickup(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                    }
+                  } catch (err) {
+                    setPickup(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                  }
+                  setPickupSug([])
+                }}
+              >Drop a pin on the map</button>
+              <div className="rp-muted" style={{ marginTop: 6, fontSize: '12px' }}>Drop a pin, then drag it anywhere to set your exact pickup.</div>
                 {pickupSug.length > 0 && (
                   <div className="rp-suggest">
                     {pickupSug.map((s, i) => (
