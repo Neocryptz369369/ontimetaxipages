@@ -223,7 +223,19 @@ export default function RidePage() {
       if (!alive) return
       const ride = data && data[0] ? data[0] : null
       setActiveRide(ride)
-      if (!ride) return
+      if (!ride) {
+        channel = supabase
+          .channel('ride-pending-' + user.id)
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: 'rider_id=eq.' + user.id }, (payload: any) => {
+            const r = payload.new
+            if (r && (r.status === 'accepted' || r.status === 'picked_up')) {
+              if (channel) { supabase.removeChannel(channel); channel = null }
+              boot()
+            }
+          })
+          .subscribe()
+        return
+      }
       setStage(STAGE.ONWAY)
       if (ride.driver_lat != null && ride.driver_lng != null) {
         setDriverPos({ lat: ride.driver_lat, lng: ride.driver_lng })
