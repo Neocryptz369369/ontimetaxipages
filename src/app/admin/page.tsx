@@ -677,6 +677,27 @@ export default function AdminPage() {
             {driveGeoError && (
               <p style={{ color: "#ffb4b4", fontSize: "13px", marginTop: "6px", marginBottom: 0 }}>{driveGeoError}</p>
             )}
+          {activeDrive && !activeDrive.driver_confirmed_pickup && activeDrive.status !== "picked_up" && activeDrive.status !== "completed" && (
+            <button
+              onClick={async () => {
+                const bothNow = activeDrive.rider_confirmed_pickup === true;
+                const patch = bothNow
+                  ? { driver_confirmed_pickup: true, status: "picked_up" }
+                  : { driver_confirmed_pickup: true };
+                const { data } = await supabase.from("rides").update(patch).eq("id", activeDrive.id).select("*");
+                if (data && data[0]) setActiveDrive(data[0]);
+              }}
+              style={{ width: "100%", marginTop: "16px", padding: "14px", borderRadius: "12px", border: "none", background: "#1a7f37", color: "#fff", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
+            >
+              Confirm pickup
+            </button>
+          )}
+          {activeDrive && activeDrive.driver_confirmed_pickup && activeDrive.status !== "picked_up" && activeDrive.status !== "completed" && (
+            <p style={{ color: "#7fd18f", fontSize: "13px", marginTop: "12px", marginBottom: 0 }}>Pickup confirmed. Waiting for the rider to confirm...</p>
+          )}
+          {activeDrive && activeDrive.status === "picked_up" && (
+            <p style={{ color: "#7fd18f", fontSize: "14px", fontWeight: 700, marginTop: "12px", marginBottom: 0 }}>Trip in progress</p>
+          )}
           </div>
         )}
 
