@@ -186,12 +186,14 @@ export default function AdminPage() {
   useEffect(() => {
     if (!activeDrive) return;
     let channel: any = null;
+    let pollId: any = null;
     if (typeof navigator !== "undefined" && navigator.geolocation) {
       adminWatchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           setDriveGeoError("");
+          setActiveDrive((prev: any) => prev ? { ...prev, driver_lat: lat, driver_lng: lng } : prev);
           supabase
             .from("rides")
             .update({ driver_lat: lat, driver_lng: lng, updated_at: new Date().toISOString() })
@@ -210,8 +212,16 @@ export default function AdminPage() {
         if (r.rider_lat != null && r.rider_lng != null) setRiderPos({ lat: r.rider_lat, lng: r.rider_lng });
       })
       .subscribe();
+    pollId = setInterval(async () => {
+      const { data: rows } = await supabase.from("rides").select("*").eq("id", activeDrive.id).limit(1);
+      const r = rows && rows[0] ? rows[0] : null;
+      if (!r) return;
+      setActiveDrive(r);
+      if (r.rider_lat != null && r.rider_lng != null) setRiderPos({ lat: r.rider_lat, lng: r.rider_lng });
+    }, 4000);
     return () => {
       if (adminWatchIdRef.current != null && typeof navigator !== "undefined" && navigator.geolocation) navigator.geolocation.clearWatch(adminWatchIdRef.current);
+      if (pollId) clearInterval(pollId);
       if (channel) supabase.removeChannel(channel);
     };
   }, [activeDrive ? activeDrive.id : null]);
