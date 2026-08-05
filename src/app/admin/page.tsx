@@ -730,6 +730,21 @@ export default function AdminPage() {
           {activeDrive && activeDrive.status === "completed" && (
             <p style={{ color: "#7fd18f", fontSize: "14px", fontWeight: 700, marginTop: "12px", marginBottom: 0 }}>Ride completed</p>
           )}
+          {activeDrive && (
+            <button
+              onClick={async () => {
+                await supabase
+                  .from("rides")
+                  .update({ status: "canceled" })
+                  .eq("id", activeDrive.id);
+                setActiveDrive(null);
+                setRiderPos(null);
+              }}
+              style={{ width: "100%", marginTop: "12px", padding: "12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.25)", background: "transparent", color: "#e6a5a5", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}
+            >
+              Clear this ride (testing)
+            </button>
+          )}
           </div>
         )}
 
