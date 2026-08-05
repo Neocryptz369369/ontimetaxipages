@@ -673,6 +673,10 @@ export default function AdminPage() {
             </div>
             <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
               {activeDrive.profiles?.full_name ? activeDrive.profiles.full_name + " • " : ""}
+              {activeDrive.profiles?.phone ? (
+                <a href={"tel:" + activeDrive.profiles.phone} style={{ color: "#7fd1ff", textDecoration: "underline", fontWeight: 600 }}>{"Call rider: " + activeDrive.profiles.phone}</a>
+              ) : null}
+              {activeDrive.profiles?.phone ? <br /> : null}
               {activeDrive.pickup ? "Pickup: " + activeDrive.pickup : ""}
             {activeDrive.dropoff ? <br /> : null}
             {activeDrive.dropoff ? "Destination: " + activeDrive.dropoff : ""}
