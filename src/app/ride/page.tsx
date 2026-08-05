@@ -209,6 +209,7 @@ export default function RidePage() {
   useEffect(() => {
     let alive = true
     let channel: any = null
+    let pollId: any = null
 
     async function boot() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -247,6 +248,7 @@ export default function RidePage() {
             const lat = pos.coords.latitude
             const lng = pos.coords.longitude
             setGeoError('')
+            setActiveRide((prev: any) => prev ? { ...prev, rider_lat: lat, rider_lng: lng } : prev)
             supabase.from('rides').update({ rider_lat: lat, rider_lng: lng, updated_at: new Date().toISOString() }).eq('id', ride.id).then(() => {})
           },
           () => { setGeoError('Location access is off. Turn it on so your driver can find you.') },
@@ -264,10 +266,21 @@ export default function RidePage() {
         .subscribe()
     }
     boot()
+    pollId = setInterval(async () => {
+      if (!alive) return
+      const { data: u } = await supabase.auth.getUser()
+      if (!u || !u.user) return
+      const { data: rows } = await supabase.from('rides').select('*').eq('rider_id', u.user.id).in('status', ['accepted', 'picked_up']).order('created_at', { ascending: false }).limit(1)
+      const r = rows && rows[0] ? rows[0] : null
+      if (!alive || !r) return
+      setActiveRide(r)
+      if (r.driver_lat != null && r.driver_lng != null) setDriverPos({ lat: r.driver_lat, lng: r.driver_lng })
+    }, 4000)
 
     return () => {
       alive = false
       if (watchIdRef.current != null && typeof navigator !== 'undefined' && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current)
+      if (pollId) clearInterval(pollId)
       if (channel) supabase.removeChannel(channel)
     }
   }, [])
