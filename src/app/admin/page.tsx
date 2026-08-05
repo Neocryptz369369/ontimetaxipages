@@ -664,6 +664,8 @@ export default function AdminPage() {
             <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
               {activeDrive.profiles?.full_name ? activeDrive.profiles.full_name + " • " : ""}
               {activeDrive.pickup ? "Pickup: " + activeDrive.pickup : ""}
+            {activeDrive.dropoff ? <br /> : null}
+            {activeDrive.dropoff ? "Destination: " + activeDrive.dropoff : ""}
             </p>
             <div
               ref={adminMapDivRef}
