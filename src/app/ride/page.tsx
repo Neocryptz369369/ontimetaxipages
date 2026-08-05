@@ -346,6 +346,33 @@ export default function RidePage() {
               <div className="rp-field">
                 <span className="rp-dot pick" />
                 <input className="rp-input" placeholder="Pickup address" value={pickup} onChange={e => { setPickup(e.target.value); setPickupCoord(null) }} />
+              <button
+                type="button"
+                className="rp-btn rp-ghost"
+                style={{ marginTop: 8, fontSize: '13px', padding: '8px 12px' }}
+                onClick={() => {
+                  if (!navigator.geolocation) { alert('Location is not available on this device.'); return }
+                  navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const lng = pos.coords.longitude
+                    const lat = pos.coords.latitude
+                    setPickupCoord([lng, lat])
+                    try {
+                      if (MAPBOX_TOKEN) {
+                        const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN
+                        const res = await fetch(url)
+                        const json = await res.json()
+                        const name = json && json.features && json.features[0] ? json.features[0].place_name : ''
+                        setPickup(name || (lat.toFixed(5) + ', ' + lng.toFixed(5)))
+                      } else {
+                        setPickup(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                      }
+                    } catch (err) {
+                      setPickup(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                    }
+                    setPickupSug([])
+                  }, () => { alert('Could not get your location. Please allow location access.') })
+                }}
+              >Use my current location</button>
                 {pickupSug.length > 0 && (
                   <div className="rp-suggest">
                     {pickupSug.map((s, i) => (
