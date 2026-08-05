@@ -672,11 +672,15 @@ export default function AdminPage() {
               <h2 style={{ margin: 0, fontSize: "18px", color: "#fff" }}>Current ride — live location</h2>
             </div>
             <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
-              {activeDrive.profiles?.full_name ? activeDrive.profiles.full_name + " • " : ""}
-              {activeDrive.profiles?.phone ? (
-                <a href={"tel:" + activeDrive.profiles.phone} style={{ color: "#7fd1ff", textDecoration: "underline", fontWeight: 600 }}>{"Call rider: " + activeDrive.profiles.phone}</a>
-              ) : null}
-              {activeDrive.profiles?.phone ? <br /> : null}
+              <span style={{ color: "#fff", fontWeight: 700 }}>Rider: </span>
+              {(activeDrive.rider_name || activeDrive.profiles?.full_name || "Name unavailable")}
+              <br />
+              {(activeDrive.rider_phone || activeDrive.profiles?.phone) ? (
+                <a href={"tel:" + (activeDrive.rider_phone || activeDrive.profiles?.phone)} style={{ color: "#7fd1ff", textDecoration: "underline", fontWeight: 600 }}>{"Call rider: " + (activeDrive.rider_phone || activeDrive.profiles?.phone)}</a>
+              ) : (
+                <span style={{ color: "#c98f8f" }}>Phone unavailable</span>
+              )}
+              <br />
               {activeDrive.pickup ? "Pickup: " + activeDrive.pickup : ""}
             {activeDrive.dropoff ? <br /> : null}
             {activeDrive.dropoff ? "Destination: " + activeDrive.dropoff : ""}
