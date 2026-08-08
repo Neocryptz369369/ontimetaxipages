@@ -690,6 +690,8 @@ export default function AdminPage() {
               {activeDrive.pickup ? "Pickup: " + activeDrive.pickup : ""}
             {activeDrive.dropoff ? <br /> : null}
             {activeDrive.dropoff ? "Destination: " + activeDrive.dropoff : ""}
+                <br />
+                {activeDrive.fare != null ? <span style={{ color: "#fff", fontWeight: 700 }}>Rider paid: ${Number(activeDrive.fare).toFixed(2)}</span> : ""}
             </p>
             <div
               ref={adminMapDivRef}
