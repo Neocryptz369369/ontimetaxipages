@@ -1,7 +1,14 @@
 'use client'
 import Link from 'next/link'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function RideSuccess() {
+  const router = useRouter()
+  useEffect(() => {
+    const t = setTimeout(() => { router.push('/ride') }, 4000)
+    return () => clearTimeout(t)
+  }, [router])
   return (
     <div className="sx-wrap">
       <div className="sx-card">
@@ -11,8 +18,8 @@ export default function RideSuccess() {
           </svg>
         </div>
         <h1 className="sx-title">Payment received</h1>
-        <p className="sx-text">Thank you. Your On Time Taxi ride is confirmed and your driver is being dispatched.</p>
-        <Link href="/ride" className="sx-btn">Book another ride</Link>
+        <p className="sx-text">Thank you. Your On Time Taxi ride is confirmed. Taking you to live tracking...</p>
+        <Link href="/ride" className="sx-btn">Track your ride</Link>
         <Link href="/" className="sx-home">Back to home</Link>
       </div>
       <style jsx global>{`
