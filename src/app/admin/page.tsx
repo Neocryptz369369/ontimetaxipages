@@ -98,6 +98,7 @@ export default function AdminPage() {
   const [riderPos, setRiderPos] = useState<{ lat: number; lng: number } | null>(null);
   const [driveGeoError, setDriveGeoError] = useState("");
   const [adminMapsReady, setAdminMapsReady] = useState(false);
+  const [driverInputs, setDriverInputs] = useState<any>({});
   const adminMapDivRef = useRef<HTMLDivElement | null>(null);
   const adminMapRef = useRef<any>(null);
   const adminRiderMarkerRef = useRef<any>(null);
@@ -274,12 +275,17 @@ export default function AdminPage() {
 
   async function acceptRide(id: string) {
     setRideMsg("");
+    const d = driverInputs[id] || { name: "", phone: "", vehicle: "", plate: "" };
+    if (!d.name.trim() || !d.phone.trim()) {
+      setRideMsg("Enter at least the driver name and phone before accepting.");
+      return;
+    }
     const { error: acceptError } = await supabase
       .from("rides")
-      .update({ status: "accepted" })
+      .update({ status: "accepted", driver_name: d.name.trim(), driver_phone: d.phone.trim(), vehicle: d.vehicle.trim(), plate: d.plate.trim() })
       .eq("id", id);
     if (acceptError) {
-      setRideMsg("Could not accept the ride. Please try again.");
+      setRideMsg("Could not accept the ride: " + acceptError.message);
       return;
     }
     setIncoming((prev) => prev.filter((r) => r.id !== id));
@@ -816,6 +822,12 @@ export default function AdminPage() {
                     </div>
                     <div style={{ color: "#fff", fontSize: "13px", marginTop: "6px" }}>
                       Fare: ${Number(r.fare || 0).toFixed(2)}
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                      <input type="text" placeholder="Driver name" value={(driverInputs[r.id] && driverInputs[r.id].name) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), name: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                      <input type="text" placeholder="Driver phone" value={(driverInputs[r.id] && driverInputs[r.id].phone) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), phone: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                      <input type="text" placeholder="Vehicle" value={(driverInputs[r.id] && driverInputs[r.id].vehicle) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), vehicle: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                      <input type="text" placeholder="Plate" value={(driverInputs[r.id] && driverInputs[r.id].plate) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), plate: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
                     </div>
                   </div>
                   <button
