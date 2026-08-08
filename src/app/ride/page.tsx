@@ -197,7 +197,7 @@ export default function RidePage() {
           const meta = (user.user_metadata || {})
           const riderName = meta.full_name || meta.name || user.email || ''
           const riderPhone = meta.phone || meta.phone_number || ''
-          await supabase.from('rides').insert({
+          const { error: rideInsertErr } = await supabase.from('rides').insert({
             rider_id: user.id,
             rider_name: riderName,
             rider_phone: riderPhone,
@@ -205,8 +205,13 @@ export default function RidePage() {
             dropoff,
             fare: rideFare,
             status: 'requested',
-          })
+        })
+        if (rideInsertErr) {
+          setPayError('Could not create your ride: ' + rideInsertErr.message)
+          setPaying(false)
+          return
         }
+      }
       } catch (rideErr) {
         // non-blocking: continue to checkout even if ride logging fails
       }
@@ -357,6 +362,18 @@ export default function RidePage() {
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
                 {activeRide.status === 'picked_up' ? 'You are on your way' : 'Your driver is on the way'}
               </div>
+              {activeRide.driver_name && (
+                <div style={{ fontSize: '14px', marginBottom: '4px' }}>
+                  Driver: <strong>{activeRide.driver_name}</strong>
+                  {activeRide.vehicle ? ' - ' + activeRide.vehicle : ''}
+                  {activeRide.plate ? ' - ' + activeRide.plate : ''}
+                </div>
+              )}
+              {activeRide.driver_phone && (
+                <div style={{ fontSize: '13px', marginBottom: '4px' }}>
+                  Call driver: <a href={'tel:' + activeRide.driver_phone} style={{ color: '#ffb4b4' }}>{activeRide.driver_phone}</a>
+                </div>
+              )}
               <div style={{ fontSize: '13px', opacity: 0.85 }}>
                 {driverPos ? 'Live location updating on the map above.' : 'Waiting for your driver location...'}
               </div>
