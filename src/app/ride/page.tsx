@@ -1,4 +1,4 @@
-'use client'
+&types=poi,place,address&access_token='use client'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -483,6 +483,34 @@ export default function RidePage() {
                   </div>
                 )}
               </div>
+
+              {/* Multi-stop Section */}
+                                  <div className="rp-field">
+                                                        <span className="rp-dot multi" />
+                                                        <button className="rp-btn-small" onClick={() => setStops([...stops, { address: '', lat: null, lng: null }])}>
+                                                                                Add Stop
+                                                        </button>button>
+                                  </div>div>
+            
+              {stops.map((stop, idx) => (
+                                    <div key={idx} className="rp-field">
+                                                            <span className="rp-dot stop" />
+                                                            <input
+                                                                                        className="rp-input"
+                                                                                        placeholder={`Stop ${idx + 1}`}
+                                                                                        value={stop.address}
+                                                                                        onChange={(e) => {
+                                                                                                                      const newStops = [...stops];
+                                                                                                                      newStops[idx].address = e.target.value;
+                                                                                                                      setStops(newStops);
+                                                                                                                      onChangeDropoffAddress(e);
+                                                                                          }}
+                                                                                      />
+                                                            <button className="rp-btn-small" onClick={() => setStops(stops.filter((_, i) => i !== idx))}>
+                                                                                      Remove
+                                                            </button>button>
+                                    </div>div>
+                                  ))}</div>
 
               <div className="rp-farebox">
                 <div className="rp-farebig">${fare.toFixed(2)}</div>
