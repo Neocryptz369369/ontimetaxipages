@@ -204,7 +204,7 @@ export default function RidePage() {
             pickup,
             dropoff,
             fare: rideFare,
-            status: 'requested',
+            status: 'requested', pickup_lat: pickupCoord ? pickupCoord[1] : null, pickup_lng: pickupCoord ? pickupCoord[0] : null, dropoff_lat: dropoffCoord ? dropoffCoord[1] : null, dropoff_lng: dropoffCoord ? dropoffCoord[0] : null,
         })
         if (rideInsertErr) {
           setPayError('Could not create your ride: ' + rideInsertErr.message)
