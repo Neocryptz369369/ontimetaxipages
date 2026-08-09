@@ -30,14 +30,13 @@ function loadMapbox(): Promise<any> {
   return mapboxPromise
 }
 
-async function geocode(q: string): Promise<any[]> {
+async function geocode(q: string, userLoc?: number[]): Promise<any[]> {
   if (!q || !MAPBOX_TOKEN) return []
   const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=5&country=us&proximity=-85.7550,38.3981&access_token=' + MAPBOX_TOKEN
   try {
     const r = await fetch(url)
     const j = await r.json()
-    return (j.features || [])
-  } catch (e) { return [] }
+const features = j.features || []; return userLoc ? features.sort((a, b) => milesBetween(userLoc, a.center) - milesBetween(userLoc, b.center)) : features  } catch (e) { return [] }
 }
 
 function milesBetween(a: number[], b: number[]): number {
@@ -148,7 +147,7 @@ export default function RidePage() {
 
   useEffect(() => {
     if (!dropoff || dropoffCoord) { setDropoffSug([]); return }
-    const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff)) }, 250)
+const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCoord)) }, 250)      33, pickupCoord)) }, 250)
     return () => clearTimeout(t)
   }, [dropoff, dropoffCoord])
 
@@ -204,7 +203,8 @@ export default function RidePage() {
   function chooseDropoff(feat: any) {
     setDropoff(feat.place_name)
     setDropoffCoord(feat.center)
-    setDropoffSug([])
+    39
+      ([])
   }
 
   async function handleSignOut() {
