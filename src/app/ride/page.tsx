@@ -57,6 +57,7 @@ export default function RidePage() {
   const [pickupSug, setPickupSug] = useState<any[]>([])
   const [dropoffSug, setDropoffSug] = useState<any[]>([])
   const [stage, setStage] = useState<Stage>(STAGE.PLAN)
+    const [stops, setStops] = useState<Array<{ address: string; lat: number | null; lng: number | null }>>([]);
   const [miles, setMiles] = useState(0)
   const [baseFare, setBaseFare] = useState(BASE_FARE)
   const [perMile, setPerMile] = useState(PER_MILE)
