@@ -114,6 +114,12 @@ export default function RidePage() {
     }
   }, [mapsReady])
 
+          // Drop-a-pin functionality for dropoff
+          m.on('click', (e) => {
+                      setDropoff(`${e.lngLat.lng.toFixed(5)}, ${e.lngLat.lat.toFixed(5)}`)
+                      setDropoffCoord({ lat: e.lngLat.lat, lng: e.lngLat.lng })
+          })
+
     useEffect(() => {
           if (!mapsReady || !mapRef.current || !activeRide || !activeRide.driver_lat || !activeRide.pickup_lat || !activeRide.dropoff_lat) return;
           const m = mapRef.current;
@@ -328,7 +334,8 @@ export default function RidePage() {
       if (r.driver_lat != null && r.driver_lng != null) setDriverPos({ lat: r.driver_lat, lng: r.driver_lng })
     }, 4000)
 
-    return () => {
+    400
+      ) => {
       alive = false
       if (watchIdRef.current != null && typeof navigator !== 'undefined' && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current)
       if (pollId) clearInterval(pollId)
@@ -403,6 +410,14 @@ export default function RidePage() {
               )}
             </div>
           )}
+          {stage === STAGE.SEARCHING && (
+                  <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                                  <div style={{ animation: 'spin 2s linear infinite', width: '60px', height: '60px', border: '4px solid #ffcc00', borderTop: '4px solid transparent', borderRadius: '50%' }} />
+                                  <h2 style={{ color: 'white', marginTop: '20px' }}>Looking for a driver...</h2>h2>
+                  </div>div>
+                )}
+
+                    
           {stage === STAGE.PLAN && (
             <>
               <div className="rp-label">Where to?</div>
@@ -618,6 +633,8 @@ export default function RidePage() {
         @keyframes rp-rot { to { transform: rotate(360deg); } }
         .rp-muted { color: #888; font-size: 13px; margin: 8px 0; }
         .rp-tripline { color: #ddd; font-size: 14px; margin: 12px 0; }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                          .rp-btn-small { padding: 8px 16px; background: #ffcc00; color: #111; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; margin-left: 8px; }
       `}</style>
     </div>
   )
