@@ -1,4 +1,4 @@
-&types=poi,place,address&access_token='use client'
+'use client'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -32,7 +32,7 @@ function loadMapbox(): Promise<any> {
 
 async function geocode(q: string, userLoc?: number[]): Promise<any[]> {
   if (!q || !MAPBOX_TOKEN) return []
-  const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=5&country=us&proximity=-85.7550,38.3981&access_token=' + MAPBOX_TOKEN
+  const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=5&country=us&proximity=-85.7550,38.3981&types=poi,place,address&access_token=' + MAPBOX_TOKEN
   try {
     const r = await fetch(url)
     const j = await r.json()
@@ -490,6 +490,34 @@ const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCo
               <div className="rp-field">
                 <span className="rp-dot drop" />
                 <input className="rp-input" placeholder="Dropoff address" value={dropoff} onChange={e => { setDropoff(e.target.value); setDropoffCoord(null) }} />
+              <button
+                type="button"
+                className="rp-btn rp-ghost"
+                style={{ marginTop: 8, marginLeft: 8, fontSize: '13px', padding: '8px 12px' }}
+                onClick={async () => {
+                  const map = mapRef.current
+                  if (!map) { alert('Map is still loading, please try again.'); return }
+                  const c = map.getCenter()
+                  const lng = c.lng
+                  const lat = c.lat
+                  setDropoffCoord([lng, lat])
+                  try {
+                    if (MAPBOX_TOKEN) {
+                      const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN
+                      const res = await fetch(url)
+                      const json = await res.json()
+                      const name = json && json.features && json.features[0] ? json.features[0].place_name : ''
+                      setDropoff(name || (lat.toFixed(5) + ', ' + lng.toFixed(5)))
+                    } else {
+                      setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                    }
+                  } catch (err) {
+                    setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                  }
+                  setDropoffSug([])
+                }}
+              >Drop a pin on the map</button>
+              <div className="rp-muted" style={{ marginTop: 6, fontSize: '12px' }}>Drop a pin, then drag it anywhere to set your exact dropoff.</div>
                 {dropoffSug.length > 0 && (
                   <div className="rp-suggest">
                     {dropoffSug.map((s, i) => (
