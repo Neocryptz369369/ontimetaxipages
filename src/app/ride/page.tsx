@@ -31,13 +31,17 @@ function loadMapbox(): Promise<any> {
   return mapboxPromise
 }
 
-async function geocode(q: string): Promise<any[]> {
+async function geocode(q: string, userLoc?: number[] | null): Promise<any[]> {
   if (!q || !MAPBOX_TOKEN) return []
-  const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=5&country=us&proximity=-85.7550,38.3981&types=poi,place,address&access_token=' + MAPBOX_TOKEN
+  const home: number[] = [-85.7550, 38.3981]
+  const origin: number[] = userLoc && userLoc.length === 2 ? userLoc : home
+  const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=10&country=us&proximity=' + origin[0] + ',' + origin[1] + '&types=poi,place,address&access_token=' + MAPBOX_TOKEN
   try {
     const r = await fetch(url)
     const j = await r.json()
-    return (j.features || [])
+    const feats: any[] = (j.features || []).filter((f: any) => f && f.center && f.center.length === 2)
+    feats.sort((a: any, b: any) => milesBetween(origin, a.center) - milesBetween(origin, b.center))
+    return feats.slice(0, 6)
   } catch (e) { return [] }
 }
 
@@ -137,15 +141,15 @@ export default function RidePage() {
 
   useEffect(() => {
     if (!pickup || pickupCoord) { setPickupSug([]); return }
-    const t = setTimeout(async () => { setPickupSug(await geocode(pickup)) }, 250)
+    const t = setTimeout(async () => { setPickupSug(await geocode(pickup, pickupCoord)) }, 250)
     return () => clearTimeout(t)
   }, [pickup, pickupCoord])
 
   useEffect(() => {
     if (!dropoff || dropoffCoord) { setDropoffSug([]); return }
-    const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff)) }, 250)
+    const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCoord)) }, 250)
     return () => clearTimeout(t)
-  }, [dropoff, dropoffCoord])
+  }, [dropoff, dropoffCoord, pickupCoord])
 
   useEffect(() => {
     const map = mapRef.current
@@ -177,7 +181,27 @@ export default function RidePage() {
     }
     if (dropoffCoord) {
       if (dropMarkerRef.current) dropMarkerRef.current.remove()
-      dropMarkerRef.current = new mapboxgl.Marker({ color: '#f5b301' }).setLngLat(dropoffCoord).addTo(map)
+      dropMarkerRef.current = new mapboxgl.Marker({ color: '#f5b301', draggable: true }).setLngLat(dropoffCoord).addTo(map)
+      dropMarkerRef.current.on('dragend', async () => {
+        const ll = dropMarkerRef.current.getLngLat()
+        const lng = ll.lng
+        const lat = ll.lat
+        setDropoffCoord([lng, lat])
+        try {
+          if (MAPBOX_TOKEN) {
+            const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN
+            const res = await fetch(url)
+            const json = await res.json()
+            const name = json && json.features && json.features[0] ? json.features[0].place_name : ''
+            setDropoff(name || (lat.toFixed(5) + ', ' + lng.toFixed(5)))
+          } else {
+            setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
+          }
+        } catch (err) {
+          setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
+        }
+        setDropoffSug([])
+      })
     }
     if (pickupCoord && dropoffCoord) {
       const b = new mapboxgl.LngLatBounds()
@@ -476,6 +500,34 @@ export default function RidePage() {
               <div className="rp-field">
                 <span className="rp-dot drop" />
                 <input className="rp-input" placeholder="Dropoff address" value={dropoff} onChange={e => { setDropoff(e.target.value); setDropoffCoord(null) }} />
+              <button
+                type="button"
+                className="rp-btn rp-ghost"
+                style={{ marginTop: 8, marginLeft: 8, fontSize: '13px', padding: '8px 12px' }}
+                onClick={async () => {
+                  const map = mapRef.current
+                  if (!map) { alert('Map is still loading, please try again.'); return }
+                  const c = map.getCenter()
+                  const lng = c.lng
+                  const lat = c.lat
+                  setDropoffCoord([lng, lat])
+                  try {
+                    if (MAPBOX_TOKEN) {
+                      const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN
+                      const res = await fetch(url)
+                      const json = await res.json()
+                      const name = json && json.features && json.features[0] ? json.features[0].place_name : ''
+                      setDropoff(name || (lat.toFixed(5) + ', ' + lng.toFixed(5)))
+                    } else {
+                      setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                    }
+                  } catch (err) {
+                    setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
+                  }
+                  setDropoffSug([])
+                }}
+              >Drop a pin on the map</button>
+              <div className="rp-muted" style={{ marginTop: 6, fontSize: '12px' }}>Drop a pin, then drag it anywhere to set your exact dropoff.</div>
                 {dropoffSug.length > 0 && (
                   <div className="rp-suggest">
                     {dropoffSug.map((s, i) => (
@@ -618,6 +670,14 @@ export default function RidePage() {
         @keyframes rp-rot { to { transform: rotate(360deg); } }
         .rp-muted { color: #888; font-size: 13px; margin: 8px 0; }
         .rp-tripline { color: #ddd; font-size: 14px; margin: 12px 0; }
+        .rp-field { flex-wrap: wrap; }
+        .rp-field .rp-input { flex: 1 1 auto; min-width: 55%; }
+        .rp-field .rp-btn { width: auto; flex: 0 0 auto; white-space: nowrap; }
+        .rp-field .rp-muted { flex: 1 1 100%; margin: 4px 0 0 0; }
+        .rp-btn-small { background: transparent; color: #f5b301; border: 1px solid #2a2a2e; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .rp-btn-small:hover { background: #1f1f24; }
+        .rp-dot.multi { background: #6ea8fe; }
+        .rp-dot.stop { background: #9b8cff; }
       `}</style>
     </div>
   )
