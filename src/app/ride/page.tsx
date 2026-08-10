@@ -30,13 +30,14 @@ function loadMapbox(): Promise<any> {
   return mapboxPromise
 }
 
-async function geocode(q: string, userLoc?: number[]): Promise<any[]> {
+async function geocode(q: string): Promise<any[]> {
   if (!q || !MAPBOX_TOKEN) return []
   const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=5&country=us&proximity=-85.7550,38.3981&types=poi,place,address&access_token=' + MAPBOX_TOKEN
   try {
     const r = await fetch(url)
     const j = await r.json()
-const features = j.features || []; return userLoc ? features.sort((a, b) => milesBetween(userLoc, a.center) - milesBetween(userLoc, b.center)) : features  } catch (e) { return [] }
+    return (j.features || [])
+  } catch (e) { return [] }
 }
 
 function milesBetween(a: number[], b: number[]): number {
@@ -113,12 +114,6 @@ export default function RidePage() {
     }
   }, [mapsReady])
 
-          // Drop-a-pin functionality for dropoff
-          m.on('click', (e) => {
-                      setDropoff(`${e.lngLat.lng.toFixed(5)}, ${e.lngLat.lat.toFixed(5)}`)
-                      setDropoffCoord({ lat: e.lngLat.lat, lng: e.lngLat.lng })
-          })
-
     useEffect(() => {
           if (!mapsReady || !mapRef.current || !activeRide || !activeRide.driver_lat || !activeRide.pickup_lat || !activeRide.dropoff_lat) return;
           const m = mapRef.current;
@@ -147,7 +142,7 @@ export default function RidePage() {
 
   useEffect(() => {
     if (!dropoff || dropoffCoord) { setDropoffSug([]); return }
-const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCoord)) }, 250)      33, pickupCoord)) }, 250)
+    const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff)) }, 250)
     return () => clearTimeout(t)
   }, [dropoff, dropoffCoord])
 
@@ -203,8 +198,7 @@ const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCo
   function chooseDropoff(feat: any) {
     setDropoff(feat.place_name)
     setDropoffCoord(feat.center)
-    39
-      ([])
+    setDropoffSug([])
   }
 
   async function handleSignOut() {
@@ -334,8 +328,7 @@ const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCo
       if (r.driver_lat != null && r.driver_lng != null) setDriverPos({ lat: r.driver_lat, lng: r.driver_lng })
     }, 4000)
 
-    400
-      ) => {
+    return () => {
       alive = false
       if (watchIdRef.current != null && typeof navigator !== 'undefined' && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current)
       if (pollId) clearInterval(pollId)
@@ -410,14 +403,6 @@ const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCo
               )}
             </div>
           )}
-          {stage === STAGE.SEARCHING && (
-                  <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                                  <div style={{ animation: 'spin 2s linear infinite', width: '60px', height: '60px', border: '4px solid #ffcc00', borderTop: '4px solid transparent', borderRadius: '50%' }} />
-                                  <h2 style={{ color: 'white', marginTop: '20px' }}>Looking for a driver...</h2>h2>
-                  </div>div>
-                )}
-
-                    
           {stage === STAGE.PLAN && (
             <>
               <div className="rp-label">Where to?</div>
@@ -490,34 +475,6 @@ const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCo
               <div className="rp-field">
                 <span className="rp-dot drop" />
                 <input className="rp-input" placeholder="Dropoff address" value={dropoff} onChange={e => { setDropoff(e.target.value); setDropoffCoord(null) }} />
-              <button
-                type="button"
-                className="rp-btn rp-ghost"
-                style={{ marginTop: 8, marginLeft: 8, fontSize: '13px', padding: '8px 12px' }}
-                onClick={async () => {
-                  const map = mapRef.current
-                  if (!map) { alert('Map is still loading, please try again.'); return }
-                  const c = map.getCenter()
-                  const lng = c.lng
-                  const lat = c.lat
-                  setDropoffCoord([lng, lat])
-                  try {
-                    if (MAPBOX_TOKEN) {
-                      const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN
-                      const res = await fetch(url)
-                      const json = await res.json()
-                      const name = json && json.features && json.features[0] ? json.features[0].place_name : ''
-                      setDropoff(name || (lat.toFixed(5) + ', ' + lng.toFixed(5)))
-                    } else {
-                      setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
-                    }
-                  } catch (err) {
-                    setDropoff(lat.toFixed(5) + ', ' + lng.toFixed(5))
-                  }
-                  setDropoffSug([])
-                }}
-              >Drop a pin on the map</button>
-              <div className="rp-muted" style={{ marginTop: 6, fontSize: '12px' }}>Drop a pin, then drag it anywhere to set your exact dropoff.</div>
                 {dropoffSug.length > 0 && (
                   <div className="rp-suggest">
                     {dropoffSug.map((s, i) => (
@@ -661,8 +618,6 @@ const t = setTimeout(async () => { setDropoffSug(await geocode(dropoff, pickupCo
         @keyframes rp-rot { to { transform: rotate(360deg); } }
         .rp-muted { color: #888; font-size: 13px; margin: 8px 0; }
         .rp-tripline { color: #ddd; font-size: 14px; margin: 12px 0; }
-                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                          .rp-btn-small { padding: 8px 16px; background: #ffcc00; color: #111; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; margin-left: 8px; }
       `}</style>
     </div>
   )
