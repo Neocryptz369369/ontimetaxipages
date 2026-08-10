@@ -35,11 +35,19 @@ async function geocode(q: string, userLoc?: number[] | null): Promise<any[]> {
   if (!q || !MAPBOX_TOKEN) return []
   const home: number[] = [-85.7550, 38.3981]
   const origin: number[] = userLoc && userLoc.length === 2 ? userLoc : home
-  const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(q) + '.json?autocomplete=true&limit=10&country=us&proximity=' + origin[0] + ',' + origin[1] + '&types=poi,place,address&access_token=' + MAPBOX_TOKEN
+  const url = 'https://api.mapbox.com/search/searchbox/v1/forward?q=' + encodeURIComponent(q) + '&limit=10&language=en&country=US&proximity=' + origin[0] + ',' + origin[1] + '&access_token=' + MAPBOX_TOKEN
   try {
     const r = await fetch(url)
     const j = await r.json()
-    const feats: any[] = (j.features || []).filter((f: any) => f && f.center && f.center.length === 2)
+    const raw: any[] = (j.features || []).filter((f: any) => f && f.geometry && f.geometry.coordinates && f.geometry.coordinates.length === 2)
+    const feats: any[] = raw.map((f: any) => {
+      const p: any = f.properties || {}
+      const addr: string = (p.full_address || p.place_formatted || '').replace(', United States', '')
+      const nm: string = p.name || ''
+      let label: string = addr || nm
+      if (nm && addr && addr.indexOf(nm) !== 0) label = nm + ' - ' + addr
+      return { place_name: label, center: f.geometry.coordinates }
+    })
     feats.sort((a: any, b: any) => milesBetween(origin, a.center) - milesBetween(origin, b.center))
     return feats.slice(0, 6)
   } catch (e) { return [] }
