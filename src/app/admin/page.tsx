@@ -25,6 +25,37 @@ function loadAdminMapbox(): Promise<any> {
   });
   return adminMapboxPromise;
 }
+async function adminRouteAlong(points: number[][]): Promise<number[][] | null> {
+  if (!points || points.length < 2) return null;
+  const path = points.map((p: number[]) => p[0] + ',' + p[1]).join(';');
+  const url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + path + '?alternatives=false&geometries=geojson&overview=full&steps=false&access_token=' + ADMIN_MAPBOX_TOKEN;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data || !data.routes || !data.routes[0] || !data.routes[0].geometry) return null;
+    return data.routes[0].geometry.coordinates;
+  } catch (e) {
+    return null;
+  }
+}
+
+function adminDrawRouteLine(m: any, coords: number[][]) {
+  if (!m || !coords || coords.length < 2) return;
+  const data: any = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } };
+  const paint = () => {
+    try {
+      const existing = m.getSource('route-source');
+      if (existing) { existing.setData(data); return; }
+      m.addSource('route-source', { type: 'geojson', data });
+      m.addLayer({ id: 'route-layer', type: 'line', source: 'route-source', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#0080ff', 'line-width': 6, 'line-opacity': 0.9 } });
+    } catch (e) {}
+  };
+  try {
+    if (m.isStyleLoaded && m.isStyleLoaded()) paint();
+    else m.once('idle', paint);
+  } catch (e) {}
+}
+
 
 const sections = [
   {
@@ -113,36 +144,27 @@ export default function AdminPage() {
     });
   }, []);
 
+  const routeKey = activeDrive
+    ? [activeDrive.id, activeDrive.status, Math.round(Number(activeDrive.driver_lat) * 3000), Math.round(Number(activeDrive.driver_lng) * 3000), activeDrive.pickup_lat, activeDrive.pickup_lng, activeDrive.dropoff_lat, activeDrive.dropoff_lng].join(',')
+    : '';
+
   useEffect(() => {
     if (!adminMapsReady || !adminMapRef.current || !activeDrive) return;
     const drive = activeDrive;
-    if (!drive.driver_lat || !drive.pickup_lat || !drive.dropoff_lat) return;
     const m = adminMapRef.current;
+    const started = drive.status === 'picked_up';
+    const pts: number[][] = [];
+    if (drive.driver_lat != null && drive.driver_lng != null) pts.push([Number(drive.driver_lng), Number(drive.driver_lat)]);
+    if (!started && drive.pickup_lat != null && drive.pickup_lng != null) pts.push([Number(drive.pickup_lng), Number(drive.pickup_lat)]);
+    if (drive.dropoff_lat != null && drive.dropoff_lng != null) pts.push([Number(drive.dropoff_lng), Number(drive.dropoff_lat)]);
+    if (pts.length < 2) return;
     let cancelled = false;
-    async function drawRoute() {
-      const from = `${drive.driver_lng},${drive.driver_lat}`;
-      const via = `${drive.pickup_lng},${drive.pickup_lat}`;
-      const to = `${drive.dropoff_lng},${drive.dropoff_lat}`;
-      try {
-        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from};${via};${to}?alternatives=false&geometries=geojson&overview=full&access_token=${ADMIN_MAPBOX_TOKEN}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (cancelled) return;
-        if (!data || !data.routes || !data.routes[0]) return;
-        const geom = data.routes[0].geometry;
-        if (m.getSource('route-source')) {
-          if (m.getLayer('route-layer')) m.removeLayer('route-layer');
-          m.removeSource('route-source');
-        }
-        m.addSource('route-source', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: geom } });
-        m.addLayer({ id: 'route-layer', type: 'line', source: 'route-source', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#0080ff', 'line-width': 6 } });
-      } catch (e) {
-        // ignore route errors
-      }
-    }
-    drawRoute();
+    adminRouteAlong(pts).then((coords) => {
+      if (cancelled || !coords) return;
+      adminDrawRouteLine(m, coords);
+    });
     return () => { cancelled = true; };
-  }, [adminMapsReady, activeDrive]);
+  }, [adminMapsReady, routeKey]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
