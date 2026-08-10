@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
   try { body = await req.json() } catch (e) { body = {} }
 
   const miles = Number(body.miles) || 0
+  const rawTip = Number(body.tip)
+  const tip = isNaN(rawTip) || rawTip < 0 ? 0 : Math.min(Math.round(rawTip * 100) / 100, 1000)
   // Server-side pricing: recompute fare from admin settings so it cannot be tampered with.
   let baseFee = 5.0
   let perMile = 2.0
@@ -57,6 +59,14 @@ export async function POST(req: NextRequest) {
   if (pickup) params.append('metadata[pickup]', pickup.slice(0, 480))
   if (dropoff) params.append('metadata[dropoff]', dropoff.slice(0, 480))
   if (miles) params.append('metadata[miles]', miles.toFixed(2))
+  if (tip > 0) {
+    params.append('line_items[1][quantity]', '1')
+    params.append('line_items[1][price_data][currency]', 'usd')
+    params.append('line_items[1][price_data][unit_amount]', String(Math.round(tip * 100)))
+    params.append('line_items[1][price_data][product_data][name]', 'Driver tip')
+    params.append('line_items[1][price_data][product_data][description]', 'Thank you for tipping your driver')
+    params.append('metadata[tip]', tip.toFixed(2))
+  }
 
   try {
     const resp = await fetch('https://api.stripe.com/v1/checkout/sessions', {
