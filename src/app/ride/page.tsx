@@ -71,6 +71,9 @@ export default function RidePage() {
   const [dropoffSug, setDropoffSug] = useState<any[]>([])
   const [stage, setStage] = useState<Stage>(STAGE.PLAN)
   const [stops, setStops] = useState<Stop[]>([])
+  const [stopSug, setStopSug] = useState<any[]>([])
+  const [activeStop, setActiveStop] = useState<number>(-1)
+  const stopKey: string = stops.map((s: Stop) => (s.lat == null || s.lng == null ? 'x' : String(s.lng) + ',' + String(s.lat))).join('|')
   const [miles, setMiles] = useState(0)
   const [baseFare, setBaseFare] = useState(BASE_FARE)
   const [perMile, setPerMile] = useState(PER_MILE)
@@ -92,6 +95,7 @@ export default function RidePage() {
   const mapRef = useRef<any>(null)
   const pickMarkerRef = useRef<any>(null)
   const dropMarkerRef = useRef<any>(null)
+  const stopMarkersRef = useRef<any[]>([])
   const [activeRide, setActiveRide] = useState<any>(null)
   const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null)
   const [geoError, setGeoError] = useState('')
@@ -211,17 +215,41 @@ export default function RidePage() {
         setDropoffSug([])
       })
     }
+    const stopMarks: any[] = stopMarkersRef.current || []
+    for (const mk of stopMarks) { try { mk.remove() } catch (e2) {} }
+    stopMarkersRef.current = []
+    stops.forEach((s: Stop, si: number) => {
+      if (s.lat == null || s.lng == null) return
+      const el = document.createElement('div')
+      el.className = 'rp-stopmark'
+      el.textContent = String(si + 1)
+      const mk = new mapboxgl.Marker({ element: el, draggable: true }).setLngLat([s.lng, s.lat]).addTo(map)
+      mk.on('dragend', async () => {
+        const ll = mk.getLngLat()
+        let nm = ''
+        try {
+          if (MAPBOX_TOKEN) {
+            const res = await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + ll.lng + ',' + ll.lat + '.json?access_token=' + MAPBOX_TOKEN)
+            const json = await res.json()
+            nm = json && json.features && json.features[0] ? json.features[0].place_name : ''
+          }
+        } catch (err) { nm = '' }
+        updateStop(si, { address: nm || (ll.lat.toFixed(5) + ', ' + ll.lng.toFixed(5)), lng: ll.lng, lat: ll.lat })
+      })
+      stopMarkersRef.current.push(mk)
+    })
     if (pickupCoord && dropoffCoord) {
       const b = new mapboxgl.LngLatBounds()
-      b.extend(pickupCoord); b.extend(dropoffCoord)
+      b.extend(pickupCoord)
+      for (const s of stops) { if (s.lat != null && s.lng != null) b.extend([s.lng, s.lat]) }
+      b.extend(dropoffCoord)
       map.fitBounds(b, { padding: 70, maxZoom: 14 })
-      setMiles(milesBetween(pickupCoord, dropoffCoord))
     } else if (pickupCoord) {
       map.flyTo({ center: pickupCoord, zoom: 13 })
     } else if (dropoffCoord) {
       map.flyTo({ center: dropoffCoord, zoom: 13 })
     }
-  }, [pickupCoord, dropoffCoord, mapsReady])
+  }, [pickupCoord, dropoffCoord, stopKey, mapsReady])
 
   function choosePickup(feat: any) {
     setPickup(feat.place_name)
@@ -233,6 +261,53 @@ export default function RidePage() {
     setDropoffCoord(feat.center)
     setDropoffSug([])
   }
+
+  function updateStop(idx: number, patch: any) {
+    setStops((prev: Stop[]) => prev.map((s: Stop, i: number) => (i === idx ? { ...s, ...patch } : s)))
+  }
+
+  function chooseStop(idx: number, feat: any) {
+    updateStop(idx, { address: feat.place_name, lng: feat.center[0], lat: feat.center[1] })
+    setStopSug([])
+    setActiveStop(-1)
+  }
+
+  async function dropPinForStop(idx: number) {
+    const map = mapRef.current
+    if (!map) { alert('Map is still loading, please try again.'); return }
+    const ctr = map.getCenter()
+    const lng = ctr.lng
+    const lat = ctr.lat
+    let name = ''
+    try {
+      if (MAPBOX_TOKEN) {
+        const res = await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + MAPBOX_TOKEN)
+        const json = await res.json()
+        name = json && json.features && json.features[0] ? json.features[0].place_name : ''
+      }
+    } catch (err) { name = '' }
+    updateStop(idx, { address: name || (lat.toFixed(5) + ', ' + lng.toFixed(5)), lng: lng, lat: lat })
+    setStopSug([])
+    setActiveStop(-1)
+  }
+
+  useEffect(() => {
+    if (activeStop < 0 || activeStop >= stops.length) { setStopSug([]); return }
+    const s = stops[activeStop]
+    if (!s || !s.address || s.lat != null) { setStopSug([]); return }
+    const t = setTimeout(async () => { setStopSug(await geocode(s.address, pickupCoord)) }, 250)
+    return () => clearTimeout(t)
+  }, [activeStop, stops, pickupCoord])
+
+  useEffect(() => {
+    const pts: number[][] = []
+    if (pickupCoord) pts.push(pickupCoord)
+    for (const s of stops) { if (s.lat != null && s.lng != null) pts.push([s.lng as number, s.lat as number]) }
+    if (dropoffCoord) pts.push(dropoffCoord)
+    let total = 0
+    for (let i = 1; i < pts.length; i++) total += milesBetween(pts[i - 1], pts[i])
+    setMiles(pickupCoord && dropoffCoord ? total : 0)
+  }, [pickupCoord, dropoffCoord, stops])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -546,37 +621,49 @@ export default function RidePage() {
               </div>
 
               {/* Multi-stop Section */}
-                                  <div className="rp-field">
-                                                        <span className="rp-dot multi" />
-                                                        <button className="rp-btn-small" onClick={() => setStops([...stops, { address: '', lat: null, lng: null }])}>
-                                                                                Add Stop
-                                                        </button>
-                                  </div>
-            
+              <div className="rp-row" style={{ marginBottom: 10 }}>
+                <button type="button" className="rp-btn-small" onClick={() => setStops([...stops, { address: '', lat: null, lng: null }])}>+ Add Stop</button>
+                <span className="rp-muted" style={{ margin: 0, fontSize: '12px' }}>Add as many stops as you need</span>
+              </div>
+
               {stops.map((stop, idx) => (
-                                    <div key={idx} className="rp-field">
-                                                            <span className="rp-dot stop" />
-                                                            <input
-                                                                                        className="rp-input"
-                                                                                        placeholder={`Stop ${idx + 1}`}
-                                                                                        value={stop.address}
-                                                                                        onChange={(e) => {
-                                                                                                                      const newStops = [...stops];
-                                                                                                                      newStops[idx].address = e.target.value;
-                                                                                                                      setStops(newStops);
-                                                                                          }}
-                                                                                      />
-                                                            <button className="rp-btn-small" onClick={() => setStops(stops.filter((_, i) => i !== idx))}>
-                                                                                      Remove
-                                                            </button>
-                                    </div>
-                                  ))}
+                <div key={idx} className="rp-field">
+                  <span className="rp-dot stop" />
+                  <input
+                    className="rp-input"
+                    placeholder={'Stop ' + (idx + 1) + ' address or business'}
+                    value={stop.address}
+                    onFocus={() => setActiveStop(idx)}
+                    onChange={(ev) => { setActiveStop(idx); updateStop(idx, { address: ev.target.value, lat: null, lng: null }) }}
+                  />
+                  <button
+                    type="button"
+                    className="rp-btn rp-ghost"
+                    style={{ marginTop: 8, fontSize: '13px', padding: '8px 12px' }}
+                    onClick={() => dropPinForStop(idx)}
+                  >Drop a pin on the map</button>
+                  <button
+                    type="button"
+                    className="rp-btn-small"
+                    style={{ marginTop: 8, marginLeft: 8 }}
+                    onClick={() => { setActiveStop(-1); setStopSug([]); setStops(stops.filter((_, i) => i !== idx)) }}
+                  >Remove</button>
+                  <div className="rp-muted" style={{ marginTop: 6, fontSize: '12px' }}>Stop {idx + 1} - search a business or address, or drop a pin anywhere.</div>
+                  {activeStop === idx && stopSug.length > 0 && (
+                    <div className="rp-suggest">
+                      {stopSug.map((s, i) => (
+                        <div key={i} className="rp-sugitem" onClick={() => chooseStop(idx, s)}>{s.place_name}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
 
               <div className="rp-farebox">
                 <div className="rp-farebig">${fare.toFixed(2)}</div>
                 <div className="rp-rate">${baseFare.toFixed(2)} base + ${perMile.toFixed(2)} per mile{miles > 0 ? ' \u00b7 ' + miles.toFixed(1) + ' mi' : ''}</div>
               </div>
-              <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord || paying} onClick={startCheckout}>{paying ? 'Processing...' : 'Request On Time Taxi'}</button>
+              <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord || paying || stops.some((s: Stop) => s.address.trim().length > 0 && (s.lat == null || s.lng == null))} onClick={startCheckout}>{paying ? 'Processing...' : 'Request On Time Taxi'}</button>
               {payError && <div className="rp-payerr">{payError}</div>}
             </>
           )}
@@ -677,6 +764,7 @@ export default function RidePage() {
         .rp-spin { width: 20px; height: 20px; border: 3px solid #2a2a2e; border-top-color: #f5b301; border-radius: 50%; animation: rp-rot 0.8s linear infinite; }
         @keyframes rp-rot { to { transform: rotate(360deg); } }
         .rp-muted { color: #888; font-size: 13px; margin: 8px 0; }
+        .rp-stopmark { width: 26px; height: 26px; border-radius: 50%; background: #9b8cff; color: #111; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; cursor: grab; }
         .rp-tripline { color: #ddd; font-size: 14px; margin: 12px 0; }
         .rp-field { flex-wrap: wrap; }
         .rp-field .rp-input { flex: 1 1 auto; min-width: 55%; }
