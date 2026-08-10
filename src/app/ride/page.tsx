@@ -62,6 +62,46 @@ function milesBetween(a: number[], b: number[]): number {
   return 2*R*Math.asin(Math.sqrt(h))
 }
 
+async function routeAlong(points: number[][]): Promise<{ coords: number[][]; miles: number } | null> {
+  if (!points || points.length < 2) return null
+  const pts = points.length > 25 ? points.slice(0, 25) : points
+  const path = pts.map((p: number[]) => p[0] + ',' + p[1]).join(';')
+  const url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + path + '?alternatives=false&geometries=geojson&overview=full&steps=false&access_token=' + MAPBOX_TOKEN
+  try {
+    const r = await fetch(url)
+    const j = await r.json()
+    if (!j || !j.routes || !j.routes[0] || !j.routes[0].geometry) return null
+    return { coords: j.routes[0].geometry.coordinates, miles: Number(j.routes[0].distance) / 1609.344 }
+  } catch (e) {
+    return null
+  }
+}
+
+function drawRouteLine(m: any, coords: number[][]) {
+  if (!m || !coords || coords.length < 2) return
+  const data: any = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }
+  const paint = () => {
+    try {
+      const existing = m.getSource('route-source')
+      if (existing) { existing.setData(data); return }
+      m.addSource('route-source', { type: 'geojson', data })
+      m.addLayer({ id: 'route-layer', type: 'line', source: 'route-source', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#0080ff', 'line-width': 6, 'line-opacity': 0.9 } })
+    } catch (e) {}
+  }
+  try {
+    if (m.isStyleLoaded && m.isStyleLoaded()) paint()
+    else m.once('idle', paint)
+  } catch (e) {}
+}
+
+function clearRouteLine(m: any) {
+  try {
+    if (!m) return
+    if (m.getLayer && m.getLayer('route-layer')) m.removeLayer('route-layer')
+    if (m.getSource && m.getSource('route-source')) m.removeSource('route-source')
+  } catch (e) {}
+}
+
 export default function RidePage() {
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
@@ -77,6 +117,8 @@ export default function RidePage() {
   const [miles, setMiles] = useState(0)
   const [baseFare, setBaseFare] = useState(BASE_FARE)
   const [perMile, setPerMile] = useState(PER_MILE)
+  const [tipPct, setTipPct] = useState<number>(0)
+  const [customTip, setCustomTip] = useState('')
 
   useEffect(() => {
     let alive = true
@@ -131,25 +173,24 @@ export default function RidePage() {
     }
   }, [mapsReady])
 
-    useEffect(() => {
-          if (!mapsReady || !mapRef.current || !activeRide || !activeRide.driver_lat || !activeRide.pickup_lat || !activeRide.dropoff_lat) return;
-          const m = mapRef.current;
-          async function drawRoute() {
-                  const from = `${activeRide.driver_lng},${activeRide.driver_lat}`;
-                  const to = `${activeRide.dropoff_lng},${activeRide.dropoff_lat}`;
-                  const via = `${activeRide.pickup_lng},${activeRide.pickup_lat}`;
-                  try {
-                            const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${from};${via};${to}?alternatives=false&geometries=geojson&access_token=${MAPBOX_TOKEN}`);
-                            const data = await res.json();
-                            if (!data.routes || !data.routes[0]) return;
-                            const geom = data.routes[0].geometry;
-                            if (m.getSource('route-source')) { m.removeLayer('route-layer'); m.removeSource('route-source'); }
-                            m.addSource('route-source', { type: 'geojson', data: { type: 'Feature', geometry: geom } });
-                            m.addLayer({ id: 'route-layer', type: 'line', source: 'route-source', paint: { 'line-color': '#0080ff', 'line-width': 5 } }, 'poi-label');
-                  } catch (e) { console.log('Route error:', e); }
-          }
-          drawRoute();
-    }, [activeRide, mapsReady, MAPBOX_TOKEN]);
+  useEffect(() => {
+    if (!mapsReady || !mapRef.current || !activeRide) return
+    const m = mapRef.current
+    const started = activeRide.status === 'picked_up'
+    const pts: number[][] = []
+    const dLng = driverPos ? driverPos.lng : activeRide.driver_lng
+    const dLat = driverPos ? driverPos.lat : activeRide.driver_lat
+    if (dLat != null && dLng != null) pts.push([Number(dLng), Number(dLat)])
+    if (!started && activeRide.pickup_lat != null && activeRide.pickup_lng != null) pts.push([Number(activeRide.pickup_lng), Number(activeRide.pickup_lat)])
+    if (activeRide.dropoff_lat != null && activeRide.dropoff_lng != null) pts.push([Number(activeRide.dropoff_lng), Number(activeRide.dropoff_lat)])
+    if (pts.length < 2) return
+    let cancelled = false
+    routeAlong(pts).then((r) => {
+      if (cancelled || !r) return
+      drawRouteLine(m, r.coords)
+    })
+    return () => { cancelled = true }
+  }, [activeRide, driverPos, mapsReady])
 
   useEffect(() => {
     if (!pickup || pickupCoord) { setPickupSug([]); return }
@@ -300,14 +341,28 @@ export default function RidePage() {
   }, [activeStop, stops, pickupCoord])
 
   useEffect(() => {
+    if (activeRide) return
     const pts: number[][] = []
     if (pickupCoord) pts.push(pickupCoord)
     for (const s of stops) { if (s.lat != null && s.lng != null) pts.push([s.lng as number, s.lat as number]) }
     if (dropoffCoord) pts.push(dropoffCoord)
-    let total = 0
-    for (let i = 1; i < pts.length; i++) total += milesBetween(pts[i - 1], pts[i])
-    setMiles(pickupCoord && dropoffCoord ? total : 0)
-  }, [pickupCoord, dropoffCoord, stops])
+    if (!pickupCoord || !dropoffCoord || pts.length < 2) {
+      setMiles(0)
+      if (mapRef.current) clearRouteLine(mapRef.current)
+      return
+    }
+    let straight = 0
+    for (let i = 1; i < pts.length; i++) straight += milesBetween(pts[i - 1], pts[i])
+    setMiles(straight)
+    let cancelled = false
+    routeAlong(pts).then((r) => {
+      if (cancelled || !r) return
+      setMiles(r.miles)
+      if (mapRef.current) drawRouteLine(mapRef.current, r.coords)
+    })
+    return () => { cancelled = true }
+  }, [pickupCoord, dropoffCoord, stopKey, mapsReady, activeRide])
+
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -347,7 +402,7 @@ export default function RidePage() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fare, pickup, dropoff, miles }),
+        body: JSON.stringify({ fare, pickup, dropoff, miles, tip, total }),
       })
       const data = await res.json()
       if (data && data.url) {
@@ -363,6 +418,11 @@ export default function RidePage() {
   }
 
   const fare = miles > 0 ? baseFare + perMile * miles : baseFare
+  const tip = tipPct < 0 ? Math.max(0, Number(customTip) || 0) : Math.round(fare * tipPct) / 100
+  const total = fare + tip
+  const tripFare = activeRide && activeRide.fare != null ? Number(activeRide.fare) : total
+  const tripMiles = activeRide && activeRide.fare != null ? Math.max(0, (Number(activeRide.fare) - baseFare) / (perMile || 1)) : miles
+  const tripStatus = activeRide && activeRide.status === 'picked_up' ? 'On the trip' : 'On the way'
 
   // Live tracking: find the rider's active ride, stream their GPS, and receive the driver's GPS
   useEffect(() => {
@@ -660,8 +720,20 @@ export default function RidePage() {
               ))}
 
               <div className="rp-farebox">
-                <div className="rp-farebig">${fare.toFixed(2)}</div>
-                <div className="rp-rate">${baseFare.toFixed(2)} base + ${perMile.toFixed(2)} per mile{miles > 0 ? ' \u00b7 ' + miles.toFixed(1) + ' mi' : ''}</div>
+                <div className="rp-farebig">${total.toFixed(2)}</div>
+                <div className="rp-rate">${baseFare.toFixed(2)} base + ${perMile.toFixed(2)} per mile{miles > 0 ? ' \u00b7 ' + miles.toFixed(1) + ' mi' : ''}{tip > 0 ? ' \u00b7 fare $' + fare.toFixed(2) + ' + tip $' + tip.toFixed(2) : ''}</div>
+              </div>
+              <div className="rp-tipbox">
+                <div className="rp-tiplabel">Add a tip for your driver (optional)</div>
+                <div className="rp-tiprow">
+                  {[0, 15, 20, 25].map((p: number) => (
+                    <button type="button" key={p} className={'rp-tipbtn' + (tipPct === p ? ' rp-tipon' : '')} onClick={() => { setTipPct(p); setCustomTip('') }}>{p === 0 ? 'No tip' : p + '%'}</button>
+                  ))}
+                  <button type="button" className={'rp-tipbtn' + (tipPct < 0 ? ' rp-tipon' : '')} onClick={() => setTipPct(-1)}>Other</button>
+                </div>
+                {tipPct < 0 && (
+                  <input className="rp-input rp-tipinput" type="number" min="0" step="1" placeholder="Tip amount ($)" value={customTip} onChange={(e) => setCustomTip(e.target.value)} />
+                )}
               </div>
               <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord || paying || stops.some((s: Stop) => s.address.trim().length > 0 && (s.lat == null || s.lng == null))} onClick={startCheckout}>{paying ? 'Processing...' : 'Request On Time Taxi'}</button>
               {payError && <div className="rp-payerr">{payError}</div>}
@@ -674,7 +746,7 @@ export default function RidePage() {
                 <span className="rp-spin" />
                 <span>Finding your driver...</span>
               </div>
-              <div className="rp-muted">${fare.toFixed(2)} \u00b7 {miles.toFixed(1)} mi</div>
+                  <div className="rp-muted">${tripFare.toFixed(2)} \u00b7 {tripMiles.toFixed(1)} mi</div>
               <button className="rp-btn rp-ghost" onClick={() => setStage(STAGE.ONWAY)}>Simulate driver found</button>
               <button className="rp-btn rp-ghost" onClick={() => setStage(STAGE.PLAN)}>Cancel</button>
             </div>
@@ -690,7 +762,7 @@ export default function RidePage() {
                 <a href="tel:+19302164166" className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: (930) 216-4166</a>
                 </div>
               </div>
-              <div className="rp-tripline">${fare.toFixed(2)} \u00b7 {miles.toFixed(1)} mi \u00b7 On the way</div>
+                <div className="rp-tripline">${tripFare.toFixed(2)} \u00b7 {tripMiles.toFixed(1)} mi \u00b7 {tripStatus}</div>
               {activeRide && !activeRide.rider_confirmed_pickup && activeRide.status !== 'picked_up' && (
                 <button
                   className="rp-btn"
@@ -755,6 +827,12 @@ export default function RidePage() {
         .rp-farebox { display: flex; align-items: baseline; justify-content: space-between; margin: 16px 0; }
         .rp-farebig { font-size: 30px; font-weight: 800; color: #f5b301; }
         .rp-rate { font-size: 12px; color: #888; text-align: right; }
+      .rp-tipbox { margin: 10px 0 14px; }
+      .rp-tiplabel { font-size: 13px; color: #bbb; margin-bottom: 6px; }
+      .rp-tiprow { display: flex; gap: 6px; flex-wrap: wrap; }
+      .rp-tipbtn { flex: 1 1 auto; padding: 8px 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #ddd; font-size: 13px; font-weight: 700; cursor: pointer; }
+      .rp-tipon { background: #f5b301; color: #111; border-color: #f5b301; }
+      .rp-tipinput { margin-top: 8px; }
         .rp-payerr { color: #ff6b6b; font-size: 13px; margin-top: 10px; text-align: center; }
         .rp-btn { width: 100%; background: #f5b301; color: #111; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 6px; }
         .rp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
