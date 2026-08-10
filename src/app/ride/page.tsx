@@ -9,6 +9,7 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
 
 const STAGE = { PLAN: 'plan', SEARCHING: 'searching', ONWAY: 'onway' } as const
 type Stage = typeof STAGE[keyof typeof STAGE]
+type Stop = { address: string; lat: number | null; lng: number | null }
 
 let mapboxPromise: Promise<any> | null = null
 function loadMapbox(): Promise<any> {
@@ -57,7 +58,7 @@ export default function RidePage() {
   const [pickupSug, setPickupSug] = useState<any[]>([])
   const [dropoffSug, setDropoffSug] = useState<any[]>([])
   const [stage, setStage] = useState<Stage>(STAGE.PLAN)
-    const [stops, setStops] = useState<Array<{ address: string; lat: number | null; lng: number | null }>>([]);
+  const [stops, setStops] = useState<Stop[]>([])
   const [miles, setMiles] = useState(0)
   const [baseFare, setBaseFare] = useState(BASE_FARE)
   const [perMile, setPerMile] = useState(PER_MILE)
