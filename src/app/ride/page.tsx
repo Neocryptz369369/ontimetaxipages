@@ -381,20 +381,31 @@ export default function RidePage() {
           const meta = (user.user_metadata || {})
           const riderName = meta.full_name || meta.name || user.email || ''
           const riderPhone = meta.phone || meta.phone_number || ''
-          const { error: rideInsertErr } = await supabase.from('rides').insert({
+          const rideRow: any = {
             rider_id: user.id,
             rider_name: riderName,
             rider_phone: riderPhone,
             pickup,
             dropoff,
             fare: rideFare,
-            status: 'requested', pickup_lat: pickupCoord ? pickupCoord[1] : null, pickup_lng: pickupCoord ? pickupCoord[0] : null, dropoff_lat: dropoffCoord ? dropoffCoord[1] : null, dropoff_lng: dropoffCoord ? dropoffCoord[0] : null,
-        })
-        if (rideInsertErr) {
-          setPayError('Could not create your ride: ' + rideInsertErr.message)
-          setPaying(false)
-          return
-        }
+            status: 'requested',
+            pickup_lat: pickupCoord ? pickupCoord[1] : null,
+            pickup_lng: pickupCoord ? pickupCoord[0] : null,
+            dropoff_lat: dropoffCoord ? dropoffCoord[1] : null,
+            dropoff_lng: dropoffCoord ? dropoffCoord[0] : null,
+          }
+          let rideInsertErr: any = null
+          const firstTry = await supabase.from('rides').insert({ ...rideRow, tip })
+          rideInsertErr = firstTry.error
+          if (rideInsertErr) {
+            const retry = await supabase.from('rides').insert(rideRow)
+            rideInsertErr = retry.error
+          }
+          if (rideInsertErr) {
+            setPayError('Could not create your ride: ' + rideInsertErr.message)
+            setPaying(false)
+            return
+          }
       }
       } catch (rideErr) {
         // non-blocking: continue to checkout even if ride logging fails
@@ -414,6 +425,15 @@ export default function RidePage() {
     } catch (e) {
       setPayError('Network error. Please try again.')
       setPaying(false)
+    }
+  }
+
+  async function cancelRideRequest() {
+    const ride = activeRide
+    setStage(STAGE.PLAN)
+    setActiveRide(null)
+    if (ride && ride.id) {
+      try { await supabase.from('rides').update({ status: 'canceled' }).eq('id', ride.id) } catch (e) {}
     }
   }
 
@@ -437,7 +457,8 @@ export default function RidePage() {
         .from('rides')
         .select('*')
         .eq('rider_id', user.id)
-        .in('status', ['accepted', 'picked_up'])
+        .in('status', ['requested', 'accepted', 'picked_up'])
+        .gte('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
         .limit(1)
       if (!alive) return
@@ -446,9 +467,9 @@ export default function RidePage() {
       if (!ride) {
         channel = supabase
           .channel('ride-pending-' + user.id)
-          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: 'rider_id=eq.' + user.id }, (payload: any) => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'rides', filter: 'rider_id=eq.' + user.id }, (payload: any) => {
             const r = payload.new
-            if (r && (r.status === 'accepted' || r.status === 'picked_up')) {
+            if (r && (r.status === 'requested' || r.status === 'accepted' || r.status === 'picked_up')) {
               if (channel) { supabase.removeChannel(channel); channel = null }
               boot()
             }
@@ -456,7 +477,7 @@ export default function RidePage() {
           .subscribe()
         return
       }
-      setStage(STAGE.ONWAY)
+      setStage(ride.status === 'requested' ? STAGE.SEARCHING : STAGE.ONWAY)
       if (ride.driver_lat != null && ride.driver_lng != null) {
         setDriverPos({ lat: ride.driver_lat, lng: ride.driver_lng })
       }
@@ -480,6 +501,8 @@ export default function RidePage() {
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: 'id=eq.' + ride.id }, (payload: any) => {
           const r = payload.new
           setActiveRide(r)
+          if (r.status === 'requested') setStage(STAGE.SEARCHING)
+          else if (r.status === 'accepted' || r.status === 'picked_up') setStage(STAGE.ONWAY)
           if (r.driver_lat != null && r.driver_lng != null) setDriverPos({ lat: r.driver_lat, lng: r.driver_lng })
         })
         .subscribe()
@@ -489,10 +512,11 @@ export default function RidePage() {
       if (!alive) return
       const { data: u } = await supabase.auth.getUser()
       if (!u || !u.user) return
-      const { data: rows } = await supabase.from('rides').select('*').eq('rider_id', u.user.id).in('status', ['accepted', 'picked_up']).order('created_at', { ascending: false }).limit(1)
+      const { data: rows } = await supabase.from('rides').select('*').eq('rider_id', u.user.id).in('status', ['requested', 'accepted', 'picked_up']).gte('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()).order('created_at', { ascending: false }).limit(1)
       const r = rows && rows[0] ? rows[0] : null
       if (!alive || !r) return
       setActiveRide(r)
+      setStage(r.status === 'requested' ? STAGE.SEARCHING : STAGE.ONWAY)
       if (r.driver_lat != null && r.driver_lng != null) setDriverPos({ lat: r.driver_lat, lng: r.driver_lng })
     }, 4000)
 
@@ -747,8 +771,7 @@ export default function RidePage() {
                 <span>Finding your driver...</span>
               </div>
                   <div className="rp-muted">${tripFare.toFixed(2)} \u00b7 {tripMiles.toFixed(1)} mi</div>
-              <button className="rp-btn rp-ghost" onClick={() => setStage(STAGE.ONWAY)}>Simulate driver found</button>
-              <button className="rp-btn rp-ghost" onClick={() => setStage(STAGE.PLAN)}>Cancel</button>
+                <button className="rp-btn rp-ghost" onClick={cancelRideRequest}>Cancel ride request</button>
             </div>
           )}
 
