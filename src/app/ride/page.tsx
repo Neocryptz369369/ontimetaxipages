@@ -500,6 +500,11 @@ export default function RidePage() {
         .channel('ride-track-' + ride.id)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: 'id=eq.' + ride.id }, (payload: any) => {
           const r = payload.new
+          if (r.status !== 'requested' && r.status !== 'accepted' && r.status !== 'picked_up') {
+            setActiveRide(null)
+            setStage(STAGE.PLAN)
+            return
+          }
           setActiveRide(r)
           if (r.status === 'requested') setStage(STAGE.SEARCHING)
           else if (r.status === 'accepted' || r.status === 'picked_up') setStage(STAGE.ONWAY)
@@ -515,6 +520,7 @@ export default function RidePage() {
       const { data: rows } = await supabase.from('rides').select('*').eq('rider_id', u.user.id).in('status', ['requested', 'accepted', 'picked_up']).gte('created_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()).order('created_at', { ascending: false }).limit(1)
       const r = rows && rows[0] ? rows[0] : null
       if (!alive || !r) return
+      if (r.status !== 'requested' && r.status !== 'accepted' && r.status !== 'picked_up') return
       setActiveRide(r)
       setStage(r.status === 'requested' ? STAGE.SEARCHING : STAGE.ONWAY)
       if (r.driver_lat != null && r.driver_lng != null) setDriverPos({ lat: r.driver_lat, lng: r.driver_lng })
@@ -570,7 +576,7 @@ export default function RidePage() {
         </div>
 
         <div className="rp-card">
-          {activeRide && (
+            {activeRide && (activeRide.status === 'requested' || activeRide.status === 'accepted' || activeRide.status === 'picked_up') && (
             <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(216,27,27,0.12)', border: '1px solid rgba(216,27,27,0.35)' }}>
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
                     {activeRide.status === 'picked_up' ? 'You are on your way' : (activeRide.status === 'requested' ? 'Ride requested' : 'Your driver is on the way')}
