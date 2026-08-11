@@ -2,10 +2,18 @@
 import Link from 'next/link'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '../../../lib/supabase'
 
 export default function RideSuccess() {
   const router = useRouter()
   useEffect(() => {
+    try {
+      const rid = window.localStorage.getItem('ott_ride_id')
+      if (rid) {
+        window.localStorage.setItem('ott_paid_ride', rid)
+        supabase.from('rides').update({ paid: true }).eq('id', rid).then(function () {}, function () {})
+      }
+    } catch (e) {}
     const t = setTimeout(() => { router.push('/ride') }, 4000)
     return () => clearTimeout(t)
   }, [router])
