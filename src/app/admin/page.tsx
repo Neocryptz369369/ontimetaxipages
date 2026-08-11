@@ -186,7 +186,7 @@ export default function AdminPage() {
     async function loadRides() {
       const { data } = await supabase
         .from("rides")
-        .select("id, pickup, dropoff, fare, status, created_at, rider_id, profiles(full_name, phone, photo_url)")
+        .select("*, profiles(full_name, phone, photo_url)")
         .eq("status", "requested")
         .order("created_at", { ascending: true });
       setIncoming(data || []);
@@ -744,7 +744,7 @@ export default function AdminPage() {
             {activeDrive.dropoff ? <br /> : null}
             {activeDrive.dropoff ? "Destination: " + activeDrive.dropoff : ""}
                 <br />
-                {activeDrive.fare != null ? <span style={{ color: "#fff", fontWeight: 700 }}>Rider paid: ${Number(activeDrive.fare).toFixed(2)}</span> : ""}
+                {activeDrive.fare != null ? <span style={{ color: "#fff", fontWeight: 700 }}>Rider paid: ${Number(activeDrive.fare).toFixed(2)}{Number(activeDrive.tip || 0) > 0 ? " + $" + Number(activeDrive.tip).toFixed(2) + " tip" : ""}</span> : ""}
             </p>
             <div
               ref={adminMapDivRef}
@@ -876,7 +876,7 @@ export default function AdminPage() {
                       <strong>To:</strong> {r.dropoff}
                     </div>
                     <div style={{ color: "#fff", fontSize: "13px", marginTop: "6px" }}>
-                      Fare: ${Number(r.fare || 0).toFixed(2)}
+                      Fare: ${Number(r.fare || 0).toFixed(2)}{Number(r.tip || 0) > 0 ? " + $" + Number(r.tip).toFixed(2) + " tip" : ""}
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
                       <input type="text" placeholder="Driver name" value={(driverInputs[r.id] && driverInputs[r.id].name) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), name: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
