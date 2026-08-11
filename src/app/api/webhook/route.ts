@@ -69,6 +69,27 @@ export async function POST(req: NextRequest) {
         dropoff: meta.dropoff,
         miles: meta.miles,
       })
+      try {
+        const rideId = meta.ride_id
+        const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        if (rideId && sbUrl && sbKey) {
+          const url = sbUrl + '/rest/v1/rides\u003Fid=eq.' + encodeURIComponent(String(rideId))
+          const hdrs: any = {
+            apikey: sbKey,
+            Authorization: 'Bearer ' + sbKey,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          }
+          const patch: any = { paid: true }
+          const t = Number(meta.tip)
+          if (!isNaN(t) && t > 0) patch.tip = t
+          const r = await fetch(url, { method: 'PATCH', headers: hdrs, body: JSON.stringify(patch) })
+          if (!r.ok) {
+            await fetch(url, { method: 'PATCH', headers: hdrs, body: JSON.stringify({ paid: true }) })
+          }
+        }
+      } catch (e) {}
       break
     }
     default:
