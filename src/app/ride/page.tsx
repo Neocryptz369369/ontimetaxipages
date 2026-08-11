@@ -421,10 +421,12 @@ export default function RidePage() {
       } catch (rideErr) {
         // non-blocking: continue to checkout even if ride logging fails
       }
+      let __rid: any = null
+      try { __rid = typeof window !== 'undefined' ? window.localStorage.getItem('ott_ride_id') : null } catch (e) {}
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fare, pickup, dropoff, miles, tip, total }),
+        body: JSON.stringify({ fare, pickup, dropoff, miles, tip, total, rideId: __rid }),
       })
       const data = await res.json()
       if (data && data.url) {
