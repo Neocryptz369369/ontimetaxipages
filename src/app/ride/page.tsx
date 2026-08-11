@@ -573,7 +573,7 @@ export default function RidePage() {
           {activeRide && (
             <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(216,27,27,0.12)', border: '1px solid rgba(216,27,27,0.35)' }}>
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
-                {activeRide.status === 'picked_up' ? 'You are on your way' : 'Your driver is on the way'}
+                    {activeRide.status === 'picked_up' ? 'You are on your way' : (activeRide.status === 'requested' ? 'Ride requested' : 'Your driver is on the way')}
               </div>
               {activeRide.driver_name && (
                 <div style={{ fontSize: '14px', marginBottom: '4px' }}>
@@ -588,7 +588,7 @@ export default function RidePage() {
                 </div>
               )}
               <div style={{ fontSize: '13px', opacity: 0.85 }}>
-                {driverPos ? 'Live location updating on the map above.' : 'Waiting for your driver location...'}
+                    {driverPos ? 'Live location updating on the map above.' : (activeRide.status === 'requested' ? 'Waiting for a driver to accept your ride.' : 'Waiting for your driver location...')}
               </div>
               {geoError && (
                 <div style={{ fontSize: '13px', color: '#ffb4b4', marginTop: '6px' }}>{geoError}</div>
@@ -770,7 +770,7 @@ export default function RidePage() {
                 <span className="rp-spin" />
                 <span>Finding your driver...</span>
               </div>
-                  <div className="rp-muted">${tripFare.toFixed(2)} \u00b7 {tripMiles.toFixed(1)} mi</div>
+                  <div className="rp-muted">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi</div>
                 <button className="rp-btn rp-ghost" onClick={cancelRideRequest}>Cancel ride request</button>
             </div>
           )}
@@ -785,7 +785,7 @@ export default function RidePage() {
                 <a href="tel:+19302164166" className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: (930) 216-4166</a>
                 </div>
               </div>
-                <div className="rp-tripline">${tripFare.toFixed(2)} \u00b7 {tripMiles.toFixed(1)} mi \u00b7 {tripStatus}</div>
+                <div className="rp-tripline">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi · {tripStatus}</div>
               {activeRide && !activeRide.rider_confirmed_pickup && activeRide.status !== 'picked_up' && (
                 <button
                   className="rp-btn"
