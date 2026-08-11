@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
   const fare = miles > 0 ? baseFee + perMile * miles : baseFee
   const pickup = typeof body.pickup === 'string' ? body.pickup : ''
   const dropoff = typeof body.dropoff === 'string' ? body.dropoff : ''
+  const rideId = body.rideId ? String(body.rideId) : ''
 
   if (!fare || isNaN(fare) || fare <= 0) {
     return NextResponse.json({ error: 'Invalid fare' }, { status: 400 })
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
   if (pickup) params.append('metadata[pickup]', pickup.slice(0, 480))
   if (dropoff) params.append('metadata[dropoff]', dropoff.slice(0, 480))
   if (miles) params.append('metadata[miles]', miles.toFixed(2))
+  if (rideId) params.append('metadata[ride_id]', rideId.slice(0, 120))
   if (tip > 0) {
     params.append('line_items[1][quantity]', '1')
     params.append('line_items[1][price_data][currency]', 'usd')
