@@ -118,6 +118,7 @@ export default function RidePage() {
   const [baseFare, setBaseFare] = useState(BASE_FARE)
   const [perMile, setPerMile] = useState(PER_MILE)
   const [tipPct, setTipPct] = useState<number>(0)
+  const [paidRideId, setPaidRideId] = useState<string>('')
   const [customTip, setCustomTip] = useState('')
 
   useEffect(() => {
@@ -395,12 +396,22 @@ export default function RidePage() {
             dropoff_lng: dropoffCoord ? dropoffCoord[0] : null,
           }
           let rideInsertErr: any = null
-          const firstTry = await supabase.from('rides').insert({ ...rideRow, tip })
+          let newRideId: any = null
+          const firstTry = await supabase.from('rides').insert({ ...rideRow, tip }).select()
           rideInsertErr = firstTry.error
           if (rideInsertErr) {
-            const retry = await supabase.from('rides').insert(rideRow)
+            const retry = await supabase.from('rides').insert(rideRow).select()
             rideInsertErr = retry.error
+            if (!rideInsertErr && retry.data && retry.data[0]) newRideId = retry.data[0].id
+          } else if (firstTry.data && firstTry.data[0]) {
+            newRideId = firstTry.data[0].id
           }
+          try {
+            if (newRideId && typeof window !== 'undefined') {
+              window.localStorage.setItem('ott_ride_id', String(newRideId))
+              window.localStorage.removeItem('ott_paid_ride')
+            }
+          } catch (e) {}
           if (rideInsertErr) {
             setPayError('Could not create your ride: ' + rideInsertErr.message)
             setPaying(false)
@@ -436,6 +447,15 @@ export default function RidePage() {
       try { await supabase.from('rides').update({ status: 'canceled' }).eq('id', ride.id) } catch (e) {}
     }
   }
+
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem('ott_paid_ride')
+      if (v) setPaidRideId(v)
+    } catch (e) {}
+  }, [activeRide])
+
+  const ridePaid = !!activeRide && (((activeRide as any).paid === true) || (paidRideId !== '' && String(activeRide.id) === paidRideId))
 
   const fare = miles > 0 ? baseFare + perMile * miles : baseFare
   const tip = tipPct < 0 ? Math.max(0, Number(customTip) || 0) : Math.round(fare * tipPct) / 100
@@ -777,7 +797,7 @@ export default function RidePage() {
                 <span>Finding your driver...</span>
               </div>
                   <div className="rp-muted">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi</div>
-                <button className="rp-btn rp-ghost" onClick={cancelRideRequest}>Cancel ride request</button>
+                {!ridePaid && (<button className="rp-btn rp-ghost" onClick={cancelRideRequest}>Cancel ride request</button>)}
             </div>
           )}
 
@@ -812,6 +832,7 @@ export default function RidePage() {
               {activeRide && activeRide.status === 'picked_up' && (
                 <div className="rp-tripline" style={{ color: '#1a7f37', fontWeight: 700 }}>You&rsquo;re picked up &middot; on your way</div>
               )}
+              {!ridePaid && (
               <button
                 className="rp-btn rp-ghost"
                 onClick={async () => {
@@ -828,6 +849,7 @@ export default function RidePage() {
                   setStage(STAGE.PLAN)
                 }}
               >Cancel ride</button>
+              )}
             </div>
           )}
         </div>
