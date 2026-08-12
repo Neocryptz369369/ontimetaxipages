@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, useMemo, useState } from "react";
 
-type DocKey = "license" | "insurance" | "background" | "driving_record";
+type DocKey = "license" | "photo" | "insurance" | "background" | "driving_record";
 type ReviewStatus = "Approved" | "Denied";
 
 type PendingFile = {
@@ -33,6 +33,12 @@ const docDefinitions: Array<{ id: DocKey; label: string; note: string; agencyReq
     id: "license",
     label: "Driver license",
     note: "Upload the driver license file first.",
+    agencyRequired: false,
+  },
+  {
+    id: "photo",
+    label: "Your picture",
+    note: "Add a clear photo of your face. Riders see this photo so they know who is picking them up.",
     agencyRequired: false,
   },
   {
@@ -113,9 +119,10 @@ function badgeStyle(done: boolean) {
 export default function UploadDocsPage() {
   const [selectedFiles, setSelectedFiles] = useState<Partial<Record<DocKey, PendingFile>>>({});
   const [message, setMessage] = useState(
-    "Upload all 4 files first. Background and driving record files must come from a separate agency. Then press Send so the admin panel receives them and the automated system decides approved or denied."
+    "Upload all 5 files first. Background and driving record files must come from a separate agency. Then press Send so the admin panel receives them and the automated system decides approved or denied."
   );
   const [sent, setSent] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState("");
 
   const selectedCount = useMemo(
     () => Object.values(selectedFiles).filter(Boolean).length,
@@ -129,6 +136,10 @@ export default function UploadDocsPage() {
 
     if (!file) return;
 
+    if (id === "photo") {
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+
     setSelectedFiles((current) => ({
       ...current,
       [id]: {
@@ -139,12 +150,12 @@ export default function UploadDocsPage() {
     }));
 
     setSent(false);
-    setMessage(`${label} selected. Keep going until all 4 files are ready.`);
+    setMessage(`${label} selected. Keep going until all 5 files are ready.`);
   }
 
   function handleSend() {
     if (!allFilesReady) {
-      setMessage("Upload all 4 files first. Then press Send.");
+      setMessage("Upload all 5 files first. Then press Send.");
       return;
     }
 
@@ -361,10 +372,17 @@ export default function UploadDocsPage() {
                   <div style={{ fontWeight: 700, marginBottom: "8px" }}>Choose file</div>
                   <input
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    accept={doc.id === "photo" ? "image/*" : ".pdf,.jpg,.jpeg,.png,.webp"}
                     onChange={(event) => handleFileChange(doc.id, doc.label, event)}
                     style={{ width: "100%" }}
                   />
+                  {doc.id === "photo" && photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Your picture"
+                      style={{ marginTop: "12px", width: "88px", height: "88px", borderRadius: "999px", objectFit: "cover", border: "2px solid rgba(255,255,255,0.35)", display: "block" }}
+                    />
+                  ) : null}
                   <div style={{ marginTop: "10px", color: "#b8cee8", fontSize: "14px" }}>
                     {file ? `${file.name} • ${formatBytes(file.size)}` : "No file selected yet."}
                   </div>
@@ -381,7 +399,7 @@ export default function UploadDocsPage() {
                   }}
                 >
                   {file
-                    ? "This file is ready. After all 4 files are uploaded, press Send at the bottom."
+                    ? "This file is ready. After all 5 files are uploaded, press Send at the bottom."
                     : "Upload this file first. The system will not review anything until the bottom Send button is pressed."}
                 </div>
               </div>
