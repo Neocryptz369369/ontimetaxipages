@@ -142,6 +142,19 @@ export default function DrivePage() {
             >
               Open admin
             </Link>
+            <Link
+              href='/driver-login'
+              style={{
+                textDecoration: 'none',
+                color: '#09111f',
+                background: '#ffd84d',
+                padding: '12px 16px',
+                borderRadius: '14px',
+                fontWeight: 800,
+              }}
+            >
+              Driver sign in
+            </Link>
           </div>
         </div>
 
