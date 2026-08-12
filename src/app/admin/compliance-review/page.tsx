@@ -16,6 +16,7 @@ type ReviewRecord = {
   decision: ReviewStatus;
   reason: string;
   sentAt: string;
+  photoUrl?: string;
 };
 
 const storageKey = "riderOnTimeComplianceUploads";
@@ -225,6 +226,13 @@ export default function ComplianceReviewPage() {
                     <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "8px" }}>File</div>
                     <div style={{ fontWeight: 700 }}>{record.fileName}</div>
                     <div style={{ color: "#cfe3ff", marginTop: "6px" }}>{record.fileSizeText} • {record.mimeType || "unknown"}</div>
+                    {record.photoUrl ? (
+                      <img
+                        src={record.photoUrl}
+                        alt="Driver picture"
+                        style={{ marginTop: "12px", width: "110px", height: "110px", borderRadius: "999px", objectFit: "cover", border: "2px solid rgba(255,255,255,0.35)", display: "block" }}
+                      />
+                    ) : null}
                   </div>
                   <div style={{ borderRadius: "18px", padding: "14px", background: "rgba(0,0,0,0.20)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#9fc8ea", marginBottom: "8px" }}>Sent to admin</div>
