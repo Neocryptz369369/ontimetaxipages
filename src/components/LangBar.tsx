@@ -193,13 +193,34 @@ export default function LangBar() {
     <div
       className="ott-langbar"
       data-notranslate="1"
-      style={{ position: 'fixed', left: 12, bottom: 12, zIndex: 2147483000, fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' }}
+      style={{ position: 'fixed', right: 12, top: 12, zIndex: 2147483000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif' }}
     >
+      <button
+        type="button"
+        onClick={function () { setOpen(!open) }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+          padding: '9px 14px',
+          borderRadius: 999,
+          border: '1px solid rgba(255,255,255,0.18)',
+          background: '#15161c',
+          color: '#fff',
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.35)'
+        }}
+      >
+        <span style={{ fontSize: 15 }}>{'\uD83C\uDF10'}</span>
+        <span>{busy ? 'Translating...' : shortLabel}</span>
+      </button>
       {open && (
         <div
           style={{
             width: 250,
-            marginBottom: 8,
+            marginTop: 8,
             borderRadius: 14,
             overflow: 'hidden',
             background: '#15161c',
@@ -238,27 +259,6 @@ export default function LangBar() {
           </div>
         </div>
       )}
-      <button
-        type="button"
-        onClick={function () { setOpen(!open) }}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 7,
-          padding: '9px 14px',
-          borderRadius: 999,
-          border: '1px solid rgba(255,255,255,0.18)',
-          background: '#15161c',
-          color: '#fff',
-          fontSize: 13,
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.35)'
-        }}
-      >
-        <span style={{ fontSize: 15 }}>{'\uD83C\uDF10'}</span>
-        <span>{busy ? 'Translating...' : shortLabel}</span>
-      </button>
     </div>
   )
 }
