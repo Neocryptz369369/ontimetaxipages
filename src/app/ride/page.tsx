@@ -142,6 +142,11 @@ export default function RidePage() {
   const stopMarkersRef = useRef<any[]>([])
   const [activeRide, setActiveRide] = useState<any>(null)
   const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [nowTs, setNowTs] = useState<number>(Date.now())
+  useEffect(() => {
+    const id = setInterval(() => { setNowTs(Date.now()) }, 1000)
+    return () => { clearInterval(id) }
+  }, [])
   const [geoError, setGeoError] = useState('')
   const riderMarkerRef = useRef<any>(null)
   const driverMarkerRef = useRef<any>(null)
@@ -459,6 +464,11 @@ export default function RidePage() {
   }, [activeRide])
 
   const ridePaid = !!activeRide && (((activeRide as any).paid === true) || (paidRideId !== '' && String(activeRide.id) === paidRideId))
+  const TRACK_DELAY_MS = 3 * 60 * 1000
+  const trackDeadline = activeRide && (activeRide as any).created_at ? new Date((activeRide as any).created_at).getTime() + TRACK_DELAY_MS : 0
+  const trackMsLeft = trackDeadline > 0 ? Math.max(0, trackDeadline - nowTs) : 0
+  const trackUnlocked = !!activeRide && (ridePaid || (trackDeadline > 0 && nowTs >= trackDeadline))
+  const trackCountdown = Math.floor(trackMsLeft / 60000) + ':' + ('0' + Math.floor((trackMsLeft % 60000) / 1000)).slice(-2)
 
   const fare = miles > 0 ? baseFare + perMile * miles : baseFare
   const tip = tipPct < 0 ? Math.max(0, Number(customTip) || 0) : Math.round(fare * tipPct) / 100
@@ -800,6 +810,13 @@ export default function RidePage() {
                 <span>Finding your driver...</span>
               </div>
                   <div className="rp-muted">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi</div>
+                {!ridePaid && (
+                  <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
+                    {trackUnlocked
+                      ? "Live tracking is on. Your driver's location will show on the map above as soon as the driver is on the way."
+                      : "Payment has not been completed. In " + trackCountdown + " this page will show you your driver's live location on the map."}
+                  </div>
+                )}
                 {!ridePaid && (<button className="rp-btn rp-ghost" onClick={cancelRideRequest}>Cancel ride request</button>)}
             </div>
           )}
@@ -815,6 +832,13 @@ export default function RidePage() {
                 </div>
               </div>
                 <div className="rp-tripline">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi · {tripStatus}</div>
+              {!ridePaid && (
+                <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
+                  {trackUnlocked
+                    ? "Live tracking is on. Payment was not completed, so you can pay your driver directly."
+                    : "Payment has not been completed. In " + trackCountdown + " this page will show you your driver's live location on the map."}
+                </div>
+              )}
               {activeRide && !activeRide.rider_confirmed_pickup && activeRide.status !== 'picked_up' && (
                 <button
                   className="rp-btn"
