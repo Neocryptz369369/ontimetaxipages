@@ -143,6 +143,18 @@ export default function RidePage() {
   const [activeRide, setActiveRide] = useState<any>(null)
   const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null)
   const [nowTs, setNowTs] = useState<number>(Date.now())
+  const [backedOut, setBackedOut] = useState<boolean>(false)
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search)
+      if (q.get('canceled') === '1') {
+        window.localStorage.setItem('ott_pay_backed_out', '1')
+        setBackedOut(true)
+      } else if (window.localStorage.getItem('ott_pay_backed_out') === '1') {
+        setBackedOut(true)
+      }
+    } catch (e) {}
+  }, [])
   useEffect(() => {
     const id = setInterval(() => { setNowTs(Date.now()) }, 1000)
     return () => { clearInterval(id) }
@@ -377,6 +389,7 @@ export default function RidePage() {
   }
 
   async function startCheckout() {
+    try { window.localStorage.removeItem('ott_pay_backed_out') } catch (e) {}
     setPayError('')
     setPaying(true)
     try {
@@ -467,7 +480,7 @@ export default function RidePage() {
   const TRACK_DELAY_MS = 3 * 60 * 1000
   const trackDeadline = activeRide && (activeRide as any).created_at ? new Date((activeRide as any).created_at).getTime() + TRACK_DELAY_MS : 0
   const trackMsLeft = trackDeadline > 0 ? Math.max(0, trackDeadline - nowTs) : 0
-  const trackUnlocked = !!activeRide && (ridePaid || (trackDeadline > 0 && nowTs >= trackDeadline))
+  const trackUnlocked = !!activeRide && (ridePaid || backedOut || (trackDeadline > 0 && nowTs >= trackDeadline))
   const trackCountdown = Math.floor(trackMsLeft / 60000) + ':' + ('0' + Math.floor((trackMsLeft % 60000) / 1000)).slice(-2)
 
   const fare = miles > 0 ? baseFare + perMile * miles : baseFare
