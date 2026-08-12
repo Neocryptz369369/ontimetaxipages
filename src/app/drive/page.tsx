@@ -134,22 +134,31 @@ export default function DrivePage() {
     if (!photo) { setError('Please add a photo of yourself. Riders will see it so they know who is picking them up.'); return; }
     setBusy(true);
     try {
-      const out = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password,
-        options: {
-          data: { full_name: fullName.trim(), phone: phone.trim(), driver_application: true },
-          emailRedirectTo: window.location.origin + '/drive',
-        },
+      const dataUrl: string = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(String(reader.result));
+        reader.onerror = rej;
+        reader.readAsDataURL(photo as File);
       });
-      if (out.error) throw out.error;
-      const u = (out.data && out.data.user) ? out.data.user : null;
-      const hasSession = !!(out.data && out.data.session);
-      if (u && hasSession) {
-        await saveApplication(u.id, email.trim());
-        await load();
+      const resp = await fetch('/api/driver-apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          password: password,
+          photo: dataUrl,
+        }),
+      });
+      const j = await resp.json();
+      if (!resp.ok || j.error) throw new Error(j.error || 'Could not send your application. Please try again.');
+      const si = await supabase.auth.signInWithPassword({ email: email.trim(), password: password });
+      if (si.error) {
+        setNotice('Your application was sent to On Time Taxi. Sign in below to check on it.');
+        setMode('signin');
       } else {
-        setCheckEmail(true);
+        await load();
       }
     } catch (e) {
       setError(errText(e));
@@ -338,6 +347,7 @@ export default function DrivePage() {
       <div style={card}>
         <h2 style={{ margin: '0 0 6px', fontSize: 22, color: '#0f172a' }}>Driver sign in</h2>
         <p style={{ margin: '0 0 18px', color: '#475569', lineHeight: 1.7 }}>Already applied? Sign in to see where your application stands.</p>
+        {notice ? <p style={{ margin: '0 0 14px', color: '#065f46', fontWeight: 700 }}>{notice}</p> : null}
         <form onSubmit={onSignIn}>
           <span style={label}>Email address</span>
           <input style={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
