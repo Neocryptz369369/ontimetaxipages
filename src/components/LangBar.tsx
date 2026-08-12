@@ -33,6 +33,18 @@ function skipNode(start: any): boolean {
   return true
 }
 
+const KEEP: { [k: string]: boolean } = {
+  'on time taxi': true,
+  'on time taxi.': true,
+  'ontimetaxi': true,
+  'ontimetaxi.biz': true,
+  'mapbox': true,
+  'stripe': true,
+  'dennis': true
+}
+
+function isBrand(s: string) { return KEEP[String(s || '').trim().toLowerCase()] === true }
+
 const ATTRS = ['placeholder', 'title', 'aria-label', 'alt']
 
 export default function LangBar() {
@@ -53,7 +65,7 @@ export default function LangBar() {
       while (node) {
         const stored = node.__ottOrig
         const val = String(typeof stored === 'string' ? stored : node.nodeValue || '')
-        if (val.trim().length > 1 && hasLetters(val) && !looksLikeAddress(val) && !skipNode(node.parentNode)) {
+        if (val.trim().length > 1 && hasLetters(val) && !looksLikeAddress(val) && !isBrand(val) && !skipNode(node.parentNode)) {
           if (typeof stored !== 'string') node.__ottOrig = val
           items.push({ node: node, attr: null, orig: val })
         }
@@ -71,7 +83,7 @@ export default function LangBar() {
           const slot = '__ottA_' + name
           const stored = el[slot]
           const val = String(typeof stored === 'string' ? stored : el.getAttribute(name) || '')
-          if (val.trim().length < 2 || !hasLetters(val) || looksLikeAddress(val)) continue
+          if (val.trim().length < 2 || !hasLetters(val) || looksLikeAddress(val) || isBrand(val)) continue
           if (typeof stored !== 'string') el[slot] = val
           items.push({ node: el, attr: name, orig: val })
         }
