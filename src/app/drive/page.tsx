@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 type CheckItem = {
@@ -18,10 +18,10 @@ const screeningSteps: CheckItem[] = [
     provider: 'State license record / DMV verification',
   },
   {
-    id: 'insurance',
-    title: 'Insurance check',
-    detail: 'Add active vehicle insurance and verify policy dates before approval.',
-    provider: 'Insurance carrier proof + policy review',
+    id: 'photo',
+    title: 'Add your picture',
+    detail: 'Add a clear photo of your face. Riders see this photo so they know who is picking them up.',
+    provider: 'Driver profile photo',
   },
   {
     id: 'background',
@@ -40,12 +40,29 @@ const screeningSteps: CheckItem[] = [
 export default function DrivePage() {
   const [completed, setCompleted] = useState<Record<string, boolean>>({
     license: false,
-    insurance: false,
+    photo: false,
     background: false,
     driving_record: false,
   });
   const [agreed, setAgreed] = useState(false);
   const [message, setMessage] = useState('Driver onboarding screen ready.');
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoName, setPhotoName] = useState('');
+
+  function openPhotoPicker() {
+    if (photoInputRef.current) photoInputRef.current.click();
+  }
+
+  function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
+    if (!picked) return;
+    setPhotoPreview(URL.createObjectURL(picked));
+    setPhotoName(picked.name);
+    setCompleted((current) => ({ ...current, photo: true }));
+    setAgreed(false);
+    setMessage('Picture added.');
+  }
 
   const doneCount = useMemo(
     () => Object.values(completed).filter(Boolean).length,
@@ -181,7 +198,7 @@ export default function DrivePage() {
               </div>
               <h2 style={{ margin: '0 0 10px', fontSize: '34px', lineHeight: 1.08 }}>Drivers must pass all 4 checks</h2>
               <p style={{ margin: 0, color: '#e8fff5', fontSize: '18px', lineHeight: 1.7 }}>
-                License, insurance, background check, and driving record review are all part of the same approval path now.
+                License, your picture, background check, and driving record review are all part of the same approval path now.
               </p>
             </div>
 
@@ -250,8 +267,16 @@ export default function DrivePage() {
           >
             <h2 style={{ marginTop: 0, fontSize: '28px' }}>Driver screening checklist</h2>
             <div style={{ display: 'grid', gap: '12px' }}>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={onPhotoPicked}
+                style={{ display: 'none' }}
+              />
               {screeningSteps.map((item) => {
                 const isDone = completed[item.id];
+                const isPhoto = item.id === 'photo';
                 return (
                   <div
                     key={item.id}
@@ -282,9 +307,19 @@ export default function DrivePage() {
                       </div>
                     </div>
                     <p style={{ margin: '0 0 14px', color: '#f5fbff', lineHeight: 1.7 }}>{item.detail}</p>
+                    {isPhoto && photoPreview ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                        <img
+                          src={photoPreview}
+                          alt="Your picture"
+                          style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.18)' }}
+                        />
+                        <div style={{ color: '#d9e5ff', fontSize: '14px' }}>{photoName}</div>
+                      </div>
+                    ) : null}
                     <button
                       type='button'
-                      onClick={() => toggleStep(item.id)}
+                      onClick={isPhoto ? openPhotoPicker : () => toggleStep(item.id)}
                       style={{
                         border: 'none',
                         cursor: 'pointer',
@@ -295,7 +330,7 @@ export default function DrivePage() {
                         fontWeight: 800,
                       }}
                     >
-                      {isDone ? 'Mark pending' : 'Mark done'}
+                      {isPhoto ? (isDone ? 'Change picture' : 'Add picture') : (isDone ? 'Mark pending' : 'Mark done')}
                     </button>
                   </div>
                 );
