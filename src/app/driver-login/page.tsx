@@ -1,0 +1,390 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '../../lib/supabase';
+
+type DriverInfo = {
+  driverCode: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  status: string;
+  calledIn: boolean;
+  photoUrl: string;
+};
+
+const shell = {
+  minHeight: '100vh',
+  background: 'linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%)',
+  fontFamily: 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif',
+  padding: '32px 16px',
+};
+
+const card = {
+  background: '#fff',
+  borderRadius: 20,
+  border: '1px solid #e5e7eb',
+  boxShadow: '0 10px 30px rgba(15,23,42,0.06)',
+  padding: 28,
+};
+
+const label = { display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 };
+
+const input = {
+  width: '100%',
+  boxSizing: 'border-box' as const,
+  padding: '12px 14px',
+  borderRadius: 12,
+  border: '1px solid #cbd5e1',
+  fontSize: 16,
+  marginBottom: 14,
+};
+
+const mainButton = {
+  width: '100%',
+  padding: '13px 16px',
+  borderRadius: 12,
+  border: 'none',
+  background: '#2563eb',
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: 800,
+  cursor: 'pointer',
+};
+
+function statusLook(status: string) {
+  if (status === 'approved') {
+    return { text: 'Approved to drive', bg: '#dcfce7', color: '#166534', border: '1px solid #86efac' };
+  }
+  if (status === 'suspended') {
+    return { text: 'Suspended', bg: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' };
+  }
+  return { text: 'Waiting for approval', bg: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' };
+}
+
+export default function DriverLoginPage() {
+  const [checking, setChecking] = useState(true);
+  const [signedIn, setSignedIn] = useState(false);
+  const [driver, setDriver] = useState<DriverInfo | null>(null);
+  const [accountEmail, setAccountEmail] = useState('');
+  const [mode, setMode] = useState('signin');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [photo, setPhoto] = useState('');
+  const [photoName, setPhotoName] = useState('');
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    loadMe();
+  }, []);
+
+  async function loadMe() {
+    setChecking(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session ? session.data.session.access_token : '';
+
+      if (!token) {
+        setSignedIn(false);
+        setDriver(null);
+        setChecking(false);
+        return;
+      }
+
+      const res = await fetch('/api/driver-me', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSignedIn(false);
+        setDriver(null);
+        setChecking(false);
+        return;
+      }
+
+      setSignedIn(true);
+      setAccountEmail(String(data.email || ''));
+      setDriver(data.driver ? data.driver : null);
+    } catch (err) {
+      setSignedIn(false);
+      setDriver(null);
+    }
+    setChecking(false);
+  }
+
+  async function onSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setNotice('');
+
+    if (!email.trim() || !password) {
+      setError('Please enter your email and your password.');
+      return;
+    }
+
+    setBusy(true);
+    const signed = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
+    setBusy(false);
+
+    if (signed.error) {
+      setError('That email and password did not match. Please try again.');
+      return;
+    }
+
+    setPassword('');
+    await loadMe();
+  }
+
+  async function onSignOut() {
+    await supabase.auth.signOut();
+    setSignedIn(false);
+    setDriver(null);
+    setNotice('You are signed out.');
+  }
+
+  function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    if (!picked) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhoto(String(reader.result || ''));
+      setPhotoName(picked.name);
+    };
+    reader.readAsDataURL(picked);
+  }
+
+  async function onCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setNotice('');
+
+    if (!fullName.trim()) { setError('Please enter your full name.'); return; }
+    if (!email.trim()) { setError('Please enter your email address.'); return; }
+    if (!phone.trim()) { setError('Please enter your phone number.'); return; }
+    if (password.length < 8) { setError('Please pick a password with at least 8 letters or numbers.'); return; }
+    if (!photo) { setError('Please add a picture of yourself.'); return; }
+
+    setBusy(true);
+    try {
+      const res = await fetch('/api/driver-apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
+          password: password,
+          photo: photo,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(String(data.error || 'Could not create your driver account.'));
+        setBusy(false);
+        return;
+      }
+
+      const signed = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
+      setBusy(false);
+      setPassword('');
+
+      if (signed.error) {
+        setNotice('Your driver account was created. Please sign in now.');
+        setMode('signin');
+        return;
+      }
+
+      await loadMe();
+    } catch (err) {
+      setBusy(false);
+      setError('Could not create your driver account. Please try again.');
+    }
+  }
+
+  const look = driver ? statusLook(driver.status) : statusLook('pending');
+
+  return (
+    <main style={shell}>
+      <div style={{ maxWidth: 460, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <Link href='/' style={{ color: '#2563eb', fontWeight: 800, fontSize: 20, textDecoration: 'none' }}>
+            On Time Taxi
+          </Link>
+          <div style={{ color: '#64748b', marginTop: 6, fontWeight: 700, letterSpacing: '0.12em', fontSize: 12 }}>
+            DRIVER AREA
+          </div>
+        </div>
+
+        {checking ? (
+          <div style={card}>
+            <div style={{ color: '#334155', fontWeight: 700 }}>Loading your driver account...</div>
+          </div>
+        ) : null}
+
+        {!checking && signedIn && driver ? (
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+              {driver.photoUrl ? (
+                <img
+                  src={driver.photoUrl}
+                  alt='Your picture'
+                  style={{ width: 76, height: 76, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0' }}
+                />
+              ) : (
+                <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#e2e8f0' }} />
+              )}
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{driver.fullName}</div>
+                <div style={{ color: '#64748b', marginTop: 4 }}>{driver.email}</div>
+              </div>
+            </div>
+
+            <div style={{ background: '#f1f5f9', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', letterSpacing: '0.12em' }}>YOUR DRIVER ID</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '0.08em', marginTop: 6, fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace' }}>
+                {driver.driverCode}
+              </div>
+            </div>
+
+            <div style={{ background: look.bg, color: look.color, border: look.border, borderRadius: 14, padding: 16, fontWeight: 800, marginBottom: 16 }}>
+              {look.text}
+            </div>
+
+            {driver.status !== 'approved' ? (
+              <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#7c2d12', borderRadius: 14, padding: 16, lineHeight: 1.6, marginBottom: 16 }}>
+                You cannot take rides yet. Call the owner and talk to him, then he approves you from the admin panel.
+                Keep this page handy, your driver ID above is the number he will ask you for.
+              </div>
+            ) : null}
+
+            <Link
+              href='/drive/upload-docs'
+              style={{ display: 'block', textAlign: 'center', padding: '13px 16px', borderRadius: 12, background: '#0f172a', color: '#fff', fontWeight: 800, textDecoration: 'none', marginBottom: 12 }}
+            >
+              Send in your documents
+            </Link>
+
+            <button type='button' onClick={onSignOut} style={{ ...mainButton, background: '#e2e8f0', color: '#0f172a' }}>
+              Sign out
+            </button>
+          </div>
+        ) : null}
+
+        {!checking && signedIn && !driver ? (
+          <div style={card}>
+            <h1 style={{ fontSize: 22, margin: '0 0 10px', color: '#0f172a' }}>This is not a driver account</h1>
+            <p style={{ color: '#475569', lineHeight: 1.6, marginTop: 0 }}>
+              You are signed in as {accountEmail}. That account is a rider account, not a driver account.
+              Sign out and create a driver account below.
+            </p>
+            <button type='button' onClick={onSignOut} style={mainButton}>Sign out</button>
+          </div>
+        ) : null}
+
+        {!checking && !signedIn ? (
+          <div style={card}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <button
+                type='button'
+                onClick={() => { setMode('signin'); setError(''); setNotice(''); }}
+                style={{ flex: 1, padding: '11px 12px', borderRadius: 12, border: '1px solid #cbd5e1', cursor: 'pointer', fontWeight: 800, background: mode === 'signin' ? '#2563eb' : '#fff', color: mode === 'signin' ? '#fff' : '#0f172a' }}
+              >
+                Sign in
+              </button>
+              <button
+                type='button'
+                onClick={() => { setMode('signup'); setError(''); setNotice(''); }}
+                style={{ flex: 1, padding: '11px 12px', borderRadius: 12, border: '1px solid #cbd5e1', cursor: 'pointer', fontWeight: 800, background: mode === 'signup' ? '#2563eb' : '#fff', color: mode === 'signup' ? '#fff' : '#0f172a' }}
+              >
+                New driver
+              </button>
+            </div>
+
+            {notice ? (
+              <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#166534', borderRadius: 12, padding: 12, marginBottom: 14, fontWeight: 700 }}>
+                {notice}
+              </div>
+            ) : null}
+
+            {error ? (
+              <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', borderRadius: 12, padding: 12, marginBottom: 14, fontWeight: 700 }}>
+                {error}
+              </div>
+            ) : null}
+
+            {mode === 'signin' ? (
+              <form onSubmit={onSignIn}>
+                <h1 style={{ fontSize: 24, margin: '0 0 6px', color: '#0f172a' }}>Driver sign in</h1>
+                <p style={{ color: '#64748b', marginTop: 0, marginBottom: 18, lineHeight: 1.6 }}>
+                  Use the email and password you set up.
+                </p>
+
+                <label style={label}>Email</label>
+                <input style={input} type='email' value={email} onChange={(e) => setEmail(e.target.value)} placeholder='you@example.com' />
+
+                <label style={label}>Password</label>
+                <input style={input} type='password' value={password} onChange={(e) => setPassword(e.target.value)} placeholder='Your password' />
+
+                <button type='submit' disabled={busy} style={{ ...mainButton, opacity: busy ? 0.6 : 1 }}>
+                  {busy ? 'Signing in...' : 'Sign in'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={onCreate}>
+                <h1 style={{ fontSize: 24, margin: '0 0 6px', color: '#0f172a' }}>Create your driver account</h1>
+                <p style={{ color: '#64748b', marginTop: 0, marginBottom: 18, lineHeight: 1.6 }}>
+                  You will get your own 12 digit driver ID. You cannot take rides until the owner approves you,
+                  and you must call him first.
+                </p>
+
+                <label style={label}>Full name</label>
+                <input style={input} type='text' value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder='First and last name' />
+
+                <label style={label}>Email</label>
+                <input style={input} type='email' value={email} onChange={(e) => setEmail(e.target.value)} placeholder='you@example.com' />
+
+                <label style={label}>Phone number</label>
+                <input style={input} type='tel' value={phone} onChange={(e) => setPhone(e.target.value)} placeholder='555 555 5555' />
+
+                <label style={label}>Password you want to use</label>
+                <input style={input} type='password' value={password} onChange={(e) => setPassword(e.target.value)} placeholder='At least 8 characters' />
+
+                <label style={label}>Your picture</label>
+                <input style={{ ...input, padding: '10px 12px' }} type='file' accept='image/*' onChange={onPhotoPicked} />
+
+                {photo ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <img src={photo} alt='Your picture' style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0' }} />
+                    <div style={{ color: '#475569', fontSize: 14 }}>{photoName}</div>
+                  </div>
+                ) : null}
+
+                <button type='submit' disabled={busy} style={{ ...mainButton, opacity: busy ? 0.6 : 1 }}>
+                  {busy ? 'Creating your account...' : 'Create my driver account'}
+                </button>
+              </form>
+            )}
+          </div>
+        ) : null}
+
+        <div style={{ textAlign: 'center', marginTop: 18 }}>
+          <Link href='/drive' style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
+            Back to the driver checks page
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
