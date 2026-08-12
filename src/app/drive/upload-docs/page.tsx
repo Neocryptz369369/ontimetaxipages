@@ -278,7 +278,7 @@ export default function UploadDocsPage() {
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#bfe8ff" }}>
                 Files ready
               </div>
-              <div style={{ fontSize: "34px", fontWeight: 800, marginTop: "10px" }}>{selectedCount} / 4</div>
+              <div style={{ fontSize: "34px", fontWeight: 800, marginTop: "10px" }}>{selectedCount} / {docDefinitions.length}</div>
             </div>
             <div style={{ borderRadius: "22px", padding: "18px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <div style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.14em", color: "#bfe8ff" }}>
