@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
+import RideChat from '../../components/RideChat'
 
 const BASE_FARE = 5.0
 const PER_MILE = 2.0
@@ -833,6 +834,9 @@ export default function RidePage() {
               )}
               {activeRide && activeRide.status === 'picked_up' && (
                 <div className="rp-tripline" style={{ color: '#1a7f37', fontWeight: 700 }}>You&rsquo;re picked up &middot; on your way</div>
+              )}
+              {activeRide && activeRide.id && (
+                <RideChat rideId={activeRide.id} role="rider" />
               )}
               {!ridePaid && (
               <button
