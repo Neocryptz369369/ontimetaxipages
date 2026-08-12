@@ -837,7 +837,7 @@ export default function RidePage() {
           {stage === STAGE.ONWAY && (
             <div>
               <div className="rp-row">
-                <div className="rp-avatar">D</div>
+                <img src="/driver.jpg" alt="Dennis, your On Time Taxi driver" className="rp-avatar" style={{ objectFit: 'cover' }} />
                 <div>
                   <div style={{ fontWeight: 700 }}>Dennis &middot; On Time Taxi</div>
                   <div className="rp-muted">Your On Time Taxi driver</div>
@@ -932,7 +932,7 @@ export default function RidePage() {
         .rp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .rp-ghost { background: transparent; color: #bbb; border: 1px solid #2a2a2e; margin-top: 10px; }
         .rp-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
-        .rp-avatar { width: 44px; height: 44px; border-radius: 50%; background: #f5b301; color: #111; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; }
+        .rp-avatar { object-fit: cover; overflow: hidden; width: 44px; height: 44px; border-radius: 50%; background: #f5b301; color: #111; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; }
         .rp-spin { width: 20px; height: 20px; border: 3px solid #2a2a2e; border-top-color: #f5b301; border-radius: 50%; animation: rp-rot 0.8s linear infinite; }
         @keyframes rp-rot { to { transform: rotate(360deg); } }
         .rp-muted { color: #888; font-size: 13px; margin: 8px 0; }
