@@ -9,6 +9,7 @@ const OWNER_TEL = 'tel:+19302164166';
 const GET_IN_FEE = 5;
 const COMPANY_PCT = 20;
 const BUCKET = 'profile-photos';
+const OWNER_EMAIL = 'neocryptz@yahoo.com';
 
 type DriverRow = {
   id: string;
@@ -210,6 +211,7 @@ export default function DrivePage() {
 
   const status = driver && driver.status ? String(driver.status) : null;
   const shot = driver ? publicPhoto(driver.photo_url) : null;
+  const isOwner = !!(userEmail && userEmail.toLowerCase() === OWNER_EMAIL);
 
   const payTerms = (
     <div style={card}>
@@ -323,6 +325,19 @@ export default function DrivePage() {
         {notice ? <p style={{ margin: '14px 0 0', color: '#065f46', fontWeight: 700 }}>{notice}</p> : null}
 
         <button type="button" onClick={onSignOut} disabled={busy} style={{ marginTop: 18, padding: '10px 16px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', color: '#334155', fontWeight: 700, cursor: 'pointer' }}>Sign out</button>
+      </div>
+    );
+  } else if (isOwner) {
+    body = (
+      <div style={card}>
+        <h2 style={{ margin: '0 0 10px', fontSize: 22, color: '#0f172a' }}>You are signed in as the owner</h2>
+        <p style={{ margin: '0 0 16px', color: '#475569', lineHeight: 1.7 }}>
+          This page is where new drivers apply. Every application lands in your admin panel, where you approve, reject, suspend or reinstate a driver. Nobody drives until you approve them.
+        </p>
+        <Link href="/admin" style={{ display: 'inline-block', background: '#2563eb', color: '#fff', padding: '12px 20px', borderRadius: 10, textDecoration: 'none', fontWeight: 800 }}>Go to my admin panel</Link>
+        <div>
+          <button type="button" onClick={onSignOut} disabled={busy} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', color: '#334155', fontWeight: 700, cursor: 'pointer' }}>Sign out to see what a driver sees</button>
+        </div>
       </div>
     );
   } else if (userId) {
