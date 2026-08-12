@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import RideChat from "../../components/RideChat";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -791,6 +792,9 @@ export default function AdminPage() {
             >
               Rider dropped off &mdash; complete ride
             </button>
+          )}
+          {activeDrive && activeDrive.id && (
+            <RideChat rideId={activeDrive.id} role="driver" />
           )}
           {activeDrive && activeDrive.status === "completed" && (
             <p style={{ color: "#7fd18f", fontSize: "14px", fontWeight: 700, marginTop: "12px", marginBottom: 0 }}>Ride completed</p>
