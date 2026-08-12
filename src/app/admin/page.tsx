@@ -552,7 +552,13 @@ export default function AdminPage() {
             marginBottom: "8px",
           }}
         >
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <img
+              src="/driver.jpg"
+              alt="Dennis, On Time Taxi driver"
+              style={{ width: "58px", height: "58px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.25)", flexShrink: 0 }}
+            />
+            <div>
             <div
               style={{
                 fontSize: "12px",
@@ -568,6 +574,7 @@ export default function AdminPage() {
             <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 900 }}>
               Admin Dashboard
             </h1>
+            </div>
           </div>
           <button
             onClick={() => setIsLoggedIn(false)}
