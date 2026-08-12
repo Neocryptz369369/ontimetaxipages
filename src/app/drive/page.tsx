@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 type CheckItem = {
@@ -46,23 +46,6 @@ export default function DrivePage() {
   });
   const [agreed, setAgreed] = useState(false);
   const [message, setMessage] = useState('Driver onboarding screen ready.');
-  const photoInputRef = useRef<HTMLInputElement | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoName, setPhotoName] = useState('');
-
-  function openPhotoPicker() {
-    if (photoInputRef.current) photoInputRef.current.click();
-  }
-
-  function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
-    const picked = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
-    if (!picked) return;
-    setPhotoPreview(URL.createObjectURL(picked));
-    setPhotoName(picked.name);
-    setCompleted((current) => ({ ...current, photo: true }));
-    setAgreed(false);
-    setMessage('Picture added.');
-  }
 
   const doneCount = useMemo(
     () => Object.values(completed).filter(Boolean).length,
@@ -267,16 +250,8 @@ export default function DrivePage() {
           >
             <h2 style={{ marginTop: 0, fontSize: '28px' }}>Driver screening checklist</h2>
             <div style={{ display: 'grid', gap: '12px' }}>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={onPhotoPicked}
-                style={{ display: 'none' }}
-              />
               {screeningSteps.map((item) => {
                 const isDone = completed[item.id];
-                const isPhoto = item.id === 'photo';
                 return (
                   <div
                     key={item.id}
@@ -307,19 +282,9 @@ export default function DrivePage() {
                       </div>
                     </div>
                     <p style={{ margin: '0 0 14px', color: '#f5fbff', lineHeight: 1.7 }}>{item.detail}</p>
-                    {isPhoto && photoPreview ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                        <img
-                          src={photoPreview}
-                          alt="Your picture"
-                          style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.18)' }}
-                        />
-                        <div style={{ color: '#d9e5ff', fontSize: '14px' }}>{photoName}</div>
-                      </div>
-                    ) : null}
                     <button
                       type='button'
-                      onClick={isPhoto ? openPhotoPicker : () => toggleStep(item.id)}
+                      onClick={() => toggleStep(item.id)}
                       style={{
                         border: 'none',
                         cursor: 'pointer',
@@ -330,7 +295,7 @@ export default function DrivePage() {
                         fontWeight: 800,
                       }}
                     >
-                      {isPhoto ? (isDone ? 'Change picture' : 'Add picture') : (isDone ? 'Mark pending' : 'Mark done')}
+                      {isDone ? 'Mark pending' : 'Mark done'}
                     </button>
                   </div>
                 );
