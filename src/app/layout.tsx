@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import LangBar from "../components/LangBar";
 
 export const metadata = {
   title: "On Time Taxi",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: {
     <html lang="en">
       <body style={{ margin: 0, background: "#f5f7fb" }}>
         {children}
+        <LangBar />
 </body>
     </html>
   );
