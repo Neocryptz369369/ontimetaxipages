@@ -22,6 +22,7 @@ type ReviewRecord = {
   decision: ReviewStatus;
   reason: string;
   sentAt: string;
+  photoUrl?: string;
 };
 
 const storageKey = "riderOnTimeComplianceUploads";
@@ -123,6 +124,8 @@ export default function UploadDocsPage() {
   );
   const [sent, setSent] = useState(false);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const selectedCount = useMemo(
     () => Object.values(selectedFiles).filter(Boolean).length,
@@ -131,6 +134,38 @@ export default function UploadDocsPage() {
 
   const allFilesReady = selectedCount === docDefinitions.length;
 
+  async function savePhoto(file: File) {
+    setPhotoBusy(true);
+    setPhotoUrl("");
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("read failed"));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/driver-photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photo: dataUrl }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        setMessage(String(data.error || "The picture could not be saved. Please try again."));
+        setPhotoBusy(false);
+        return;
+      }
+
+      setPhotoUrl(String(data.url));
+      setMessage("Your picture is saved.");
+    } catch (err) {
+      setMessage("The picture could not be saved. Please try again.");
+    }
+    setPhotoBusy(false);
+  }
+
   function handleFileChange(id: DocKey, label: string, event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -138,6 +173,7 @@ export default function UploadDocsPage() {
 
     if (id === "photo") {
       setPhotoPreview(URL.createObjectURL(file));
+      savePhoto(file);
     }
 
     setSelectedFiles((current) => ({
@@ -174,6 +210,7 @@ export default function UploadDocsPage() {
         mimeType: file.type,
         decision: result.decision,
         reason: result.reason,
+          photoUrl: doc.id === "photo" ? photoUrl : undefined,
         sentAt,
       };
     });
@@ -382,6 +419,12 @@ export default function UploadDocsPage() {
                       alt="Your picture"
                       style={{ marginTop: "12px", width: "88px", height: "88px", borderRadius: "999px", objectFit: "cover", border: "2px solid rgba(255,255,255,0.35)", display: "block" }}
                     />
+                  ) : null}
+                  {doc.id === "photo" && photoBusy ? (
+                    <div style={{ marginTop: "10px", color: "#ffe4a8", fontWeight: 700 }}>Saving your picture...</div>
+                  ) : null}
+                  {doc.id === "photo" && !photoBusy && photoUrl ? (
+                    <div style={{ marginTop: "10px", color: "#a8f5c8", fontWeight: 700 }}>Picture saved.</div>
                   ) : null}
                   <div style={{ marginTop: "10px", color: "#b8cee8", fontSize: "14px" }}>
                     {file ? `${file.name} • ${formatBytes(file.size)}` : "No file selected yet."}
