@@ -112,7 +112,6 @@ export default function HomePage() {
             {[
               ["Ride", "/ride"],
               ["Drive", "/drive"],
-              ["Admin", "/admin"],
             ].map(([label, href]) => (
               <Link
                 key={href}
@@ -272,16 +271,6 @@ export default function HomePage() {
             border: "1px solid rgba(255,255,255,0.10)",
           }}
         >
-          <div style={{ fontSize: "12px", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "#8fdcff", marginBottom: "12px" }}>
-            
-          </div>
-          <h2 style={{ margin: "0 0 10px", fontSize: "34px", lineHeight: 1.08 }}>
-            
-          </h2>
-          <p style={{ margin: "0 0 18px", color: "#d9e5ff", fontSize: "17px", lineHeight: 1.7, maxWidth: "860px" }}>
-            
-          </p>
-
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
             {workflowLinks.map((card) => (
               <div
@@ -319,6 +308,32 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+        <Link
+          href="/admin"
+          aria-label="Admin"
+          style={{
+            position: "fixed",
+            right: "18px",
+            bottom: "18px",
+            width: "48px",
+            height: "48px",
+            borderRadius: "999px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textDecoration: "none",
+            color: "#ff2d2d",
+            fontSize: "26px",
+            fontWeight: 900,
+            lineHeight: 1,
+            background: "rgba(0,0,0,0.55)",
+            border: "1px solid rgba(255,45,45,0.55)",
+            boxShadow: "0 0 18px rgba(255,45,45,0.45)",
+            zIndex: 50,
+          }}
+        >
+          @
+        </Link>
     </main>
   );
 }
