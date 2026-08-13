@@ -47,6 +47,47 @@ export async function POST(req: Request) {
       photoUrl = pub && pub.data ? pub.data.publicUrl : '';
     }
 
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+
+    let commissionPct = 20;
+    const settings = await sb.from('app_settings').select('commission_pct').limit(1).maybeSingle();
+    if (settings.data && settings.data.commission_pct !== null && settings.data.commission_pct !== undefined) {
+      commissionPct = Number(settings.data.commission_pct);
+    }
+
+    const GET_IN_FEE = 5;
+    let rideCount = 0;
+    let fares = 0;
+    let tips = 0;
+    let companyKeeps = 0;
+    let youMade = 0;
+    let unpaidCount = 0;
+
+    const today = await sb
+      .from('rides')
+      .select('fare, tip, paid, status, completed_at, accepted_at, created_at')
+      .eq('driver_id', user.id)
+      .gte('created_at', dayStart);
+
+    if (today.data) {
+      today.data.forEach((r: any) => {
+        if (r.status === 'cancelled') return;
+        rideCount = rideCount + 1;
+        const fare = Number(r.fare || 0);
+        const tip = Number(r.tip || 0);
+        const afterFee = fare - GET_IN_FEE > 0 ? fare - GET_IN_FEE : 0;
+        const cut = afterFee * (commissionPct / 100);
+        fares = fares + fare;
+        tips = tips + tip;
+        companyKeeps = companyKeeps + GET_IN_FEE + cut;
+        youMade = youMade + (afterFee - cut) + tip;
+        if (!r.paid) unpaidCount = unpaidCount + 1;
+      });
+    }
+
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+
     return NextResponse.json({
       ok: true,
       email: user.email || '',
@@ -58,6 +99,16 @@ export async function POST(req: Request) {
         status: found.data.status || 'pending',
         calledIn: found.data.called_in === true,
         photoUrl: photoUrl,
+      },
+      earnings: {
+        rides: rideCount,
+        fares: round2(fares),
+        tips: round2(tips),
+        companyKeeps: round2(companyKeeps),
+        youMade: round2(youMade),
+        unpaid: unpaidCount,
+        getInFee: GET_IN_FEE,
+        commissionPct: commissionPct,
       },
     });
   } catch (err) {
