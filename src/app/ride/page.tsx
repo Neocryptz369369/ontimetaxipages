@@ -142,6 +142,7 @@ export default function RidePage() {
   const stopMarkersRef = useRef<any[]>([])
   const [activeRide, setActiveRide] = useState<any>(null)
   const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [driverCard, setDriverCard] = useState<any>(null)
   const [nowTs, setNowTs] = useState<number>(Date.now())
   const [backedOut, setBackedOut] = useState<boolean>(false)
   useEffect(() => {
@@ -607,6 +608,29 @@ export default function RidePage() {
     }
   }, [activeRide, driverPos])
 
+
+  useEffect(() => {
+    const id = activeRide && activeRide.driver_id ? activeRide.driver_id : null
+    if (!id) { setDriverCard(null); return }
+    let active = true
+    supabase.rpc('driver_card', { p_driver_id: id }).then((res: any) => {
+      if (!active) return
+      const row = res && res.data && res.data.length ? res.data[0] : null
+      if (!row) { setDriverCard(null); return }
+      let photo = ''
+      if (row.photo_url) {
+        if (String(row.photo_url).indexOf('http') === 0) {
+          photo = String(row.photo_url)
+        } else {
+          const pub = supabase.storage.from('profile-photos').getPublicUrl(String(row.photo_url))
+          photo = pub && pub.data ? pub.data.publicUrl : ''
+        }
+      }
+      setDriverCard({ full_name: row.full_name || 'Your driver', driver_code: row.driver_code || '', photo: photo })
+    })
+    return () => { active = false }
+  }, [activeRide])
+
   return (
     <div className="rp-wrap">
       <div className="rp-shell">
@@ -628,6 +652,21 @@ export default function RidePage() {
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
                     {activeRide.status === 'picked_up' ? 'You are on your way' : (activeRide.status === 'requested' ? 'Ride requested' : 'Your driver is on the way')}
               </div>
+              {driverCard && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0 10px' }}>
+                  {driverCard.photo ? (
+                    <img src={driverCard.photo} alt="Your driver" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5b301' }} />
+                  ) : (
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#2a2a2e' }} />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{driverCard.full_name}</div>
+                    <div style={{ fontSize: '12px', color: '#bbb', fontFamily: 'ui-monospace, Menlo, monospace', letterSpacing: '1px' }}>
+                      Driver ID {driverCard.driver_code}
+                    </div>
+                  </div>
+                </div>
+              )}
               {activeRide.driver_name && (
                 <div style={{ fontSize: '14px', marginBottom: '4px' }}>
                   Driver: <strong>{activeRide.driver_name}</strong>
