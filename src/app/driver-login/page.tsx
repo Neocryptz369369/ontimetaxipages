@@ -294,8 +294,11 @@ export default function DriverLoginPage() {
 
             {driver.status !== 'approved' ? (
               <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#7c2d12', borderRadius: 14, padding: 16, lineHeight: 1.6, marginBottom: 16 }}>
-                You cannot take rides yet. Call the owner and talk to him, then he approves you from the admin panel.
+                You cannot take rides yet. Call the owner at 930-216-4166 and talk to him, then he approves you from the admin panel.
                 Keep this page handy, your driver ID above is the number he will ask you for.
+                <div style={{ marginTop: 10 }}>
+                  <a href="tel:9302164166" style={{ display: 'inline-block', padding: '10px 14px', borderRadius: 10, background: '#7c2d12', color: '#fff', fontWeight: 800, textDecoration: 'none' }}>Call 930-216-4166</a>
+                </div>
               </div>
             ) : null}
 
@@ -376,7 +379,7 @@ export default function DriverLoginPage() {
                 <h1 style={{ fontSize: 24, margin: '0 0 6px', color: '#0f172a' }}>Create your driver account</h1>
                 <p style={{ color: '#64748b', marginTop: 0, marginBottom: 18, lineHeight: 1.6 }}>
                   You will get your own 12 digit driver ID. You cannot take rides until the owner approves you,
-                  and you must call him first.
+                  and you must call him first at 930-216-4166.
                 </p>
 
                 <label style={label}>Full name</label>
