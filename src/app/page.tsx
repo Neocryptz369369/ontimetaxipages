@@ -9,13 +9,6 @@ const workflowLinks = [
     cta: "Open Broker Account",
     tone: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%)",
   },
-  {
-    title: "Admin Console",
-    text: "Internal admin tools stay on a separate page and no longer replace the homepage.",
-    href: "/admin",
-    cta: "Open Admin",
-    tone: "linear-gradient(135deg,#f59e0b 0%,#ef4444 100%)",
-  },
 ];
 
 export default function HomePage() {
@@ -313,22 +306,14 @@ export default function HomePage() {
           aria-label="Admin"
           style={{
             position: "fixed",
-            right: "18px",
-            bottom: "18px",
-            width: "48px",
-            height: "48px",
-            borderRadius: "999px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            right: "14px",
+            bottom: "12px",
             textDecoration: "none",
-            color: "#ff2d2d",
-            fontSize: "26px",
-            fontWeight: 900,
+            color: "rgba(255,255,255,0.22)",
+            fontSize: "13px",
+            fontWeight: 400,
             lineHeight: 1,
-            background: "rgba(0,0,0,0.55)",
-            border: "1px solid rgba(255,45,45,0.55)",
-            boxShadow: "0 0 18px rgba(255,45,45,0.45)",
+            padding: "4px",
             zIndex: 50,
           }}
         >
