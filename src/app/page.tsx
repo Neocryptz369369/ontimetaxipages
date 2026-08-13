@@ -94,35 +94,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          <nav
-            style={{
-              display: "flex",
-              gap: "14px",
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            {[
-              ["Ride", "/ride"],
-              ["Drive", "/drive"],
-            ].map(([label, href]) => (
-              <Link
-                key={href}
-                href={href}
-                style={{
-                  textDecoration: "none",
-                  color: "#ffffff",
-                  padding: "10px 14px",
-                  borderRadius: "999px",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  background: href === "/admin" ? "linear-gradient(135deg,#2d6cff 0%,#19b5ff 100%)" : "rgba(255,255,255,0.05)",
-                  fontWeight: 700,
-                }}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
         </header>
 
         <section
