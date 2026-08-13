@@ -137,7 +137,13 @@ export default function DriverRidesPage() {
         body: JSON.stringify({ token, rideId: id }),
       });
       const j = await res.json();
-      if (j && j.ok && j.got) setMsg('You got it. That ride is yours now.');
+      if (j && j.ok && j.got) {
+        setMsg('You got it. That ride is yours now.');
+        if (typeof window !== 'undefined') {
+          window.location.href = '/driver-rides/drive?ride=' + id;
+          return;
+        }
+      }
       else if (j && j.ok) setMsg('Another driver took that one first.');
       else setMsg(j && j.error ? String(j.error) : 'Could not take that ride.');
     } catch (e) {
@@ -206,6 +212,11 @@ export default function DriverRidesPage() {
                 >
                   Open directions to the pick up
                 </a>
+                <div style={{ marginTop: 10 }}>
+                  <Link href={'/driver-rides/drive?ride=' + r.id} style={{ display: 'inline-block', padding: '12px 16px', borderRadius: 12, background: '#16a34a', color: '#fff', fontWeight: 800, textDecoration: 'none' }}>
+                    Open the driving screen
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
