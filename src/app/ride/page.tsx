@@ -613,6 +613,7 @@ export default function RidePage() {
         <nav className="rp-nav">
           <Link href="/" className="rp-brand">On Time Taxi</Link>
           <Link href="/" className="rp-navlink">Home</Link>
+          <Link href="/report-driver" className="rp-navlink">Report a driver</Link>
           <button type="button" onClick={handleSignOut} className="rp-navlink" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Sign out</button>
         </nav>
 
