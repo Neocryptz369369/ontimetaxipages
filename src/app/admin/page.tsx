@@ -60,6 +60,12 @@ function adminDrawRouteLine(m: any, coords: number[][]) {
 
 const sections = [
   {
+    title: "Drivers and reports",
+    text: "Approve new drivers, suspend or reinstate them, and read rider reports.",
+    href: "/admin/drivers",
+    cta: "Open drivers",
+  },
+  {
     title: "Panic archive",
     text: "View and manage emergency alerts and history from users.",
     href: "/admin/panic-archive",
@@ -131,6 +137,7 @@ export default function AdminPage() {
   const [driveGeoError, setDriveGeoError] = useState("");
   const [adminMapsReady, setAdminMapsReady] = useState(false);
   const [driverInputs, setDriverInputs] = useState<any>({});
+  const [openReports, setOpenReports] = useState(0);
   const adminMapDivRef = useRef<HTMLDivElement | null>(null);
   const adminMapRef = useRef<any>(null);
   const adminRiderMarkerRef = useRef<any>(null);
@@ -144,6 +151,18 @@ export default function AdminPage() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let active = true;
+    const pull = async () => {
+      const res = await supabase.from("driver_reports").select("id").neq("status", "resolved");
+      if (active && !res.error) setOpenReports((res.data || []).length);
+    };
+    pull();
+    const t = setInterval(pull, 20000);
+    return () => { active = false; clearInterval(t); };
+  }, [isLoggedIn]);
 
   const routeKey = activeDrive
     ? [activeDrive.id, activeDrive.status, Math.round(Number(activeDrive.driver_lat) * 3000), Math.round(Number(activeDrive.driver_lng) * 3000), activeDrive.pickup_lat, activeDrive.pickup_lng, activeDrive.dropoff_lat, activeDrive.dropoff_lng].join(',')
@@ -627,6 +646,11 @@ export default function AdminPage() {
               <h2 style={{ margin: "10px 0 10px", fontSize: "20px", fontWeight: 800 }}>
                 {s.title}
               </h2>
+              {s.href === "/admin/drivers" && openReports > 0 && (
+                <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, display: "inline-block", padding: "4px 10px", borderRadius: "999px", fontSize: "13px", marginBottom: "8px" }}>
+                  {openReports} new driver report{openReports === 1 ? "" : "s"}
+                </div>
+              )}
               <p style={{ color: "#d9b3b3", fontSize: "14px", minHeight: "44px", marginBottom: "16px" }}>
                 {s.text}
               </p>
