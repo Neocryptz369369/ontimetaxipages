@@ -1,0 +1,75 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const runtime = 'nodejs';
+
+function adminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const token = String(body.token || '');
+    const rideId = String(body.rideId || '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 });
+    }
+    if (!rideId) {
+      return NextResponse.json({ error: 'No ride was picked.' }, { status: 400 });
+    }
+
+    const sb = adminClient();
+    const got = await sb.auth.getUser(token);
+
+    if (got.error || !got.data || !got.data.user) {
+      return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 });
+    }
+
+    const user = got.data.user;
+
+    const found = await sb
+      .from('drivers')
+      .select('driver_code, full_name, phone, status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (found.error) {
+      return NextResponse.json({ error: 'Could not load your driver record.' }, { status: 500 });
+    }
+    if (!found.data) {
+      return NextResponse.json({ error: 'You do not have a driver account yet.' }, { status: 403 });
+    }
+    if (String(found.data.status) !== 'approved') {
+      return NextResponse.json({ error: 'You are not approved to take rides yet.' }, { status: 403 });
+    }
+
+    const taken = await sb
+      .from('rides')
+      .update({
+        status: 'accepted',
+        driver_id: user.id,
+        accepted_at: new Date().toISOString(),
+        driver_name: String(found.data.full_name || ''),
+        driver_phone: String(found.data.phone || ''),
+      })
+      .eq('id', rideId)
+      .eq('status', 'requested')
+      .select('id, pickup, dropoff, fare, status');
+
+    if (taken.error) {
+      return NextResponse.json({ error: 'Could not take that ride.' }, { status: 500 });
+    }
+
+    if (!taken.data || taken.data.length === 0) {
+      return NextResponse.json({ ok: true, got: false });
+    }
+
+    return NextResponse.json({ ok: true, got: true, ride: taken.data[0] });
+  } catch (e) {
+    return NextResponse.json({ error: 'Something went wrong taking that ride.' }, { status: 500 });
+  }
+}
