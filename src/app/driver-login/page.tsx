@@ -303,6 +303,13 @@ export default function DriverLoginPage() {
             ) : null}
 
             <Link
+              href='/driver-rides'
+              style={{ display: 'block', textAlign: 'center', padding: '13px 16px', borderRadius: 12, background: '#16a34a', color: '#fff', fontWeight: 800, textDecoration: 'none', marginBottom: 12 }}
+            >
+              See open rides and take one
+            </Link>
+
+            <Link
               href='/drive/upload-docs'
               style={{ display: 'block', textAlign: 'center', padding: '13px 16px', borderRadius: 12, background: '#0f172a', color: '#fff', fontWeight: 800, textDecoration: 'none', marginBottom: 12 }}
             >
