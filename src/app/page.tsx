@@ -78,7 +78,7 @@ export default function HomePage() {
                   color: "#8fdcff",
                 }}
               >
-                Public homepage restored
+                Serving Clark County Indiana
               </div>
               <div
                 style={{
@@ -166,22 +166,6 @@ export default function HomePage() {
             }}
           >
             <div>
-              <div
-                style={{
-                  display: "inline-block",
-                  padding: "8px 12px",
-                  borderRadius: "999px",
-                  background: "rgba(255,255,255,0.10)",
-                  color: "#ffe3f4",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  marginBottom: "14px",
-                }}
-              >
-                
-              </div>
               <h1 style={{ margin: "0 0 12px", fontSize: "48px", lineHeight: 1.02 }}>
                 Get there. On Time. Every time.
               </h1>
