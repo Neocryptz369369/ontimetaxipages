@@ -63,10 +63,16 @@ function statusLook(status: string) {
   return { text: 'Waiting for approval', bg: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' };
 }
 
+function money(n: any) {
+  const v = Number(n || 0);
+  return '$' + v.toFixed(2);
+}
+
 export default function DriverLoginPage() {
   const [checking, setChecking] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
   const [driver, setDriver] = useState<DriverInfo | null>(null);
+  const [earnings, setEarnings] = useState<any>(null);
   const [accountEmail, setAccountEmail] = useState('');
   const [mode, setMode] = useState('signin');
 
@@ -115,6 +121,7 @@ export default function DriverLoginPage() {
       setSignedIn(true);
       setAccountEmail(String(data.email || ''));
       setDriver(data.driver ? data.driver : null);
+      setEarnings(data.earnings ? data.earnings : null);
     } catch (err) {
       setSignedIn(false);
       setDriver(null);
@@ -260,6 +267,29 @@ export default function DriverLoginPage() {
 
             <div style={{ background: look.bg, color: look.color, border: look.border, borderRadius: 14, padding: 16, fontWeight: 800, marginBottom: 16 }}>
               {look.text}
+            </div>
+
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', letterSpacing: '0.12em' }}>WHAT YOU MADE TODAY</div>
+              <div style={{ fontSize: 34, fontWeight: 800, color: '#0f172a', marginTop: 6 }}>
+                {money(earnings ? earnings.youMade : 0)}
+              </div>
+              <div style={{ color: '#64748b', marginTop: 6 }}>
+                {earnings ? earnings.rides : 0} rides today
+              </div>
+              <div style={{ borderTop: '1px solid #e2e8f0', marginTop: 12, paddingTop: 12, color: '#475569', lineHeight: 1.7, fontSize: 14 }}>
+                <div>Fares you drove: {money(earnings ? earnings.fares : 0)}</div>
+                <div>Tips: {money(earnings ? earnings.tips : 0)}</div>
+                <div>Company keeps: {money(earnings ? earnings.companyKeeps : 0)}</div>
+                <div style={{ color: '#94a3b8', marginTop: 6 }}>
+                  That is the {money(earnings ? earnings.getInFee : 5)} get in fee on every ride, plus {earnings ? earnings.commissionPct : 20} percent of what is left. Tips are all yours.
+                </div>
+                {earnings && earnings.unpaid > 0 ? (
+                  <div style={{ color: '#b45309', marginTop: 6 }}>
+                    {earnings.unpaid} of those were not paid by card, so they were cash runs you collected yourself.
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             {driver.status !== 'approved' ? (
