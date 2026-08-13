@@ -402,6 +402,7 @@ export default function RidePage() {
           const meta = (user.user_metadata || {})
           const riderName = meta.full_name || meta.name || user.email || ''
           const riderPhone = meta.phone || meta.phone_number || ''
+          const stopsPayload = stops.filter((st: Stop) => st.address.trim().length > 0).map((st: Stop) => ({ address: st.address, lat: st.lat, lng: st.lng }))
           const rideRow: any = {
             rider_id: user.id,
             rider_name: riderName,
@@ -417,7 +418,7 @@ export default function RidePage() {
           }
           let rideInsertErr: any = null
           let newRideId: any = null
-          const firstTry = await supabase.from('rides').insert({ ...rideRow, tip }).select()
+          const firstTry = await supabase.from('rides').insert({ ...rideRow, tip, stops: stopsPayload }).select()
           rideInsertErr = firstTry.error
           if (rideInsertErr) {
             const retry = await supabase.from('rides').insert(rideRow).select()
@@ -862,7 +863,7 @@ export default function RidePage() {
                 <span className="rp-spin" />
                 <span>Finding your driver...</span>
               </div>
-                  <div className="rp-muted">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi</div>
+                  <div className="rp-muted">${tripFare.toFixed(2)} Â· {tripMiles.toFixed(1)} mi</div>
                 {!ridePaid && (
                   <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
                     {trackUnlocked
@@ -884,7 +885,7 @@ export default function RidePage() {
                 <a href="tel:+19302164166" className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: (930) 216-4166</a>
                 </div>
               </div>
-                <div className="rp-tripline">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi · {tripStatus}</div>
+                <div className="rp-tripline">${tripFare.toFixed(2)} Â· {tripMiles.toFixed(1)} mi Â· {tripStatus}</div>
               {!ridePaid && (
                 <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
                   {trackUnlocked
@@ -913,7 +914,7 @@ export default function RidePage() {
                 <div className="rp-tripline" style={{ color: '#1a7f37', fontWeight: 700 }}>You&rsquo;re picked up &middot; on your way</div>
               )}
               {activeRide && activeRide.id && (
-                <RideChat rideId={activeRide.id} role="rider" />
+                <RideChat rideId={activeRide.id} role="rider" handsFree={true} />
               )}
               {!ridePaid && (
               <button
