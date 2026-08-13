@@ -217,6 +217,31 @@ export default function DrivePage() {
 
         <section
           style={{
+            borderRadius: '22px',
+            padding: '26px',
+            background: 'linear-gradient(150deg, rgba(12,32,24,0.92) 0%, rgba(6,16,12,0.92) 100%)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            marginBottom: '26px',
+          }}
+        >
+          <h2 style={{ margin: '0 0 6px', fontSize: '30px' }}>How you get paid</h2>
+          <p style={{ margin: '0 0 16px', color: '#cfe6db', fontSize: '16px' }}>
+            This is the deal for every driver. Nothing hidden.
+          </p>
+          <ul style={{ margin: 0, paddingLeft: '20px', color: '#eafff5', fontSize: '17px', lineHeight: 1.9 }}>
+            <li>Riders pay On Time Taxi by card. The company pays you.</li>
+            <li>The company keeps a 5 dollar get in fee on every single ride.</li>
+            <li>Out of what is left after that fee, the company keeps 20 percent and you keep 80 percent.</li>
+            <li>Tips are 100 percent yours.</li>
+            <li>Example: a 25 dollar ride. Take off the 5 dollar get in fee and 20 dollars is left. The company keeps 4 dollars of that, so you make 16 dollars plus any tip.</li>
+            <li>Your driver page adds up what you made each day with the get in fee and the 20 percent already taken out.</li>
+            <li>Nobody starts driving until the owner approves them, and you have to call him first.</li>
+            <li>Riders can report a driver for drug or alcohol use. That suspends you right away until it is looked into.</li>
+          </ul>
+        </section>
+
+        <section
+          style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: '14px',
