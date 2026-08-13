@@ -235,7 +235,7 @@ export default function DrivePage() {
             <li>Tips are 100 percent yours.</li>
             <li>Example: a 25 dollar ride. Take off the 5 dollar get in fee and 20 dollars is left. The company keeps 4 dollars of that, so you make 16 dollars plus any tip.</li>
             <li>Your driver page adds up what you made each day with the get in fee and the 20 percent already taken out.</li>
-            <li>Nobody starts driving until the owner approves them, and you have to call him first.</li>
+            <li>Nobody starts driving until the owner approves them, and you have to call him first at 930-216-4166.</li>
             <li>Riders can report a driver for drug or alcohol use. That suspends you right away until it is looked into.</li>
           </ul>
         </section>
