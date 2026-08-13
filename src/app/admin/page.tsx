@@ -138,6 +138,7 @@ export default function AdminPage() {
   const [adminMapsReady, setAdminMapsReady] = useState(false);
   const [driverInputs, setDriverInputs] = useState<any>({});
   const [openReports, setOpenReports] = useState(0);
+  const [approvedDrivers, setApprovedDrivers] = useState<any[]>([]);
   const adminMapDivRef = useRef<HTMLDivElement | null>(null);
   const adminMapRef = useRef<any>(null);
   const adminRiderMarkerRef = useRef<any>(null);
@@ -162,6 +163,15 @@ export default function AdminPage() {
     pull();
     const t = setInterval(pull, 20000);
     return () => { active = false; clearInterval(t); };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let active = true;
+    supabase.from("drivers").select("id, full_name, email, phone, driver_code, status").eq("status", "approved").then((res: any) => {
+      if (active && !res.error) setApprovedDrivers(res.data || []);
+    });
+    return () => { active = false; };
   }, [isLoggedIn]);
 
   const routeKey = activeDrive
@@ -355,7 +365,7 @@ export default function AdminPage() {
     }
     const { error: acceptError } = await supabase
       .from("rides")
-      .update({ status: "accepted", driver_name: d.name.trim(), driver_phone: d.phone.trim(), vehicle: d.vehicle.trim(), plate: d.plate.trim() })
+      .update({ status: "accepted", driver_id: d.driverId || null, accepted_at: new Date().toISOString(), driver_name: d.name.trim(), driver_phone: d.phone.trim(), vehicle: d.vehicle.trim(), plate: d.plate.trim() })
       .eq("id", id);
     if (acceptError) {
       setRideMsg("Could not accept the ride: " + acceptError.message);
@@ -914,6 +924,19 @@ export default function AdminPage() {
                       Fare: ${Number(r.fare || 0).toFixed(2)}{Number(r.tip || 0) > 0 ? " + $" + Number(r.tip).toFixed(2) + " tip" : ""}
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                      <select
+                        value={(driverInputs[r.id] && driverInputs[r.id].driverId) || ""}
+                        onChange={(e) => {
+                          const picked = approvedDrivers.filter((x: any) => x.id === e.target.value)[0];
+                          setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), driverId: e.target.value, name: picked ? (picked.full_name || "") : ((prev[r.id] || {}).name || ""), phone: picked ? (picked.phone || "") : ((prev[r.id] || {}).phone || "") } }));
+                        }}
+                        style={{ flex: "1 1 100%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff" }}
+                      >
+                        <option value="">Pick an approved driver, or just type a name below</option>
+                        {approvedDrivers.map((x: any) => (
+                          <option key={x.id} value={x.id}>{(x.full_name || x.email || "Driver") + " - " + x.driver_code}</option>
+                        ))}
+                      </select>
                       <input type="text" placeholder="Driver name" value={(driverInputs[r.id] && driverInputs[r.id].name) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), name: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
                       <input type="text" placeholder="Driver phone" value={(driverInputs[r.id] && driverInputs[r.id].phone) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), phone: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
                       <input type="text" placeholder="Vehicle" value={(driverInputs[r.id] && driverInputs[r.id].vehicle) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), vehicle: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
