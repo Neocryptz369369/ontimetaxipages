@@ -10,13 +10,6 @@ const workflowLinks = [
     tone: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%)",
   },
   {
-    title: "Driver Compliance",
-    text: "Driver compliance keeps its own route so the homepage stays public-facing.",
-    href: "/drive",
-    cta: "Open Driver Compliance",
-    tone: "linear-gradient(135deg,#38bdf8 0%,#6366f1 100%)",
-  },
-  {
     title: "Admin Console",
     text: "Internal admin tools stay on a separate page and no longer replace the homepage.",
     href: "/admin",
@@ -119,8 +112,6 @@ export default function HomePage() {
             {[
               ["Ride", "/ride"],
               ["Drive", "/drive"],
-              ["Get app", "/get-app"],
-              ["Cities", "/cities"],
               ["Admin", "/admin"],
             ].map(([label, href]) => (
               <Link
