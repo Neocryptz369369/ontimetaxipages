@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { LANG_EVENT, getLang, langLabel, translateText, speak, stopSpeaking, canSpeak } from '../lib/i18n'
+import { LANG_EVENT, getLang, langLabel, translateText, speak, stopSpeaking, canSpeak, ttsLang } from '../lib/i18n'
 
 type Msg = {
   id: any
@@ -27,7 +27,7 @@ function timeOf(s: string) {
   } catch (e) { return '' }
 }
 
-export default function RideChat(props: { rideId: any; role: string }) {
+export default function RideChat(props: { rideId: any; role: string; handsFree?: boolean }) {
   const role = props.role === 'driver' ? 'driver' : 'rider'
   const other = role === 'driver' ? 'rider' : 'driver'
   const rideId = props.rideId ? String(props.rideId) : ''
@@ -52,7 +52,7 @@ export default function RideChat(props: { rideId: any; role: string }) {
     langRef.current = l
     setMyLang(l)
     try {
-      const a = window.localStorage.getItem(AUTO_KEY) === '1'
+      const a = (window.localStorage.getItem(AUTO_KEY) || '1') === '1'
       autoRef.current = a
       setAutoRead(a)
     } catch (e) {}
@@ -170,6 +170,144 @@ export default function RideChat(props: { rideId: any; role: string }) {
   const [speakOk, setSpeakOk] = useState(false)
   useEffect(function () { setSpeakOk(canSpeak()) }, [])
 
+  const hfRef = useRef(false)
+  const recRef = useRef<any>(null)
+  const bufRef = useRef('')
+  const [hfOn, setHfOn] = useState(false)
+  const [heard, setHeard] = useState('')
+  const [hfNote, setHfNote] = useState('')
+
+  function canHear() {
+    if (typeof window === 'undefined') return false
+    return !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+  }
+
+  const SEND_WORDS = ['send', 'send it', 'sent', 'send message', 'enviar', 'envoyer', 'senden', 'invia', 'wyslij', 'gonder', 'otpravit']
+
+  function stripSendWord(raw: string) {
+    let t = String(raw || '').trim()
+    while (t.length > 0) {
+      const last = t.charAt(t.length - 1)
+      if (last === '.' || last === ',' || last === '!' || last === String.fromCharCode(63)) t = t.slice(0, t.length - 1)
+      else break
+    }
+    t = t.trim()
+    const low = t.toLowerCase()
+    for (let i = 0; i < SEND_WORDS.length; i++) {
+      const w = SEND_WORDS[i]
+      if (low === w) return ''
+      const tail = ' ' + w
+      if (low.length > tail.length && low.slice(low.length - tail.length) === tail) {
+        return t.slice(0, t.length - tail.length).trim()
+      }
+    }
+    return null
+  }
+
+  async function sendBody(b: string) {
+    const t = String(b || '').trim()
+    if (!t || !rideId) return
+    try {
+      const res: any = await supabase.from('messages').insert({
+        ride_id: rideId,
+        sender: role,
+        body: t,
+        lang: langRef.current || 'en'
+      })
+      if (res && res.error) setNote('chat-unavailable')
+      else { setNote(''); await load() }
+    } catch (e) { setNote('chat-unavailable') }
+  }
+
+  function stopHands() {
+    hfRef.current = false
+    setHfOn(false)
+    setHeard('')
+    bufRef.current = ''
+    try { if (recRef.current) recRef.current.stop() } catch (e) {}
+  }
+
+  function startHands() {
+    if (!canHear()) { setHfNote('This phone will not listen. You can still type.'); return }
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    try {
+      const rec: any = new SR()
+      rec.continuous = true
+      rec.interimResults = true
+      try { rec.lang = ttsLang(langRef.current || 'en') } catch (e) {}
+      rec.onresult = function (ev: any) {
+        if (!hfRef.current) return
+        try { if ((window as any).speechSynthesis && (window as any).speechSynthesis.speaking) return } catch (e2) {}
+        let fin = ''
+        let inter = ''
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const r: any = ev.results[i]
+          const piece = String(r[0] && r[0].transcript ? r[0].transcript : '')
+          if (r.isFinal) fin = fin + ' ' + piece
+          else inter = inter + ' ' + piece
+        }
+        if (fin.trim().length > 0) bufRef.current = (bufRef.current + ' ' + fin).trim()
+        setHeard((bufRef.current + ' ' + inter).trim())
+        const out = stripSendWord(bufRef.current)
+        if (out !== null) {
+          bufRef.current = ''
+          setHeard('')
+          if (out.length > 0) sendBody(out)
+        }
+      }
+      rec.onerror = function (ev: any) {
+        const k = ev && ev.error ? String(ev.error) : ''
+        if (k === 'not-allowed' || k === 'service-not-allowed') {
+          hfRef.current = false
+          setHfOn(false)
+          setHfNote('Let the browser use your microphone, then tap the button again.')
+        }
+      }
+      rec.onend = function () {
+        if (!hfRef.current) return
+        try { rec.start() } catch (e) {}
+      }
+      recRef.current = rec
+      hfRef.current = true
+      setHfOn(true)
+      setHfNote('')
+      bufRef.current = ''
+      if (!autoRef.current) toggleAuto()
+      try { rec.start() } catch (e) {}
+      try { speak('Hands free is on. Talk when you need to, then say the word send.', langRef.current || 'en') } catch (e) {}
+    } catch (e) {
+      setHfNote('This phone will not listen. You can still type.')
+    }
+  }
+
+  useEffect(function () {
+    return function () {
+      hfRef.current = false
+      try { if (recRef.current) recRef.current.stop() } catch (e) {}
+    }
+  }, [])
+
+  useEffect(function () {
+    if (!canSpeak()) return
+    let used = false
+    const unlock = function () {
+      if (used) return
+      used = true
+      try {
+        const sy: any = (window as any).speechSynthesis
+        const u: any = new (window as any).SpeechSynthesisUtterance(' ')
+        u.volume = 0
+        sy.speak(u)
+      } catch (e) {}
+    }
+    window.addEventListener('pointerdown', unlock)
+    window.addEventListener('keydown', unlock)
+    return function () {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
   if (!rideId) return null
 
   const linkBtn: any = {
@@ -196,6 +334,28 @@ export default function RideChat(props: { rideId: any; role: string }) {
           </button>
         )}
       </div>
+      {props.handsFree ? (
+        <div style={{ marginBottom: 10, padding: 11, borderRadius: 12, background: hfOn ? 'rgba(22,163,74,0.22)' : 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)' }}>
+          <button
+            type="button"
+            onClick={function () { if (hfOn) stopHands(); else startHands() }}
+            style={{ display: 'block', width: '100%', padding: '15px 12px', borderRadius: 12, border: 'none', background: hfOn ? '#16a34a' : '#f5b301', color: hfOn ? '#fff' : '#1a1a1a', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}
+          >
+            {hfOn ? 'Hands free is ON - tap to stop' : 'Start hands free talking'}
+          </button>
+          <div style={{ fontSize: 12, color: '#dcdcdc', marginTop: 8, lineHeight: 1.5 }}>
+            {hfOn
+              ? 'Just talk. When you finish a sentence, say the word send and it goes out by itself. Everything the rider sends back is read out loud to you.'
+              : 'Tap this one time before you pull off. After that you never touch the phone: talk, then say the word send.'}
+          </div>
+          {heard ? (
+            <div data-notranslate="1" style={{ marginTop: 8, fontSize: 13, color: '#fff', fontStyle: 'italic' }}>{heard}</div>
+          ) : null}
+          {hfNote ? (
+            <div style={{ marginTop: 8, fontSize: 12, color: '#ffb4b4', fontWeight: 700 }}>{hfNote}</div>
+          ) : null}
+        </div>
+      ) : null}
       <div style={{ fontSize: 12, color: '#bdbdbd', marginBottom: 10 }}>
         Messages are translated into your language automatically. Your language:{' '}
         <strong data-notranslate="1" style={{ color: '#f5b301' }}>{langLabel(myLang)}</strong>
