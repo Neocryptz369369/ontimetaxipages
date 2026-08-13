@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
+import RideChat from '../../../components/RideChat';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 let mapboxPromise: Promise<any> | null = null;
@@ -247,6 +248,16 @@ export default function DriveRidePage() {
       if (pos) pts.push([pos.lng, pos.lat]);
       else if (ride.driver_lat !== null && ride.driver_lng !== null) pts.push([Number(ride.driver_lng), Number(ride.driver_lat)]);
       if (!started && rLat !== null && rLng !== null) pts.push([rLng, rLat]);
+      if (Array.isArray(ride.stops)) {
+        for (let si = 0; si < ride.stops.length; si++) {
+          const st: any = ride.stops[si];
+          if (st && st.lat !== null && st.lat !== undefined && st.lng !== null && st.lng !== undefined) {
+            const sla = Number(st.lat);
+            const slo = Number(st.lng);
+            if (isFinite(sla) && isFinite(slo)) pts.push([slo, sla]);
+          }
+        }
+      }
       if (ride.dropoff_lat !== null && ride.dropoff_lat !== undefined && ride.dropoff_lng !== null) pts.push([Number(ride.dropoff_lng), Number(ride.dropoff_lat)]);
 
       if (pts.length >= 2) {
@@ -282,6 +293,14 @@ export default function DriveRidePage() {
 
   const status = ride ? String(ride.status) : '';
   const done = status === 'completed';
+  const terms: any = ride && ride.terms ? ride.terms : null;
+  const getInFee = terms && terms.getInFee !== undefined && terms.getInFee !== null ? Number(terms.getInFee) : 5;
+  const commissionPct = terms && terms.commissionPct !== undefined && terms.commissionPct !== null ? Number(terms.commissionPct) : 20;
+  const fareNum = ride ? Number(ride.fare || 0) : 0;
+  const tipNum = ride ? Number(ride.tip || 0) : 0;
+  const afterFee = fareNum - getInFee > 0 ? fareNum - getInFee : 0;
+  const driverKeeps = afterFee - afterFee * (commissionPct / 100) + tipNum;
+  const rideStops: any[] = ride && Array.isArray(ride.stops) ? ride.stops : [];
 
   return (
     <main style={shell}>
@@ -318,13 +337,38 @@ export default function DriveRidePage() {
           <div style={card}>
             <div style={rowLine}>Pick up: {ride.pickup || 'Not given'}</div>
             <div style={rowLine}>Drop off: {ride.dropoff || 'Not given'}</div>
+            {rideStops.length > 0 ? (
+              <div style={{ marginTop: 4 }}>
+                {rideStops.map((st: any, si: number) => (
+                  <div key={si} style={rowLine}>Stop {si + 1}: {st && st.address ? st.address : 'Not given'}</div>
+                ))}
+              </div>
+            ) : null}
             <div style={{ marginTop: 10, fontSize: 22, fontWeight: 900, color: '#0f172a' }}>{money(ride.fare)}</div>
             {ride.paid ? (
               <div style={{ ...small, color: '#166534', fontWeight: 700 }}>Paid by card already.</div>
             ) : (
               <div style={{ ...small, color: '#b45309', fontWeight: 700 }}>Not paid by card. Collect this one as a cash run.</div>
             )}
-            {ride.rider_name ? <div style={small}>Rider: {ride.rider_name}</div> : null}
+            <div style={{ marginTop: 8, color: '#334155', fontSize: 14, lineHeight: 1.7 }}>
+              {tipNum > 0 ? <div>Tip from the rider: {money(tipNum)} - that is all yours</div> : null}
+              <div style={{ fontWeight: 800, color: '#0f172a' }}>You keep about {money(driverKeeps)}</div>
+              <div style={{ ...small, marginTop: 2 }}>
+                That is the {money(getInFee)} get in fee, plus {commissionPct} percent of what is left, going to the company. Tips are all yours.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+              {ride.rider_photo ? (
+                <img src={ride.rider_photo} alt='Rider' style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0' }} />
+              ) : (
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#e2e8f0' }} />
+              )}
+              <div>
+                <div style={{ fontWeight: 800, color: '#0f172a' }}>{ride.rider_name || 'Your rider'}</div>
+                <div style={small}>Your rider</div>
+              </div>
+            </div>
             {ride.rider_phone ? (
               <a href={'tel:' + String(ride.rider_phone)} style={{ display: 'inline-block', marginTop: 10, color: '#2563eb', fontWeight: 800, textDecoration: 'none' }}>
                 Call the rider
@@ -354,6 +398,12 @@ export default function DriveRidePage() {
             <button style={{ ...bigBtn, background: '#16a34a', opacity: busy ? 0.6 : 1 }} onClick={onFinish} disabled={busy !== ''}>
               {busy === 'finish' ? 'Saving...' : 'Finish this ride'}
             </button>
+          </div>
+        ) : null}
+
+        {ride && !done ? (
+          <div style={{ ...card, background: '#0f172a', border: '1px solid #0f172a', paddingTop: 6 }}>
+            <RideChat rideId={ride.id} role='driver' handsFree={true} />
           </div>
         ) : null}
 
