@@ -341,12 +341,12 @@ export default function RideChat(props: { rideId: any; role: string; handsFree?:
             onClick={function () { if (hfOn) stopHands(); else startHands() }}
             style={{ display: 'block', width: '100%', padding: '15px 12px', borderRadius: 12, border: 'none', background: hfOn ? '#16a34a' : '#f5b301', color: hfOn ? '#fff' : '#1a1a1a', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}
           >
-            {hfOn ? 'Hands free is ON - tap to stop' : 'Start hands free talking'}
+            {hfOn ? 'Hands free is ON - tap to stop' : (role === 'driver' ? 'Start hands free talking' : 'Tap to talk instead of typing')}
           </button>
           <div style={{ fontSize: 12, color: '#dcdcdc', marginTop: 8, lineHeight: 1.5 }}>
             {hfOn
-              ? 'Just talk. When you finish a sentence, say the word send and it goes out by itself. Everything the rider sends back is read out loud to you.'
-              : 'Tap this one time before you pull off. After that you never touch the phone: talk, then say the word send.'}
+              ? 'Just talk. When you finish a sentence, say the word send and it goes out by itself. Everything your ' + other + ' sends back is read out loud to you.'
+              : (role === 'driver' ? 'Tap this one time before you pull off. After that you never touch the phone: talk, then say the word send.' : 'Tap this one time and then just talk instead of typing. Say the word send when you are finished.')}
           </div>
           {heard ? (
             <div data-notranslate="1" style={{ marginTop: 8, fontSize: 13, color: '#fff', fontStyle: 'italic' }}>{heard}</div>
