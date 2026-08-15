@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import RideChat from '../../../components/RideChat';
+import PanicButton from '../../../components/PanicButton';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 let mapboxPromise: Promise<any> | null = null;
@@ -115,6 +116,7 @@ export default function DriveRidePage() {
   const [busy, setBusy] = useState('');
   const [pos, setPos] = useState<any>(null);
   const [mapsReady, setMapsReady] = useState(false);
+  const [myToken, setMyToken] = useState('');
 
   const mapDivRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
@@ -130,6 +132,17 @@ export default function DriveRidePage() {
     const id = q.get('ride') || '';
     rideIdRef.current = id;
     setRideId(id);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getSession().then((got: any) => {
+      const t = got && got.data && got.data.session ? got.data.session.access_token : '';
+      if (alive) setMyToken(t || '');
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   async function call(action: string, extra?: any) {
@@ -404,6 +417,12 @@ export default function DriveRidePage() {
         {ride && !done ? (
           <div style={{ ...card, background: '#0f172a', border: '1px solid #0f172a', paddingTop: 6 }}>
             <RideChat rideId={ride.id} role='driver' handsFree={true} />
+          </div>
+        ) : null}
+
+        {!done ? (
+          <div style={{ ...card, background: '#0f172a', border: '1px solid #0f172a' }}>
+            <PanicButton role='driver' rideId={ride ? ride.id : null} token={myToken} />
           </div>
         ) : null}
 
