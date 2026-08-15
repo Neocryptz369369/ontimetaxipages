@@ -304,6 +304,12 @@ export default function BrokerAccountPage() {
             >
               Open Broker Dashboard
             </Link>
+            <Link
+              href="/broker-account/driver-hours"
+              style={{ textDecoration: "none", color: "#09111f", background: "#8fdcff", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
+            >
+              Driver hours and runs
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
