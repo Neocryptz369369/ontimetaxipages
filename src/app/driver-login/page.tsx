@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import RecordingAgreement, { RECORDING_AGREEMENT_TEXT } from '../../components/RecordingAgreement';
+import RatingBox, { starRow } from '../../components/RatingBox';
 
 type DriverInfo = {
   driverCode: string;
@@ -114,6 +115,10 @@ export default function DriverLoginPage() {
   const [shiftError, setShiftError] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [history, setHistory] = useState<any[]>([]);
+  const [pendingRate, setPendingRate] = useState<any>(null);
+  const [rateBusy, setRateBusy] = useState(false);
+  const [rateError, setRateError] = useState('');
 
   useEffect(() => {
     loadMe();
@@ -151,6 +156,7 @@ export default function DriverLoginPage() {
       setDriver(data.driver ? data.driver : null);
       setEarnings(data.earnings ? data.earnings : null);
       callShift('status');
+      loadHistory();
     } catch (err) {
       setSignedIn(false);
       setDriver(null);
@@ -180,6 +186,51 @@ export default function DriverLoginPage() {
     } catch (err) {
       setShiftBusy(false);
       if (action !== 'status') setShiftError('Could not change your time clock.');
+    }
+  }
+
+  async function loadHistory() {
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session ? session.data.session.access_token : '';
+      if (!token) return;
+      const res = await fetch('/api/ride-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, role: 'driver' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setHistory(data.rides ? data.rides : []);
+        setPendingRate(data.pending ? data.pending : null);
+      }
+    } catch (err) {}
+  }
+
+  async function sendMyRating(stars: number, review: string) {
+    if (!pendingRate) return;
+    setRateBusy(true);
+    setRateError('');
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session ? session.data.session.access_token : '';
+      const res = await fetch('/api/rate-ride', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, rideId: pendingRate.id, role: 'driver', stars: stars, review: review }),
+      });
+      const data = await res.json();
+      setRateBusy(false);
+      if (!res.ok) {
+        setRateError(String(data.error || 'Could not save your rating.'));
+        return;
+      }
+      setPendingRate(null);
+      setNotice('Thank you. Your rating was saved.');
+      await loadHistory();
+    } catch (err) {
+      setRateBusy(false);
+      setRateError('Could not save your rating.');
     }
   }
 
@@ -372,6 +423,46 @@ export default function DriverLoginPage() {
                 </div>
               </div>
             ) : null}
+
+            {pendingRate ? (
+              <RatingBox
+                heading='Rate your last rider'
+                who={pendingRate.riderName ? 'Your rider was ' + pendingRate.riderName : 'Your rider'}
+                where={pendingRate.pickup + ' to ' + pendingRate.dropoff}
+                note='You need to rate this run before you can take another one.'
+                busy={rateBusy}
+                error={rateError}
+                onSend={sendMyRating}
+              />
+            ) : null}
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+              <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 18, marginBottom: 4 }}>Your ride history</div>
+              <div style={{ color: '#64748b', fontSize: 13, marginBottom: 12 }}>Every run you have taken, newest first.</div>
+              {history.length === 0 ? (
+                <div style={{ color: '#64748b' }}>No runs yet.</div>
+              ) : (
+                history.slice(0, 30).map((r: any) => (
+                  <div key={r.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 12, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ color: '#64748b', fontWeight: 700, fontSize: 13 }}>{clockTime(r.createdAt)}</div>
+                      <div style={{ fontWeight: 900, color: '#0f172a' }}>{money(r.fare)}</div>
+                    </div>
+                    <div style={{ color: '#0f172a', fontWeight: 700, marginTop: 4 }}>From {r.pickup}</div>
+                    <div style={{ color: '#0f172a', fontWeight: 700 }}>To {r.dropoff}</div>
+                    <div style={{ color: '#475569', fontSize: 14, marginTop: 4 }}>
+                      Rider {r.riderName}{r.tip > 0 ? '  tip ' + money(r.tip) : ''}{r.paid ? '  paid' : '  not paid'}
+                    </div>
+                    {r.myStars > 0 ? (
+                      <div style={{ color: '#b45309', fontWeight: 800, fontSize: 17, marginTop: 4 }}>
+                        {starRow(r.myStars)}
+                        <span style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}> you rated this rider</span>
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
 
             <Link
               href='/driver-rides'
