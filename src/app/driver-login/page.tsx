@@ -354,41 +354,6 @@ export default function DriverLoginPage() {
               </div>
             ) : null}
 
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16, marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', letterSpacing: '0.12em' }}>YOUR HOURS TODAY</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', marginTop: 6 }}>
-                {hoursText(shift ? shift.totalMinutes : 0)}
-              </div>
-              <div style={{ fontWeight: 800, marginTop: 4, color: shift && shift.live ? '#166534' : '#64748b' }}>
-                {shift && shift.live ? 'You are LIVE since ' + clockTime(shift.openSince) : 'You are off the clock'}
-              </div>
-              <button
-                type='button'
-                disabled={shiftBusy}
-                onClick={() => callShift(shift && shift.live ? 'stop' : 'start')}
-                style={{ width: '100%', marginTop: 12, padding: '15px 16px', borderRadius: 12, border: 'none', background: shift && shift.live ? '#dc2626' : '#16a34a', color: '#fff', fontSize: 17, fontWeight: 900, cursor: 'pointer', opacity: shiftBusy ? 0.6 : 1 }}
-              >
-                {shiftBusy ? 'One moment...' : (shift && shift.live ? 'Go off the clock' : 'Go live')}
-              </button>
-              {shiftError ? (
-                <div style={{ marginTop: 10, background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', borderRadius: 12, padding: 12, fontWeight: 700 }}>
-                  {shiftError}
-                </div>
-              ) : null}
-              <div style={{ color: '#94a3b8', fontSize: 13, marginTop: 8, lineHeight: 1.6 }}>
-                Every time you go live and go off, the date and time is written down and kept on file for the insurance company.
-              </div>
-              {shift && shift.today && shift.today.length > 0 ? (
-                <div style={{ borderTop: '1px solid #e2e8f0', marginTop: 12, paddingTop: 12, color: '#475569', fontSize: 14, lineHeight: 1.8 }}>
-                  {shift.today.map((t: any) => (
-                    <div key={t.id}>
-                      On {clockTime(t.startedAt)} to {t.endedAt ? clockTime(t.endedAt) : 'still live'} ({hoursText(t.minutes)})
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
             <Link
               href='/driver-rides'
               style={{ display: 'block', textAlign: 'center', padding: '13px 16px', borderRadius: 12, background: '#16a34a', color: '#fff', fontWeight: 800, textDecoration: 'none', marginBottom: 12 }}
