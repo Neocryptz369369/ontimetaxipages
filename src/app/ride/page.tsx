@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import RideChat from '../../components/RideChat'
 import PanicButton from '../../components/PanicButton'
+import RatingBox, { starRow } from '../../components/RatingBox'
 
 const BASE_FARE = 5.0
 const PER_MILE = 2.0
@@ -122,6 +123,10 @@ export default function RidePage() {
   const [tipPct, setTipPct] = useState<number>(0)
   const [paidRideId, setPaidRideId] = useState<string>('')
   const [customTip, setCustomTip] = useState('')
+  const [pendingRate, setPendingRate] = useState<any>(null)
+  const [rateBusy, setRateBusy] = useState(false)
+  const [rateError, setRateError] = useState('')
+  const [driverStars, setDriverStars] = useState<any>(null)
 
   useEffect(() => {
     let alive = true
@@ -133,6 +138,50 @@ export default function RidePage() {
     })
     return () => { alive = false }
   }, [])
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('otRebook')
+      if (raw) {
+        const again = JSON.parse(raw)
+        sessionStorage.removeItem('otRebook')
+        if (again.pickup) setPickup(String(again.pickup))
+        if (again.dropoff) setDropoff(String(again.dropoff))
+        if (again.pickupLat != null && again.pickupLng != null) setPickupCoord([Number(again.pickupLng), Number(again.pickupLat)])
+        if (again.dropoffLat != null && again.dropoffLng != null) setDropoffCoord([Number(again.dropoffLng), Number(again.dropoffLat)])
+      }
+    } catch (e) {}
+    loadPendingRate()
+  }, [])
+
+  async function loadPendingRate() {
+    try {
+      const got = await supabase.auth.getSession()
+      const token = got.data.session ? got.data.session.access_token : ''
+      if (!token) return
+      const res = await fetch('/api/ride-history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token, role: 'rider' }) })
+      const data = await res.json()
+      if (res.ok) setPendingRate(data.pending ? data.pending : null)
+    } catch (e) {}
+  }
+
+  async function sendMyRating(stars: number, review: string) {
+    if (!pendingRate) return
+    setRateBusy(true)
+    setRateError('')
+    try {
+      const got = await supabase.auth.getSession()
+      const token = got.data.session ? got.data.session.access_token : ''
+      const res = await fetch('/api/rate-ride', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token, rideId: pendingRate.id, role: 'rider', stars: stars, review: review }) })
+      const data = await res.json()
+      setRateBusy(false)
+      if (!res.ok) { setRateError(String(data.error || 'Could not save your rating.')); return }
+      setPendingRate(null)
+    } catch (e) {
+      setRateBusy(false)
+      setRateError('Could not save your rating.')
+    }
+  }
+
   const [paying, setPaying] = useState(false)
   const [payError, setPayError] = useState('')
   const [mapsReady, setMapsReady] = useState(false)
@@ -400,6 +449,11 @@ export default function RidePage() {
   }
 
   async function startCheckout() {
+    if (pendingRate) {
+      setPayError('Please rate your last ride first. The stars are at the top of this page.')
+      return
+    }
+
     try { window.localStorage.removeItem('ott_pay_backed_out') } catch (e) {}
     setPayError('')
     setPaying(true)
@@ -642,6 +696,17 @@ export default function RidePage() {
     return () => { active = false }
   }, [activeRide])
 
+  useEffect(() => {
+    const id = activeRide && activeRide.driver_id ? activeRide.driver_id : null
+    if (!id) { setDriverStars(null); return }
+    let alive = true
+    fetch('/api/ratings' + '?type=driver&id=' + id)
+      .then((r: any) => r.json())
+      .then((d: any) => { if (alive) setDriverStars(d) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [activeRide])
+
   return (
     <div className="rp-wrap">
       <div className="rp-shell">
@@ -649,6 +714,7 @@ export default function RidePage() {
           <Link href="/" className="rp-brand">On Time Taxi</Link>
           <Link href="/" className="rp-navlink">Home</Link>
           <Link href="/report-driver" className="rp-navlink">Report a driver</Link>
+          <Link href="/ride-history" className="rp-navlink">History</Link>
           <button type="button" onClick={handleSignOut} className="rp-navlink" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Sign out</button>
         </nav>
 
@@ -658,6 +724,17 @@ export default function RidePage() {
         </div>
 
         <div className="rp-card">
+          {pendingRate ? (
+            <RatingBox
+              heading='Rate your last ride'
+              who={pendingRate.driverName ? 'Your driver was ' + pendingRate.driverName : 'Your driver'}
+              where={pendingRate.pickup + ' to ' + pendingRate.dropoff}
+              note='You need to rate this ride before you can book another one.'
+              busy={rateBusy}
+              error={rateError}
+              onSend={sendMyRating}
+            />
+          ) : null}
             {activeRide && (activeRide.status === 'requested' || activeRide.status === 'accepted' || activeRide.status === 'picked_up') && (
             <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(216,27,27,0.12)', border: '1px solid rgba(216,27,27,0.35)' }}>
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
@@ -672,6 +749,20 @@ export default function RidePage() {
                   )}
                   <div>
                     <div style={{ fontWeight: 700 }}>{driverCard.full_name}</div>
+                    {driverStars && driverStars.count > 0 ? (
+                      <div style={{ fontSize: 13, color: '#f5b301', fontWeight: 800 }}>
+                        {starRow(driverStars.average)} {driverStars.average} stars from {driverStars.count} riders
+                      </div>
+                    ) : null}
+                    {driverStars && driverStars.reviews && driverStars.reviews.length > 0 ? (
+                      <div style={{ marginTop: 4 }}>
+                        {driverStars.reviews.slice(0, 2).map((rv: any, k: number) => (
+                          <div key={k} style={{ fontSize: 12, color: '#ddd' }}>
+                            <span style={{ color: '#f5b301' }}>{starRow(rv.stars)}</span> {rv.name} {rv.review}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                     <div style={{ fontSize: '12px', color: '#bbb', fontFamily: 'ui-monospace, Menlo, monospace', letterSpacing: '1px' }}>
                       Driver ID {driverCard.driver_code}
                     </div>
