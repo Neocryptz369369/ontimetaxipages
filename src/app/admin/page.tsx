@@ -5,7 +5,6 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import RideChat from "../../components/RideChat";
 import PanicButton from "../../components/PanicButton";
-import ShiftClock from "../../components/ShiftClock";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -684,8 +683,6 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
-
-        <ShiftClock />
 
         <div
           style={{
