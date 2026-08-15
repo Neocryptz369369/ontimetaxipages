@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import RecordingAgreement, { RECORDING_AGREEMENT_TEXT } from '../../components/RecordingAgreement';
 
 async function uploadPhoto(userId: string, photo: File) {
   const ext = (photo.name.split('.').pop() || 'jpg').toLowerCase();
@@ -28,6 +29,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [agreeRecording, setAgreeRecording] = useState(false);
 
   function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] || null;
@@ -44,6 +46,7 @@ export default function SignUpPage() {
     if (!phone.trim()) { setError('Please enter your phone number.'); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (!photo) { setError('A profile photo is required so your driver can recognize you.'); return; }
+    if (!agreeRecording) { setError('Please tick the box to agree to the recording agreement.'); return; }
 
     setLoading(true);
     try {
@@ -74,6 +77,22 @@ export default function SignUpPage() {
           sessionStorage.setItem('pendingPhoto', JSON.stringify({ name: photo.name, type: photo.type, dataUrl }));
         } catch {}
       }
+
+      try {
+        await fetch('/api/recording-consent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            personType: 'rider',
+            fullName: fullName.trim(),
+            email: email.trim().toLowerCase(),
+            phone: phone.trim(),
+            userId: userId ? userId : null,
+            agreed: true,
+            agreementText: RECORDING_AGREEMENT_TEXT,
+          }),
+        });
+      } catch (consentErr) {}
 
       setDone(true);
     } catch (err: any) {
@@ -122,6 +141,8 @@ export default function SignUpPage() {
                 </div>
                 <input type="file" accept="image/*" onChange={onPhoto} style={{ fontSize: 14, color: '#475569' }} />
               </div>
+
+              <RecordingAgreement checked={agreeRecording} onChange={setAgreeRecording} />
 
               {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 12px', borderRadius: 10, fontSize: 14, marginBottom: 16 }}>{error}</div>}
 
