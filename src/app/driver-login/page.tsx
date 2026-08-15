@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import RecordingAgreement, { RECORDING_AGREEMENT_TEXT } from '../../components/RecordingAgreement';
 
 type DriverInfo = {
   driverCode: string;
@@ -105,6 +106,7 @@ export default function DriverLoginPage() {
   const [phone, setPhone] = useState('');
   const [photo, setPhoto] = useState('');
   const [photoName, setPhotoName] = useState('');
+  const [agreeRecording, setAgreeRecording] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [shift, setShift] = useState<any>(null);
@@ -233,6 +235,7 @@ export default function DriverLoginPage() {
     if (!phone.trim()) { setError('Please enter your phone number.'); return; }
     if (password.length < 8) { setError('Please pick a password with at least 8 letters or numbers.'); return; }
     if (!photo) { setError('Please add a picture of yourself.'); return; }
+    if (!agreeRecording) { setError('Please tick the box to agree to the recording agreement.'); return; }
 
     setBusy(true);
     try {
@@ -254,6 +257,22 @@ export default function DriverLoginPage() {
         setBusy(false);
         return;
       }
+
+      try {
+        await fetch('/api/recording-consent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            personType: 'driver',
+            fullName: fullName.trim(),
+            email: email.trim().toLowerCase(),
+            phone: phone.trim(),
+            userId: data && data.driverId ? String(data.driverId) : null,
+            agreed: true,
+            agreementText: RECORDING_AGREEMENT_TEXT,
+          }),
+        });
+      } catch (consentErr) {}
 
       const signed = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
       setBusy(false);
@@ -462,6 +481,8 @@ export default function DriverLoginPage() {
                     <div style={{ color: '#475569', fontSize: 14 }}>{photoName}</div>
                   </div>
                 ) : null}
+
+                <RecordingAgreement checked={agreeRecording} onChange={setAgreeRecording} />
 
                 <button type='submit' disabled={busy} style={{ ...mainButton, opacity: busy ? 0.6 : 1 }}>
                   {busy ? 'Creating your account...' : 'Create my driver account'}
