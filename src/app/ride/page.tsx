@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import RideChat from '../../components/RideChat'
+import PanicButton from '../../components/PanicButton'
 
 const BASE_FARE = 5.0
 const PER_MILE = 2.0
@@ -141,6 +142,15 @@ export default function RidePage() {
   const dropMarkerRef = useRef<any>(null)
   const stopMarkersRef = useRef<any[]>([])
   const [activeRide, setActiveRide] = useState<any>(null)
+  const [riderToken, setRiderToken] = useState('')
+  useEffect(() => {
+    let alive = true
+    supabase.auth.getSession().then((got: any) => {
+      const t = got && got.data && got.data.session ? got.data.session.access_token : ''
+      if (alive) setRiderToken(t || '')
+    })
+    return () => { alive = false }
+  }, [])
   const [driverPos, setDriverPos] = useState<{ lat: number; lng: number } | null>(null)
   const [driverCard, setDriverCard] = useState<any>(null)
   const [nowTs, setNowTs] = useState<number>(Date.now())
@@ -915,6 +925,9 @@ export default function RidePage() {
               )}
               {activeRide && activeRide.id && (
                 <RideChat rideId={activeRide.id} role="rider" handsFree={true} />
+              )}
+              {activeRide && activeRide.id && (
+                <PanicButton role="rider" rideId={activeRide.id} token={riderToken} whoName={activeRide.rider_name} whoPhone={activeRide.rider_phone} />
               )}
               {!ridePaid && (
               <button
