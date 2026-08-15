@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import RideChat from "../../components/RideChat";
+import PanicButton from "../../components/PanicButton";
+import ShiftClock from "../../components/ShiftClock";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -681,6 +683,27 @@ export default function AdminPage() {
               </Link>
             </div>
           ))}
+        </div>
+
+        <ShiftClock />
+
+        <div
+          style={{
+            marginTop: "32px",
+            padding: "24px",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "linear-gradient(180deg, rgba(40,6,6,0.6), rgba(10,0,0,0.4))",
+          }}
+        >
+          <div style={{ fontSize: "13px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 800, color: "#ff9c9c", marginBottom: "8px" }}>
+            Emergency
+          </div>
+          <p style={{ color: "#d9b3b3", fontSize: "14px", margin: "0 0 6px" }}>
+            This is your own panic button. It sends your location to the company, and it records video
+            and sound on this phone for up to 45 seconds. The recording is filed in the panic archive.
+          </p>
+          <PanicButton role="admin" whoName="On Time Taxi owner" whoPhone="9302164166" />
         </div>
 
         <div
