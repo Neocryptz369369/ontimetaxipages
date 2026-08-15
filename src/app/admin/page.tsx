@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import RideChat from "../../components/RideChat";
 import PanicButton from "../../components/PanicButton";
+import { starRow } from "../../components/RatingBox";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -140,11 +141,37 @@ export default function AdminPage() {
   const [driverInputs, setDriverInputs] = useState<any>({});
   const [openReports, setOpenReports] = useState(0);
   const [approvedDrivers, setApprovedDrivers] = useState<any[]>([]);
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [lowRatings, setLowRatings] = useState<any[]>([]);
   const adminMapDivRef = useRef<HTMLDivElement | null>(null);
   const adminMapRef = useRef<any>(null);
   const adminRiderMarkerRef = useRef<any>(null);
   const adminDriverMarkerRef = useRef<any>(null);
   const adminWatchIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let active = true;
+    const pullRatings = async () => {
+      try {
+        const got = await supabase.auth.getSession();
+        const token = got.data.session ? got.data.session.access_token : "";
+        if (!token) return;
+        const res = await fetch("/api/ratings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: token }),
+        });
+        const j = await res.json();
+        if (active && res.ok) {
+          setRatings(j.ratings ? j.ratings : []);
+          setLowRatings(j.low ? j.low : []);
+        }
+      } catch (e) {}
+    };
+    pullRatings();
+    const timer = setInterval(pullRatings, 30000);
+    return () => { active = false; clearInterval(timer); };
+  }, [isLoggedIn]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -701,6 +728,50 @@ export default function AdminPage() {
             and sound on this phone for up to 45 seconds. The recording is filed in the panic archive.
           </p>
           <PanicButton role="admin" whoName="On Time Taxi owner" whoPhone="9302164166" />
+        </div>
+        <div
+          style={{
+            marginTop: "32px",
+            padding: "24px",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "linear-gradient(180deg, rgba(40,6,6,0.6), rgba(10,0,0,0.4))",
+          }}
+        >
+          <h2 style={{ margin: "0 0 6px", fontSize: "20px", fontWeight: 800 }}>Star ratings</h2>
+          <p style={{ color: "#d9b3b3", fontSize: "14px", margin: "0 0 14px" }}>
+            Riders rate drivers and drivers rate riders after every run. Anything 2 stars or under is flagged for you here.
+          </p>
+          {lowRatings.length > 0 ? (
+            <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, padding: "10px 14px", borderRadius: "10px", marginBottom: "14px" }}>
+              {lowRatings.length} low rating{lowRatings.length === 1 ? "" : "s"} need a look
+            </div>
+          ) : null}
+          {ratings.length === 0 ? (
+            <div style={{ color: "#d9b3b3" }}>No ratings yet.</div>
+          ) : (
+            ratings.slice(0, 25).map((rt: any) => (
+              <div
+                key={rt.id}
+                style={{
+                  padding: "12px 14px",
+                  borderRadius: "12px",
+                  marginBottom: "10px",
+                  background: rt.flagged ? "rgba(255,59,59,0.16)" : "rgba(255,255,255,0.05)",
+                  border: rt.flagged ? "1px solid rgba(255,59,59,0.5)" : "1px solid rgba(255,255,255,0.10)",
+                }}
+              >
+                <div style={{ fontWeight: 800, color: "#ffd7d7" }}>
+                  {rt.rater_name} rated {rt.ratee_name}
+                </div>
+                <div style={{ color: "#f5b301", fontSize: "18px", fontWeight: 900 }}>{starRow(rt.stars)}</div>
+                {rt.review ? <div style={{ color: "#f3e5e5", fontSize: "14px", marginTop: "4px" }}>{rt.review}</div> : null}
+                <div style={{ color: "#c79a9a", fontSize: "12px", marginTop: "4px" }}>
+                  {rt.rater_type === "rider" ? "Rider rated the driver" : "Driver rated the rider"}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div
