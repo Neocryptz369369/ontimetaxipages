@@ -145,7 +145,7 @@ export default function DriverHoursPage() {
           </div>
           <div style={cardBox}>
             <div style={{ color: '#9fb7e5', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 800 }}>Time behind the wheel</div>
-            <div style={{ marginTop: '10px', fontSize: '32px', fontWeight: 800 }}>{span(totalMinutes)}</div>
+            <div style={{ marginTop: '10px', fontSize: '32px', fontWeight: 800 }}>{totalMinutes > 0 ? span(totalMinutes) : 'none yet'}</div>
           </div>
           <div style={cardBox}>
             <div style={{ color: '#9fb7e5', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 800 }}>Days covered</div>
