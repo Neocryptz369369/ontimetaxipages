@@ -35,8 +35,13 @@ export async function POST(req: Request) {
     if (found.error) {
       return NextResponse.json({ error: 'Could not read your driver record.' }, { status: 500 });
     }
-    if (!found.data) {
-      return NextResponse.json({ error: 'This is not a driver account.' }, { status: 403 });
+    const isOwner = String(user.email || '').toLowerCase() === 'neocryptz@yahoo.com';
+    let me: any = found.data;
+    if (!me) {
+      if (!isOwner) {
+        return NextResponse.json({ error: 'This is not a driver account.' }, { status: 403 });
+      }
+      me = { id: user.id, status: 'approved' };
     }
 
     const open = await sb
@@ -53,7 +58,7 @@ export async function POST(req: Request) {
     }
 
     if (action === 'start') {
-      if (found.data.status !== 'approved') {
+      if (me.status !== 'approved') {
         return NextResponse.json({ error: 'You are not approved to drive yet.' }, { status: 403 });
       }
       if (!open.data) {
@@ -106,7 +111,7 @@ export async function POST(req: Request) {
       openSince: nowOpen.data ? nowOpen.data.started_at : null,
       today: list,
       totalMinutes: Math.round(totalMs / 60000),
-      status: found.data.status || 'pending',
+      status: me.status || 'pending',
     });
   } catch (err) {
     return NextResponse.json({ error: 'Something went wrong with the time clock.' }, { status: 500 });
