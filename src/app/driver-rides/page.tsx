@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import RatingBox, { starRow } from '../../components/RatingBox';
 
 type Ride = {
   id: string;
@@ -15,6 +16,9 @@ type Ride = {
   status: string;
   created_at: string;
   accepted_at?: string | null;
+  rider_name?: string | null;
+  riderStars?: number;
+  riderRatings?: number;
 };
 
 const shell: any = {
@@ -86,6 +90,9 @@ export default function DriverRidesPage() {
   const [mine, setMine] = useState<Ride[]>([]);
   const [msg, setMsg] = useState('');
   const [busyId, setBusyId] = useState('');
+  const [mustRate, setMustRate] = useState<any>(null);
+  const [rateBusy, setRateBusy] = useState(false);
+  const [rateError, setRateError] = useState('');
   const busyRef = useRef(false);
 
   const load = useCallback(async function load() {
@@ -110,6 +117,7 @@ export default function DriverRidesPage() {
         setName(j.driver && j.driver.full_name ? String(j.driver.full_name) : '');
         setRides(j.rides || []);
         setMine(j.mine || []);
+        setMustRate(j.mustRate ? j.mustRate : null);
       }
     } catch (e) {}
     setReady(true);
@@ -123,7 +131,39 @@ export default function DriverRidesPage() {
     return () => clearInterval(t);
   }, [load]);
 
+  async function sendMyRating(stars: number, review: string) {
+    if (!mustRate) return;
+    setRateBusy(true);
+    setRateError('');
+    try {
+      const got = await supabase.auth.getSession();
+      const token = got.data.session ? got.data.session.access_token : '';
+      const res = await fetch('/api/rate-ride', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, rideId: mustRate.id, role: 'driver', stars: stars, review: review }),
+      });
+      const j = await res.json();
+      setRateBusy(false);
+      if (!res.ok) {
+        setRateError(String(j.error || 'Could not save your rating.'));
+        return;
+      }
+      setMustRate(null);
+      setMsg('Thank you. Your rating was saved.');
+      load();
+    } catch (e) {
+      setRateBusy(false);
+      setRateError('Could not save your rating.');
+    }
+  }
+
   async function take(id: string) {
+    if (mustRate) {
+      setMsg('Please rate your last run first. The stars are at the top of this page.');
+      return;
+    }
+
     if (busyRef.current) return;
     busyRef.current = true;
     setBusyId(id);
@@ -196,6 +236,18 @@ export default function DriverRidesPage() {
           <div style={{ ...card, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e3a8a', fontWeight: 700 }}>{msg}</div>
         ) : null}
 
+        {ready && approved && mustRate ? (
+          <RatingBox
+            heading='Rate your last rider'
+            who={'Your rider was ' + mustRate.riderName}
+            where={mustRate.pickup + ' to ' + mustRate.dropoff}
+            note='You have to rate that run before you can take another one.'
+            busy={rateBusy}
+            error={rateError}
+            onSend={sendMyRating}
+          />
+        ) : null}
+
         {ready && approved && mine.length > 0 ? (
           <div style={{ ...card, background: '#ecfdf5', border: '1px solid #a7f3d0' }}>
             <div style={{ fontWeight: 800, color: '#065f46', marginBottom: 8 }}>The ride you are on now</div>
@@ -233,6 +285,14 @@ export default function DriverRidesPage() {
           <div key={r.id} style={card}>
             <div style={rowLine}>Pick up: {r.pickup || 'Not given'}</div>
             <div style={rowLine}>Drop off: {r.dropoff || 'Not given'}</div>
+            {r.rider_name ? <div style={small}>Rider: {r.rider_name}</div> : null}
+            {r.riderRatings && r.riderRatings > 0 ? (
+              <div style={{ ...small, color: '#b45309', fontWeight: 800, fontSize: 15 }}>
+                {starRow(r.riderStars || 0)} {r.riderStars} stars from {r.riderRatings} drivers
+              </div>
+            ) : (
+              <div style={small}>This rider has no stars yet.</div>
+            )}
             {stopCount(r.stops) > 0 ? <div style={small}>Extra stops on the way: {stopCount(r.stops)}</div> : null}
             <div style={{ marginTop: 10, fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{money(r.fare)}</div>
             <div style={small}>Called in {waited(String(r.created_at))}</div>
@@ -241,7 +301,7 @@ export default function DriverRidesPage() {
             ) : (
               <div style={{ ...small, color: '#b45309', fontWeight: 700 }}>Not paid by card. Collect this one as a cash run.</div>
             )}
-            <button style={{ ...takeBtn, opacity: busyId === r.id ? 0.6 : 1 }} onClick={() => take(r.id)} disabled={busyId === r.id}>
+            <button style={{ ...takeBtn, opacity: busyId === r.id ? 0.6 : 1 }} onClick={() => take(r.id)} disabled={busyId === r.id || mustRate !== null}>
               {busyId === r.id ? 'Taking it...' : 'Take this ride'}
             </button>
           </div>
