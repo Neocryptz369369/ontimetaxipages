@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     const rows: any[] = list.data ? list.data : [];
     const ids = rows.map((r: any) => r.id);
 
+    let ratingsWork = true;
     const mine: any = {};
     if (ids.length > 0) {
       const rated = await sb
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
         .select('ride_id, stars, review, created_at')
         .eq('rater_type', role)
         .in('ride_id', ids);
+      if (rated.error) ratingsWork = false;
       const got2: any[] = rated.data ? rated.data : [];
       for (const g of got2) {
         mine[g.ride_id] = g;
@@ -86,6 +88,7 @@ export async function POST(req: Request) {
 
     let pending: any = null;
     for (const r of rides) {
+      if (!ratingsWork) break;
       const other = role === 'driver' ? r.riderId : r.driverId;
       if (r.finished && r.myStars === 0 && other) {
         pending = r;
