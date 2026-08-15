@@ -38,16 +38,16 @@ export async function POST(req: Request) {
     }
 
     if (!found.data) {
-      return NextResponse.json({ ok: true, driver: null, approved: false, rides: [], mine: [] });
+      return NextResponse.json({ ok: true, driver: null, approved: false, rides: [], mine: [], mustRate: null });
     }
 
     if (String(found.data.status) !== 'approved') {
-      return NextResponse.json({ ok: true, driver: found.data, approved: false, rides: [], mine: [] });
+      return NextResponse.json({ ok: true, driver: found.data, approved: false, rides: [], mine: [], mustRate: null });
     }
 
     const open = await sb
       .from('rides')
-      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng')
+      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, rider_id, rider_name')
       .eq('status', 'requested')
       .order('created_at', { ascending: true })
       .limit(25);
@@ -60,12 +60,73 @@ export async function POST(req: Request) {
       .order('created_at', { ascending: false })
       .limit(5);
 
+    const openRows: any[] = open.data ? open.data : [];
+
+    const riderIds: string[] = [];
+    for (const r of openRows) {
+      if (r.rider_id && riderIds.indexOf(String(r.rider_id)) < 0) riderIds.push(String(r.rider_id));
+    }
+
+    const book: any = {};
+    if (riderIds.length > 0) {
+      const rr = await sb
+        .from('ride_ratings')
+        .select('ratee_id, stars')
+        .eq('ratee_type', 'rider')
+        .in('ratee_id', riderIds);
+      const list: any[] = rr.data ? rr.data : [];
+      for (const x of list) {
+        const k = String(x.ratee_id);
+        const keep = book[k] ? book[k] : { total: 0, count: 0 };
+        keep.total = keep.total + Number(x.stars || 0);
+        keep.count = keep.count + 1;
+        book[k] = keep;
+      }
+    }
+
+    const ridesOut = openRows.map((r: any) => {
+      const k = r.rider_id ? String(r.rider_id) : '';
+      const s = k && book[k] ? book[k] : null;
+      const avg = s && s.count > 0 ? Math.round((s.total / s.count) * 10) / 10 : 0;
+      return Object.assign({}, r, { riderStars: avg, riderRatings: s ? s.count : 0 });
+    });
+
+    let mustRate: any = null;
+    const done = await sb
+      .from('rides')
+      .select('id, rider_id, rider_name, pickup, dropoff, completed_at')
+      .eq('driver_id', user.id)
+      .not('completed_at', 'is', null)
+      .order('completed_at', { ascending: false })
+      .limit(20);
+
+    const dlist: any[] = done.data ? done.data : [];
+    if (dlist.length > 0) {
+      const ids = dlist.map((d: any) => d.id);
+      const rated = await sb.from('ride_ratings').select('ride_id').eq('rater_type', 'driver').in('ride_id', ids);
+      const seen: any = {};
+      const rl: any[] = rated.data ? rated.data : [];
+      for (const x of rl) seen[String(x.ride_id)] = true;
+      for (const d of dlist) {
+        if (!seen[String(d.id)] && d.rider_id) {
+          mustRate = {
+            id: d.id,
+            riderName: d.rider_name ? String(d.rider_name) : 'Rider',
+            pickup: d.pickup ? String(d.pickup) : '',
+            dropoff: d.dropoff ? String(d.dropoff) : '',
+          };
+          break;
+        }
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       driver: found.data,
       approved: true,
-      rides: open.data || [],
+      rides: ridesOut,
       mine: mine.data || [],
+      mustRate: mustRate,
     });
   } catch (e) {
     return NextResponse.json({ error: 'Something went wrong loading the rides.' }, { status: 500 });
