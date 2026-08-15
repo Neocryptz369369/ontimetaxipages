@@ -835,7 +835,7 @@ export default function AdminPage() {
             </button>
           )}
           {activeDrive && activeDrive.id && (
-            <RideChat rideId={activeDrive.id} role="driver" />
+            <RideChat rideId={activeDrive.id} role="driver" handsFree={true} />
           )}
           {activeDrive && activeDrive.status === "completed" && (
             <p style={{ color: "#7fd18f", fontSize: "14px", fontWeight: 700, marginTop: "12px", marginBottom: 0 }}>Ride completed</p>
