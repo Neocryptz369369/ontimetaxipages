@@ -105,9 +105,11 @@ export async function POST(req: Request) {
       const ids = dlist.map((d: any) => d.id);
       const rated = await sb.from('ride_ratings').select('ride_id').eq('rater_type', 'driver').in('ride_id', ids);
       const seen: any = {};
+      const canRate = rated.error ? false : true;
       const rl: any[] = rated.data ? rated.data : [];
       for (const x of rl) seen[String(x.ride_id)] = true;
       for (const d of dlist) {
+        if (!canRate) break;
         if (!seen[String(d.id)] && d.rider_id) {
           mustRate = {
             id: d.id,
