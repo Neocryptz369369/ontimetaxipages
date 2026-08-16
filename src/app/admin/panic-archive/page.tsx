@@ -239,9 +239,10 @@ export default function PanicArchivePage() {
 
                   <div style={{ marginTop: 12 }}>
                     {a.media && a.media.length > 0 ? (
-                      a.media.map((m) => (
+                      a.media.map((m, mi) => (
                         <div key={m.id} style={{ marginBottom: 12 }}>
                           <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>
+                            {'Piece ' + (mi + 1) + ' of ' + a.media.length + ' - '}
                             {m.kind === 'audio' ? 'Sound from that phone' : 'Camera and sound from that phone'}
                             {m.seconds ? ' - ' + m.seconds + ' seconds' : ''}
                           </div>
