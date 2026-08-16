@@ -51,6 +51,7 @@ export default function LangBar() {
   const [lang, setLangState] = useState('en')
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [q, setQ] = useState('')
   const [ready, setReady] = useState(false)
   const langRef = useRef('en')
   const obsRef = useRef<any>(null)
@@ -182,12 +183,15 @@ export default function LangBar() {
 
   function choose(code: string) {
     setOpen(false)
+    setQ('')
     setLang(code)
   }
 
   if (!ready) return null
 
   const shortLabel = langLabel(lang).split(' / ')[0]
+  const needle = q.trim().toLowerCase()
+  const shown = needle ? LANGS.filter(function (l) { return l.label.toLowerCase().indexOf(needle) >= 0 || l.code.toLowerCase().indexOf(needle) >= 0 }) : LANGS
 
   return (
     <div
@@ -197,7 +201,7 @@ export default function LangBar() {
     >
       <button
         type="button"
-        onClick={function () { setOpen(!open) }}
+        onClick={function () { setQ(''); setOpen(!open) }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -219,7 +223,7 @@ export default function LangBar() {
       {open && (
         <div
           style={{
-            width: 250,
+            width: 272,
             marginTop: 8,
             borderRadius: 14,
             overflow: 'hidden',
@@ -231,8 +235,20 @@ export default function LangBar() {
           <div style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#f5b301', letterSpacing: 0.3 }}>
             Language / Idioma / Langue
           </div>
-          <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-            {LANGS.map(function (l) {
+          <div style={{ padding: '0 10px 10px' }}>
+            <input
+              value={q}
+              onChange={function (e) { setQ(e.target.value) }}
+              placeholder='Search 244 languages'
+              data-notranslate='1'
+              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)', background: '#0e0f13', color: '#fff', fontSize: 13, outline: 'none' }}
+            />
+          </div>
+          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+            {shown.length === 0 ? (
+              <div style={{ padding: '12px', color: '#9aa0a6', fontSize: 13 }}>No language by that name.</div>
+            ) : null}
+            {shown.map(function (l) {
               const on = l.code === lang
               return (
                 <button
