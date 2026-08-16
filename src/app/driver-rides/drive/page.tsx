@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import RideChat from '../../../components/RideChat';
 import PanicButton from '../../../components/PanicButton';
+import SpeedWatch from '../../../components/SpeedWatch';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 let mapboxPromise: Promise<any> | null = null;
@@ -345,6 +346,8 @@ export default function DriveRidePage() {
         <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
           <div ref={mapDivRef} style={{ width: '100%', height: 320 }} />
         </div>
+
+        <SpeedWatch role='driver' rideId={ride ? ride.id : null} token={myToken} />
 
         {ride ? (
           <div style={card}>
