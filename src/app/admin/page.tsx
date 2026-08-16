@@ -148,8 +148,11 @@ export default function AdminPage() {
   const [driverSpeeds, setDriverSpeeds] = useState<any[]>([]);
   const [speedUnseen, setSpeedUnseen] = useState(0);
   const [adminToken, setAdminToken] = useState("");
+  const [accidents, setAccidents] = useState<any[]>([]);
+  const [accidentOpen, setAccidentOpen] = useState(0);
   const alarmRef = useRef<any>(null);
   const seenCountRef = useRef(-1);
+  const accidentSeenRef = useRef(-1);
   const adminMapDivRef = useRef<HTMLDivElement | null>(null);
   const adminMapRef = useRef<any>(null);
   const adminRiderMarkerRef = useRef<any>(null);
@@ -208,6 +211,59 @@ export default function AdminPage() {
     } catch (e) {}
   }
 
+  function accidentAlarm() {
+    try {
+      const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AC) {
+        if (!alarmRef.current) alarmRef.current = new AC();
+        const c = alarmRef.current;
+        if (c.state === "suspended") c.resume();
+        let n = 0;
+        const fire = () => {
+          n = n + 1;
+          try {
+            const o = c.createOscillator();
+            const g = c.createGain();
+            o.type = "square";
+            o.frequency.value = n % 2 === 0 ? 1400 : 700;
+            g.gain.value = 1;
+            o.connect(g);
+            g.connect(c.destination);
+            o.start();
+            o.stop(c.currentTime + 0.3);
+          } catch (e) {}
+          if (n < 18) setTimeout(fire, 340);
+        };
+        fire();
+      }
+    } catch (e) {}
+    try {
+      const w: any = window;
+      if (w.speechSynthesis && w.SpeechSynthesisUtterance) {
+        const u = new w.SpeechSynthesisUtterance("A driver has reported an accident. Look at the admin panel.");
+        u.lang = "en-US";
+        u.volume = 1;
+        w.speechSynthesis.speak(u);
+      }
+    } catch (e) {}
+    try { if ((navigator as any).vibrate) (navigator as any).vibrate([500, 200, 500, 200, 500]); } catch (e) {}
+  }
+
+  async function closeAccident(id: string) {
+    try {
+      const got = await supabase.auth.getSession();
+      const token = got.data.session ? got.data.session.access_token : "";
+      if (!token) return;
+      await fetch("/api/accident", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, action: "close", id: id }),
+      });
+      setAccidents((old: any[]) => old.map((r: any) => (String(r.id) === String(id) ? { ...r, status: "closed" } : r)));
+      setAccidentOpen((n: number) => (n > 0 ? n - 1 : 0));
+    } catch (e) {}
+  }
+
   useEffect(() => {
     if (!isLoggedIn) return;
     supabase.auth.getSession().then((got: any) => {
@@ -242,6 +298,33 @@ export default function AdminPage() {
     pullSpeed();
     const t = setInterval(pullSpeed, 10000);
     return () => { live = false; clearInterval(t); };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let on = true;
+    const pullAccidents = async () => {
+      try {
+        const got = await supabase.auth.getSession();
+        const token = got.data.session ? got.data.session.access_token : "";
+        if (!token) return;
+        const res = await fetch("/api/accident", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: token, action: "list" }),
+        });
+        const j = await res.json();
+        if (!on || !res.ok) return;
+        const openNow = j.open ? Number(j.open) : 0;
+        setAccidents(j.reports ? j.reports : []);
+        setAccidentOpen(openNow);
+        if (accidentSeenRef.current >= 0 && openNow > accidentSeenRef.current) accidentAlarm();
+        accidentSeenRef.current = openNow;
+      } catch (e) {}
+    };
+    pullAccidents();
+    const t2 = setInterval(pullAccidents, 15000);
+    return () => { on = false; clearInterval(t2); };
   }, [isLoggedIn]);
 
   useEffect(() => {
@@ -926,6 +1009,74 @@ export default function AdminPage() {
                   <div style={{ color: "#c79a9a", fontSize: "12px", marginTop: "4px" }}>
                     {ev.created_at ? new Date(ev.created_at).toLocaleString() : ""}
                   </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div
+            style={{
+              marginTop: "32px",
+              padding: "24px",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "linear-gradient(180deg, rgba(40,6,6,0.6), rgba(10,0,0,0.4))",
+            }}
+          >
+            <h2 style={{ margin: "0 0 6px", fontSize: "20px", fontWeight: 800 }}>Accident reports</h2>
+            <p style={{ color: "#d9b3b3", fontSize: "14px", margin: "0 0 14px" }}>
+              When a driver taps Report an accident it lands here and on the broker page at the same time, with the pictures, the officer information and how fast they were going.
+            </p>
+            {accidentOpen > 0 ? (
+              <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, padding: "10px 14px", borderRadius: "10px", marginBottom: "14px" }}>
+                {accidentOpen} accident{accidentOpen === 1 ? "" : "s"} still open
+              </div>
+            ) : null}
+            {accidents.length === 0 ? (
+              <div style={{ color: "#d9b3b3" }}>No accidents reported.</div>
+            ) : (
+              accidents.slice(0, 20).map((ac: any) => (
+                <div key={ac.id} style={{ padding: "14px 16px", borderRadius: "12px", marginBottom: "12px", background: String(ac.status) === "open" ? "rgba(255,59,59,0.18)" : "rgba(255,255,255,0.05)", border: String(ac.status) === "open" ? "1px solid rgba(255,59,59,0.6)" : "1px solid rgba(255,255,255,0.10)" }}>
+                  <div style={{ fontWeight: 900, color: "#ffd7d7", fontSize: "16px" }}>
+                    {ac.driver_name ? ac.driver_name : "Driver"}
+                    {ac.mph === null || ac.mph === undefined ? "" : " - going " + ac.mph + " mph"}
+                    {ac.limit_mph ? " in a " + ac.limit_mph : ""}
+                  </div>
+                  <div style={{ color: "#c79a9a", fontSize: "12px", marginTop: "4px" }}>
+                    {ac.created_at ? new Date(ac.created_at).toLocaleString() : ""}
+                  </div>
+                  <div style={{ color: "#f3e5e5", fontSize: "14px", marginTop: "8px", lineHeight: 1.7 }}>
+                    <div>Hurt: {ac.injuries ? ac.injuries : "not said"}</div>
+                    <div>What happened: {ac.details ? ac.details : "nothing written down"}</div>
+                    <div>Where: {ac.address ? ac.address : "not given"}</div>
+                    <div>Officer: {ac.officer_name ? ac.officer_name : "none"}{ac.officer_badge ? " (badge " + ac.officer_badge + ")" : ""}{ac.report_number ? " report " + ac.report_number : ""}</div>
+                    <div>Other vehicle: {ac.other_vehicle ? ac.other_vehicle : "none given"}{ac.other_plate ? " - plate " + ac.other_plate : ""}</div>
+                    <div>Other driver: {ac.other_driver ? ac.other_driver : "none given"}{ac.other_insurance ? " - " + ac.other_insurance : ""}</div>
+                    {ac.driver_phone ? <div>Driver phone: {ac.driver_phone}</div> : null}
+                  </div>
+                  {ac.photos && ac.photos.length > 0 ? (
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
+                      {ac.photos.map((ph: any) => (ph.view ? (
+                        <a key={ph.id} href={ph.view} target="_blank" rel="noreferrer">
+                          <img src={ph.view} alt="Accident" style={{ width: 130, height: 100, objectFit: "cover", borderRadius: 10, border: "1px solid rgba(255,255,255,0.16)" }} />
+                        </a>
+                      ) : null))}
+                    </div>
+                  ) : (
+                    <div style={{ color: "#c79a9a", fontSize: "12px", marginTop: "8px" }}>No pictures came with this one.</div>
+                  )}
+                  {ac.lat !== null && ac.lat !== undefined && ac.lng !== null ? (
+                    <a href={"https://www.google.com/maps/search/?api=1&query=" + String(ac.lat) + "," + String(ac.lng)} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: "10px", color: "#ffd7d7", fontWeight: 800 }}>
+                      Open the spot on a map
+                    </a>
+                  ) : null}
+                  {String(ac.status) === "open" ? (
+                    <button type="button" onClick={() => closeAccident(String(ac.id))} style={{ display: "block", marginTop: "12px", background: "#ffffff", color: "#7f1d1d", border: "none", borderRadius: "8px", padding: "10px 14px", fontWeight: 900, cursor: "pointer" }}>
+                      Mark this one handled
+                    </button>
+                  ) : (
+                    <div style={{ marginTop: "10px", color: "#a7f3d0", fontWeight: 800, fontSize: "13px" }}>Handled</div>
+                  )}
                 </div>
               ))
             )}
