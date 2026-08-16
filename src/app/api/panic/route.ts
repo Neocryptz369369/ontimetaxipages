@@ -38,7 +38,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Missing the alert or the recording.' }, { status: 400 });
       }
       const buf = Buffer.from(await file.arrayBuffer());
-      const path = panicId + '/' + kind + '-' + Date.now() + '.webm';
+      const ftype = String(file.type || '');
+      let ext = 'webm';
+      if (ftype.indexOf('mp4') >= 0) ext = kind === 'video' ? 'mp4' : 'm4a';
+      const stamp = Date.now() + '-' + Math.round(Math.random() * 1000000);
+      const path = panicId + '/' + kind + '-' + stamp + '.' + ext;
       const up = await sb.storage.from('panic-media').upload(path, buf, {
         contentType: file.type || 'video/webm',
         upsert: true,
