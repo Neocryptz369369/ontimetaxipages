@@ -450,6 +450,66 @@ for (let g = 0; g < NEAR_GROUPS.length; g++) {
   for (let n = 0; n < list.length; n++) NEAR[list[n]] = target
 }
 
+// These are the languages the reading voice can really speak.
+const CLOUD_OK: string[] = [
+  'sq', 'am', 'en', 'ar', 'af', 'eu', 'bn', 'bs', 'my', 'yue',
+  'bg', 'ca', 'zh-HK', 'zh-CN', 'zh-TW', 'hr', 'da', 'cs', 'nl', 'et',
+  'tl', 'fr-CA', 'fi', 'fr', 'gl', 'de', 'el', 'gu', 'ha', 'iw',
+  'hi', 'hu', 'is', 'ja', 'it', 'id', 'kn', 'jw', 'km', 'ko',
+  'la', 'lv', 'lt', 'ms-Arab', 'ms', 'ml', 'mr', 'ne', 'no', 'pl',
+  'pt', 'pa-Arab', 'pa', 'ro', 'ru', 'sr-Latn', 'sr', 'sk', 'si', 'es',
+  'su', 'sw', 'sv', 'te', 'ta', 'th', 'tr', 'uk', 'vi', 'ur',
+  'cy',
+]
+
+// For every other language, this is the voice that comes closest in sound,
+// so the words still come out in a way the person can follow.
+const CLOUD_NEAR: { [k: string]: string } = {
+  'ace': 'id', 'aa': 'sw', 'alz': 'sw', 'ab': 'ru', 'ach': 'sw',
+  'av': 'ru', 'as': 'bn', 'awa': 'hi', 'az': 'tr', 'ay': 'es',
+  'az-Arab': 'ur', 'bm': 'fr', 'bal': 'ur', 'ban': 'id', 'bci': 'fr',
+  'ba': 'ru', 'bbc': 'id', 'btx': 'id', 'bts': 'id', 'be': 'ru',
+  'bem': 'sw', 'bew': 'id', 'ber': 'ar', 'bho': 'hi', 'bik': 'tl',
+  'bua': 'ru', 'br': 'fr', 'ce': 'ru', 'ch': 'es', 'ny': 'sw',
+  'ceb': 'tl', 'chk': 'tl', 'co': 'it', 'crh': 'tr', 'cv': 'ru',
+  'fa-AF': 'ur', 'din': 'sw', 'doi': 'hi', 'dyu': 'fr', 'dov': 'sw',
+  'eo': 'es', 'fj': 'id', 'ee': 'sw', 'fo': 'da', 'fy': 'nl',
+  'fon': 'fr', 'fur': 'it', 'ff': 'sw', 'gaa': 'sw', 'kl': 'da',
+  'ht': 'fr', 'gn': 'es', 'haw': 'id', 'cnh': 'id', 'hil': 'tl',
+  'hmn': 'id', 'iba': 'ms', 'hrx': 'de', 'ig': 'sw', 'ilo': 'tl',
+  'ga': 'en', 'jam': 'en', 'kac': 'id', 'pam': 'tl', 'kr': 'ha',
+  'kk': 'ru', 'cgg': 'sw', 'kg': 'sw', 'rw': 'sw', 'ktu': 'sw',
+  'trp': 'bn', 'gom': 'mr', 'kv': 'ru', 'ckb': 'ur', 'ku': 'tr',
+  'kri': 'en', 'ltg': 'lv', 'ky': 'ru', 'lij': 'it', 'li': 'nl',
+  'ln': 'sw', 'lmo': 'it', 'luo': 'sw', 'lg': 'sw', 'lb': 'de',
+  'mad': 'id', 'mk': 'sr', 'mai': 'hi', 'mak': 'id', 'mg': 'id',
+  'mt': 'it', 'mam': 'es', 'gv': 'en', 'mfe': 'fr', 'mi': 'id',
+  'mwr': 'hi', 'mni-Mtei': 'bn', 'mhr': 'ru', 'mh': 'id', 'min': 'id',
+  'lus': 'id', 'nhe': 'es', 'mn': 'ru', 'nr': 'sw', 'new': 'ne',
+  'nus': 'sw', 'oc': 'fr', 'om': 'sw', 'os': 'ru', 'pap': 'es',
+  'pag': 'tl', 'ps': 'ur', 'fa': 'ur', 'kek': 'es', 'qu': 'es',
+  'rom': 'ro', 'sm': 'id', 'rn': 'sw', 'se': 'no', 'sg': 'fr',
+  'sat-Deva': 'hi', 'sa': 'hi', 'gd': 'en', 'nso': 'sw', 'sn': 'sw',
+  'st': 'sw', 'shn': 'my', 'scn': 'it', 'sd': 'ur', 'sd-Deva': 'hi',
+  'szl': 'pl', 'sl': 'hr', 'so': 'sw', 'sus': 'fr', 'ss': 'sw',
+  'ty': 'id', 'tg': 'ru', 'tt': 'ru', 'ti': 'am', 'tet': 'id',
+  'tpi': 'en', 'tiv': 'sw', 'to': 'id', 'ts': 'sw', 'tcy': 'kn',
+  'tum': 'sw', 'tn': 'sw', 'tk': 'tr', 'tyv': 'ru', 'udm': 'ru',
+  'ak': 'sw', 'ug': 'ur', 'vec': 'it', 'uz': 'tr', 've': 'sw',
+  'war': 'tl', 'sah': 'ru', 'wo': 'fr', 'xh': 'sw', 'yi': 'iw',
+  'yo': 'sw', 'yua': 'es', 'zu': 'sw', 'zap': 'es',
+}
+
+function cloudCode(code: string): string {
+  const c = String(code || 'en')
+  for (let i = 0; i < CLOUD_OK.length; i++) { if (CLOUD_OK[i] === c) return c }
+  if (CLOUD_NEAR[c]) return CLOUD_NEAR[c]
+  const b = c.split('-')[0]
+  for (let i = 0; i < CLOUD_OK.length; i++) { if (CLOUD_OK[i] === b) return b }
+  if (CLOUD_NEAR[b]) return CLOUD_NEAR[b]
+  return ''
+}
+
 function nearLang(code: string): string {
   const c = String(code || 'en')
   if (NEAR[c]) return NEAR[c]
@@ -611,15 +671,18 @@ export function speak(text: string, code: string) {
   const lang = String(code || 'en')
   const want = ttsLang(lang)
   const near = nearLang(lang)
+  const cc = cloudCode(lang)
+  const fallBack = function () {
+    if (token !== speakToken) return
+    const back = voiceFor(near)
+    deviceSay(body, back ? String(back.lang) : want, back)
+  }
   const go = function () {
     if (token !== speakToken) return
     const own = voiceFor(want)
     if (own) { deviceSay(body, want, own); return }
-    cloudSay(chunkText(body), lang, token, function () {
-      if (token !== speakToken) return
-      const back = voiceFor(near)
-      deviceSay(body, back ? String(back.lang) : want, back)
-    })
+    if (cc) { cloudSay(chunkText(body), cc, token, fallBack); return }
+    fallBack()
   }
   try {
     const sy: any = (window as any).speechSynthesis
