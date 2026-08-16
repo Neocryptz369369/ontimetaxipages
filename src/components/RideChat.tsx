@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { LANG_EVENT, getLang, langLabel, translateText, speak, stopSpeaking, canSpeak, ttsLang } from '../lib/i18n'
+import { LANG_EVENT, getLang, langLabel, translateText, speak, stopSpeaking, canSpeak, ttsLang, primeVoice } from '../lib/i18n'
 
 type Msg = {
   id: any
@@ -293,12 +293,7 @@ export default function RideChat(props: { rideId: any; role: string; handsFree?:
     const unlock = function () {
       if (used) return
       used = true
-      try {
-        const sy: any = (window as any).speechSynthesis
-        const u: any = new (window as any).SpeechSynthesisUtterance(' ')
-        u.volume = 0
-        sy.speak(u)
-      } catch (e) {}
+      primeVoice()
     }
     window.addEventListener('pointerdown', unlock)
     window.addEventListener('keydown', unlock)
