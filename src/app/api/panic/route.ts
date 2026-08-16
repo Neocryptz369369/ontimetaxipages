@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 
+const ADMIN_EMAIL = 'neocryptz@yahoo.com';
+
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
@@ -112,6 +114,9 @@ export async function POST(req: Request) {
     }
 
     if (action === 'archive') {
+      if (!user || String(user.email || '').toLowerCase() !== ADMIN_EMAIL) {
+        return NextResponse.json({ error: 'Only the owner can read this.' }, { status: 403 });
+      }
       const ev = await sb
         .from('panic_events')
         .select('id, ride_id, role, driver_id, rider_id, who_name, who_phone, lat, lng, status, note, created_at, resolved_at')
@@ -147,6 +152,9 @@ export async function POST(req: Request) {
     }
 
     if (action === 'resolve') {
+      if (!user || String(user.email || '').toLowerCase() !== ADMIN_EMAIL) {
+        return NextResponse.json({ error: 'Only the owner can read this.' }, { status: 403 });
+      }
       const id = String(body.id || '');
       if (!id) {
         return NextResponse.json({ error: 'Missing the alert.' }, { status: 400 });
