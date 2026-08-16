@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import RatingBox, { starRow } from '../../components/RatingBox';
 import AccidentReport from '../../components/AccidentReport';
+import Ticker from '../../components/Ticker';
+import DriverAlerts from '../../components/DriverAlerts';
 
 type Ride = {
   id: string;
@@ -208,6 +210,10 @@ export default function DriverRidesPage() {
         <p style={{ color: '#475569', marginTop: 0, marginBottom: 18, lineHeight: 1.6 }}>
           Every approved driver sees the same list. The first driver to tap Take this ride gets it, and it disappears for everyone else.
         </p>
+
+        <Ticker />
+
+        {ready && signedIn && hasDriver ? <DriverAlerts token={myToken} /> : null}
 
         {!ready ? <div style={card}>Loading...</div> : null}
 
