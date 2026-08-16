@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import RideChat from '../../components/RideChat'
 import PanicButton from '../../components/PanicButton'
 import RatingBox, { starRow } from '../../components/RatingBox'
+import Ticker from '../../components/Ticker'
 
 const BASE_FARE = 5.0
 const PER_MILE = 2.0
@@ -717,6 +718,8 @@ export default function RidePage() {
           <Link href="/ride-history" className="rp-navlink">History</Link>
           <button type="button" onClick={handleSignOut} className="rp-navlink" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Sign out</button>
         </nav>
+
+        <Ticker dark={true} />
 
         <div className="rp-map">
           <div ref={mapDivRef} className="rp-mapreal" />
