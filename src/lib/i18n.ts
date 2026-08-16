@@ -400,58 +400,250 @@ const TTS: { [k: string]: string } = {
 
 export function ttsLang(code: string): string { return TTS[code] || code }
 
+// Many languages have no built in voice on a phone. These groups say which
+// voice sounds closest so the person still hears words they understand.
+const NEAR_GROUPS: any[] = [
+  ['zh-CN', ['wuu', 'za', 'gan', 'hsn', 'cjy']],
+  ['zh-TW', ['nan', 'hak', 'zh-Hant']],
+  ['zh-HK', ['yue']],
+  ['nb-NO', ['nn', 'se', 'smj']],
+  ['sv-SE', ['sma', 'scn-sv']],
+  ['da-DK', ['fo', 'kl']],
+  ['de-DE', ['lb', 'gsw', 'bar', 'yi', 'nds', 'pdc', 'li']],
+  ['it-IT', ['sc', 'nap', 'scn', 'co', 'rm', 'fur', 'lij', 'vec', 'lmo', 'pms', 'la', 'ia']],
+  ['fr-FR', ['oc', 'wa', 'ht', 'br', 'nrm', 'ln', 'sg', 'kg']],
+  ['es-ES', ['an', 'ast', 'ext', 'lad', 'qu', 'ay', 'gn', 'nah', 'arn', 'eo']],
+  ['pt-BR', ['pt', 'pap', 'cr-pt']],
+  ['hr-HR', ['bs', 'sh']],
+  ['sr-RS', ['cnr', 'me']],
+  ['ru-RU', ['tt', 'ba', 'cv', 'ce', 'os', 'sah', 'udm', 'kv', 'mhr', 'myv', 'ky', 'tg', 'ab', 'kbd', 'av']],
+  ['tr-TR', ['tk', 'crh', 'ug', 'ku', 'kmr']],
+  ['fa-IR', ['ps', 'prs', 'ckb', 'lrc', 'mzn', 'glk']],
+  ['ur-PK', ['sd', 'bal', 'ks', 'skr']],
+  ['ar-SA', ['arz', 'ary', 'apc', 'acm', 'ars', 'aeb', 'ber', 'tzm', 'kab', 'shi']],
+  ['hi-IN', ['bho', 'mai', 'awa', 'mag', 'raj', 'hne', 'doi', 'sat', 'brx', 'new', 'ne']],
+  ['mr-IN', ['gom', 'kok']],
+  ['bn-IN', ['mni', 'bpy']],
+  ['si-LK', ['dv']],
+  ['my-MM', ['shn', 'mnw']],
+  ['km-KH', ['kha']],
+  ['id-ID', ['jv', 'su', 'min', 'ban', 'ace', 'bug', 'mad', 'bjn', 'ms']],
+  ['fil-PH', ['tl', 'ceb', 'hil', 'ilo', 'war', 'pam', 'bcl', 'pag', 'ch']],
+  ['sw-KE', ['rw', 'rn', 'lg', 'sn', 'ny', 'lu', 'bem', 'kam', 'luo', 'mg']],
+  ['am-ET', ['ti', 'om', 'aa', 'sid', 'wal']],
+  ['so-SO', ['sso']],
+  ['zu-ZA', ['ss', 'nr', 'nd']],
+  ['st-ZA', ['nso', 've', 'ts', 'tn']],
+  ['yo-NG', ['ak', 'tw', 'ee', 'fon']],
+  ['ha-NG', ['ff', 'wo', 'bm', 'dyu', 'kr']],
+  ['ig-NG', ['efi', 'ibb']],
+  ['mi-NZ', ['ty', 'rar']],
+  ['sm-WS', ['to', 'fj', 'haw', 'ty-pf']],
+  ['he-IL', ['iw']],
+  ['hy-AM', ['hyw']],
+]
+
+const NEAR: { [k: string]: string } = {}
+for (let g = 0; g < NEAR_GROUPS.length; g++) {
+  const target = String(NEAR_GROUPS[g][0])
+  const list: string[] = NEAR_GROUPS[g][1]
+  for (let n = 0; n < list.length; n++) NEAR[list[n]] = target
+}
+
+function nearLang(code: string): string {
+  const c = String(code || 'en')
+  if (NEAR[c]) return NEAR[c]
+  const b = c.split('-')[0]
+  if (NEAR[b]) return NEAR[b]
+  return ttsLang(c)
+}
+
 export function canSpeak(): boolean {
   if (typeof window === 'undefined') return false
-  return !!(window as any).speechSynthesis && !!(window as any).SpeechSynthesisUtterance
+  if ((window as any).speechSynthesis && (window as any).SpeechSynthesisUtterance) return true
+  return !!(window as any).Audio
+}
+
+let cloudAudio: any = null
+let speakToken = 0
+
+const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+
+// A tap or a key press wakes the sound up. Phones will not talk before that.
+export function primeVoice() {
+  if (typeof window === 'undefined') return
+  try {
+    const sy: any = (window as any).speechSynthesis
+    if (sy && (window as any).SpeechSynthesisUtterance) {
+      const u: any = new (window as any).SpeechSynthesisUtterance(' ')
+      u.volume = 0
+      sy.speak(u)
+    }
+  } catch (e) {}
+  try {
+    if (!cloudAudio) cloudAudio = new (window as any).Audio()
+    cloudAudio.muted = true
+    cloudAudio.src = SILENT
+    const p = cloudAudio.play()
+    const done = function () { try { cloudAudio.pause(); cloudAudio.muted = false } catch (e2) {} }
+    if (p && p.then) p.then(done).catch(done)
+    else done()
+  } catch (e) {}
 }
 
 export function stopSpeaking() {
-  if (!canSpeak()) return
-  try { (window as any).speechSynthesis.cancel() } catch (e) {}
+  if (typeof window === 'undefined') return
+  speakToken = speakToken + 1
+  try {
+    const sy: any = (window as any).speechSynthesis
+    if (sy) sy.cancel()
+  } catch (e) {}
+  try {
+    if (cloudAudio) {
+      cloudAudio.onended = null
+      cloudAudio.onerror = null
+      cloudAudio.pause()
+    }
+  } catch (e) {}
+}
+
+function voiceFor(want: string): any {
+  try {
+    const sy: any = (window as any).speechSynthesis
+    if (!sy || !sy.getVoices) return null
+    const vs: any[] = sy.getVoices() || []
+    const wl = String(want || '').toLowerCase().split('_').join('-')
+    if (!wl) return null
+    const base = wl.split('-')[0]
+    for (let i = 0; i < vs.length; i++) {
+      const vl = String(vs[i].lang || '').toLowerCase().split('_').join('-')
+      if (vl === wl) return vs[i]
+    }
+    for (let i = 0; i < vs.length; i++) {
+      const vl = String(vs[i].lang || '').toLowerCase().split('_').join('-')
+      if (vl.split('-')[0] === base) return vs[i]
+    }
+    return null
+  } catch (e) { return null }
+}
+
+function deviceSay(text: string, want: string, v: any) {
+  try {
+    const sy: any = (window as any).speechSynthesis
+    if (!sy || !(window as any).SpeechSynthesisUtterance) return
+    const u: any = new (window as any).SpeechSynthesisUtterance(text)
+    u.lang = v && v.lang ? v.lang : want
+    if (v) u.voice = v
+    u.rate = 0.98
+    u.pitch = 1
+    u.volume = 1
+    sy.speak(u)
+  } catch (e) {}
+}
+
+function chunkText(t: string): string[] {
+  const words = String(t || '').split(' ')
+  const out: string[] = []
+  let cur = ''
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i]
+    if (!w) continue
+    if (cur.length > 0 && (cur + ' ' + w).length > 170) { out.push(cur); cur = w }
+    else cur = cur.length > 0 ? cur + ' ' + w : w
+  }
+  if (cur.length > 0) out.push(cur)
+  return out
+}
+
+function cloudUrl(text: string, code: string, alt: boolean): string {
+  const q = encodeURIComponent(text)
+  const tl = encodeURIComponent(String(code || 'en').split('-')[0] === 'zh' ? code : String(code || 'en'))
+  if (alt) return 'https://translate.google.com/translate_tts\u003Fie=UTF-8&client=tw-ob&tl=' + tl + '&q=' + q
+  return 'https://translate.googleapis.com/translate_tts\u003Fie=UTF-8&client=gtx&total=1&idx=0&textlen=' + text.length + '&tl=' + tl + '&q=' + q
+}
+
+// Reads it with a voice from the internet when the phone has no voice of its own.
+function cloudSay(parts: string[], code: string, token: number, onFail: any) {
+  if (typeof window === 'undefined') return
+  if (!parts || parts.length === 0) return
+  let idx = 0
+  let alt = false
+  let any = false
+  try {
+    if (!cloudAudio) cloudAudio = new (window as any).Audio()
+  } catch (e) { onFail(); return }
+  const a: any = cloudAudio
+  const fail = function () {
+    if (token !== speakToken) return
+    if (!alt) { alt = true; play(); return }
+    if (any) return
+    onFail()
+  }
+  const play = function () {
+    if (token !== speakToken) return
+    if (idx >= parts.length) return
+    try {
+      a.src = cloudUrl(parts[idx], code, alt)
+      a.muted = false
+      a.volume = 1
+      const p = a.play()
+      if (p && p.catch) p.catch(function () { fail() })
+    } catch (e) { fail() }
+  }
+  a.onended = function () {
+    if (token !== speakToken) return
+    any = true
+    idx = idx + 1
+    alt = false
+    if (idx < parts.length) play()
+  }
+  a.onerror = function () { fail() }
+  play()
 }
 
 export function speak(text: string, code: string) {
-  if (!canSpeak()) return
-  if (!text || !text.trim()) return
-  const synth: any = (window as any).speechSynthesis
-  const want = ttsLang(code || 'en')
+  if (typeof window === 'undefined') return
+  const body = String(text || '').trim()
+  if (!body) return
+  stopSpeaking()
+  speakToken = speakToken + 1
+  const token = speakToken
+  const lang = String(code || 'en')
+  const want = ttsLang(lang)
+  const near = nearLang(lang)
   const go = function () {
-    try {
-      synth.cancel()
-      const u: any = new (window as any).SpeechSynthesisUtterance(text)
-      u.lang = want
-      const wl = want.toLowerCase()
-      const base = wl.split('-')[0]
-      const vs: any[] = synth.getVoices() || []
-      let pick: any = null
-      for (let i = 0; i < vs.length; i++) {
-        const vl = String(vs[i].lang || '').toLowerCase().split('_').join('-')
-        if (vl === wl) { pick = vs[i]; break }
-      }
-      if (!pick) {
-        for (let i = 0; i < vs.length; i++) {
-          const vl = String(vs[i].lang || '').toLowerCase().split('_').join('-')
-          if (vl.split('-')[0] === base) { pick = vs[i]; break }
-        }
-      }
-      if (pick) u.voice = pick
-      u.rate = 0.98
-      u.pitch = 1
-      u.volume = 1
-      synth.speak(u)
-    } catch (e) {}
+    if (token !== speakToken) return
+    const own = voiceFor(want)
+    if (own) { deviceSay(body, want, own); return }
+    cloudSay(chunkText(body), lang, token, function () {
+      if (token !== speakToken) return
+      const back = voiceFor(near)
+      deviceSay(body, back ? String(back.lang) : want, back)
+    })
   }
   try {
-    const have = synth.getVoices() || []
-    if (have.length === 0) {
+    const sy: any = (window as any).speechSynthesis
+    if (sy && sy.getVoices && (sy.getVoices() || []).length === 0) {
       let fired = false
       const once = function () { if (fired) return; fired = true; go() }
-      synth.onvoiceschanged = once
+      sy.onvoiceschanged = once
       setTimeout(once, 350)
       return
     }
   } catch (e) {}
   go()
+}
+
+// Turns the words into the person's own language first, then says them out loud.
+export async function speakTranslated(text: string, code: string) {
+  const body = String(text || '').trim()
+  if (!body) return
+  const to = String(code || 'en')
+  let out = body
+  if (to && to !== 'en') {
+    try { out = await translateText(body, to, 'en') } catch (e) { out = body }
+  }
+  speak(out, to)
 }
 
 const ENDPOINT = 'https://translate.googleapis.com/translate_a/single'
