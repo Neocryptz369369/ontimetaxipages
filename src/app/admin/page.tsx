@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import RideChat from "../../components/RideChat";
 import PanicButton from "../../components/PanicButton";
 import { starRow } from "../../components/RatingBox";
+import SpeedWatch from "../../components/SpeedWatch";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -143,11 +144,106 @@ export default function AdminPage() {
   const [approvedDrivers, setApprovedDrivers] = useState<any[]>([]);
   const [ratings, setRatings] = useState<any[]>([]);
   const [lowRatings, setLowRatings] = useState<any[]>([]);
+  const [speedEvents, setSpeedEvents] = useState<any[]>([]);
+  const [driverSpeeds, setDriverSpeeds] = useState<any[]>([]);
+  const [speedUnseen, setSpeedUnseen] = useState(0);
+  const [adminToken, setAdminToken] = useState("");
+  const alarmRef = useRef<any>(null);
+  const seenCountRef = useRef(-1);
   const adminMapDivRef = useRef<HTMLDivElement | null>(null);
   const adminMapRef = useRef<any>(null);
   const adminRiderMarkerRef = useRef<any>(null);
   const adminDriverMarkerRef = useRef<any>(null);
   const adminWatchIdRef = useRef<number | null>(null);
+  function ownerAlarm() {
+    try {
+      const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AC) {
+        if (!alarmRef.current) alarmRef.current = new AC();
+        const c = alarmRef.current;
+        if (c.state === "suspended") c.resume();
+        let n = 0;
+        const fire = () => {
+          n = n + 1;
+          try {
+            const o = c.createOscillator();
+            const g = c.createGain();
+            o.type = "square";
+            o.frequency.value = n % 2 === 0 ? 1250 : 820;
+            g.gain.value = 1;
+            o.connect(g);
+            g.connect(c.destination);
+            o.start();
+            o.stop(c.currentTime + 0.28);
+          } catch (e) {}
+          if (n < 14) setTimeout(fire, 320);
+        };
+        fire();
+      }
+    } catch (e) {}
+    try {
+      const w: any = window;
+      if (w.speechSynthesis && w.SpeechSynthesisUtterance) {
+        const u = new w.SpeechSynthesisUtterance("Speeding driver. Look at the admin panel.");
+        u.lang = "en-US";
+        u.volume = 1;
+        w.speechSynthesis.speak(u);
+      }
+    } catch (e) {}
+    try { if ((navigator as any).vibrate) (navigator as any).vibrate([400, 200, 400, 200, 400]); } catch (e) {}
+  }
+
+  async function markSpeedSeen() {
+    try {
+      const got = await supabase.auth.getSession();
+      const token = got.data.session ? got.data.session.access_token : "";
+      if (!token) return;
+      await fetch("/api/speed-alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, action: "seen" }),
+      });
+      setSpeedUnseen(0);
+      seenCountRef.current = 0;
+    } catch (e) {}
+  }
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    supabase.auth.getSession().then((got: any) => {
+      const t = got && got.data && got.data.session ? got.data.session.access_token : "";
+      setAdminToken(t || "");
+    });
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    let live = true;
+    const pullSpeed = async () => {
+      try {
+        const got = await supabase.auth.getSession();
+        const token = got.data.session ? got.data.session.access_token : "";
+        if (!token) return;
+        const res = await fetch("/api/speed-alerts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: token, action: "list" }),
+        });
+        const j = await res.json();
+        if (!live || !res.ok) return;
+        const un = j.unseen ? Number(j.unseen) : 0;
+        setSpeedEvents(j.events ? j.events : []);
+        setDriverSpeeds(j.drivers ? j.drivers : []);
+        setSpeedUnseen(un);
+        if (seenCountRef.current >= 0 && un > seenCountRef.current) ownerAlarm();
+        seenCountRef.current = un;
+      } catch (e) {}
+    };
+    pullSpeed();
+    const t = setInterval(pullSpeed, 10000);
+    return () => { live = false; clearInterval(t); };
+  }, [isLoggedIn]);
+
   useEffect(() => {
     if (!isLoggedIn) return;
     let active = true;
@@ -773,6 +869,68 @@ export default function AdminPage() {
             ))
           )}
         </div>
+          <div
+            style={{
+              marginTop: "32px",
+              padding: "24px",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "linear-gradient(180deg, rgba(40,6,6,0.6), rgba(10,0,0,0.4))",
+            }}
+          >
+            <h2 style={{ margin: "0 0 6px", fontSize: "20px", fontWeight: 800 }}>Speed and speeding</h2>
+            <p style={{ color: "#d9b3b3", fontSize: "14px", margin: "0 0 14px" }}>
+              Every driver speed shows here while they are working, next to the posted limit on the road they are on. Anything over the limit is written down. At 15 over the driver is taken off that run with no pay for it, and the run goes back out for another driver.
+            </p>
+            {speedUnseen > 0 ? (
+              <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, padding: "10px 14px", borderRadius: "10px", marginBottom: "14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+                <span>{speedUnseen} new speeding alert{speedUnseen === 1 ? "" : "s"}</span>
+                <button type="button" onClick={markSpeedSeen} style={{ background: "#ffffff", color: "#7f1d1d", border: "none", borderRadius: "8px", padding: "8px 12px", fontWeight: 900, cursor: "pointer" }}>
+                  Mark all read
+                </button>
+              </div>
+            ) : null}
+            {driverSpeeds.length > 0 ? (
+              <div style={{ marginBottom: "14px" }}>
+                {driverSpeeds.map((d: any) => (
+                  <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "10px 12px", borderRadius: "10px", marginBottom: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                    <div>
+                      <div style={{ fontWeight: 800, color: "#ffd7d7" }}>{d.full_name}</div>
+                      <div style={{ color: "#c79a9a", fontSize: "12px" }}>
+                        ID {d.driver_code}
+                        {Number(d.speeding_strikes || 0) > 0 ? " - " + d.speeding_strikes + " speeding strikes" : ""}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontWeight: 900, fontSize: "20px", color: d.last_limit_mph && Number(d.last_mph) > Number(d.last_limit_mph) + 3 ? "#ff3b3b" : "#ffffff" }}>
+                        {d.last_mph === null || d.last_mph === undefined ? "--" : d.last_mph} mph
+                      </div>
+                      <div style={{ color: "#c79a9a", fontSize: "12px" }}>{d.last_limit_mph ? "limit " + d.last_limit_mph : "no limit found"}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {speedEvents.length === 0 ? (
+              <div style={{ color: "#d9b3b3" }}>No speeding yet.</div>
+            ) : (
+              speedEvents.slice(0, 20).map((ev: any) => (
+                <div key={ev.id} style={{ padding: "12px 14px", borderRadius: "12px", marginBottom: "10px", background: ev.removed ? "rgba(255,59,59,0.20)" : "rgba(255,255,255,0.05)", border: ev.removed ? "1px solid rgba(255,59,59,0.6)" : "1px solid rgba(255,255,255,0.10)" }}>
+                  <div style={{ fontWeight: 800, color: "#ffd7d7" }}>
+                    {ev.driver_name} was doing {ev.mph} in a {ev.limit_mph}
+                  </div>
+                  <div style={{ color: "#f3e5e5", fontSize: "14px", marginTop: "4px" }}>
+                    {ev.over_by} mph over the limit
+                    {ev.removed ? " - taken off that run, no pay for it" : ""}
+                  </div>
+                  <div style={{ color: "#c79a9a", fontSize: "12px", marginTop: "4px" }}>
+                    {ev.created_at ? new Date(ev.created_at).toLocaleString() : ""}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
 
         <div
           style={{
@@ -883,6 +1041,7 @@ export default function AdminPage() {
               ref={adminMapDivRef}
               style={{ width: "100%", height: "320px", borderRadius: "12px", overflow: "hidden", background: "#111" }}
             />
+            <SpeedWatch role="owner" rideId={activeDrive ? activeDrive.id : null} token={adminToken} dark={true} />
             <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: "12px", marginBottom: 0 }}>
               {riderPos ? "Rider location is live (blue). Your location is red." : "Waiting for the rider's location..."}
             </p>
