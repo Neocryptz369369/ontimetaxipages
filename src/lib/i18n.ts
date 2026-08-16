@@ -557,9 +557,9 @@ function chunkText(t: string): string[] {
 
 function cloudUrl(text: string, code: string, alt: boolean): string {
   const q = encodeURIComponent(text)
-  const tl = encodeURIComponent(String(code || 'en').split('-')[0] === 'zh' ? code : String(code || 'en'))
-  if (alt) return 'https://translate.google.com/translate_tts\u003Fie=UTF-8&client=tw-ob&tl=' + tl + '&q=' + q
-  return 'https://translate.googleapis.com/translate_tts\u003Fie=UTF-8&client=gtx&total=1&idx=0&textlen=' + text.length + '&tl=' + tl + '&q=' + q
+  const full = String(code || 'en')
+  const tl = encodeURIComponent(alt ? full.split('-')[0] : full)
+  return '/api/say\u003Ftl=' + tl + '&q=' + q
 }
 
 // Reads it with a voice from the internet when the phone has no voice of its own.
