@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import RatingBox, { starRow } from '../../components/RatingBox';
+import AccidentReport from '../../components/AccidentReport';
 
 type Ride = {
   id: string;
@@ -94,6 +95,7 @@ export default function DriverRidesPage() {
   const [rateBusy, setRateBusy] = useState(false);
   const [rateError, setRateError] = useState('');
   const busyRef = useRef(false);
+  const [myToken, setMyToken] = useState('');
 
   const load = useCallback(async function load() {
     const got = await supabase.auth.getSession();
@@ -104,6 +106,7 @@ export default function DriverRidesPage() {
       return;
     }
     setSignedIn(true);
+    setMyToken(token);
     try {
       const res = await fetch('/api/open-rides', {
         method: 'POST',
@@ -306,6 +309,10 @@ export default function DriverRidesPage() {
             </button>
           </div>
         ))}
+        {ready && signedIn && hasDriver ? (
+          <AccidentReport token={myToken} />
+        ) : null}
+
       </div>
     </main>
   );
