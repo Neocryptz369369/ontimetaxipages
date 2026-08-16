@@ -158,7 +158,7 @@ export default function DriverAlerts(props: { token?: string }) {
             position: 'fixed',
             left: 12,
             right: 12,
-            top: 12,
+            top: 74,
             zIndex: 9999,
             background: '#0f172a',
             color: '#fff',
