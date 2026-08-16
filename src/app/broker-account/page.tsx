@@ -310,6 +310,12 @@ export default function BrokerAccountPage() {
             >
               Driver hours and runs
             </Link>
+            <Link
+              href="/broker-account/accidents"
+              style={{ textDecoration: "none", color: "#09111f", background: "#ffb4b4", padding: "12px 16px", borderRadius: "14px", fontWeight: 800 }}
+            >
+              Accident reports
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
