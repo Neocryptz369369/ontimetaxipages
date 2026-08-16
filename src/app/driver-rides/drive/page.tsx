@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import RideChat from '../../../components/RideChat';
 import PanicButton from '../../../components/PanicButton';
 import SpeedWatch from '../../../components/SpeedWatch';
+import AccidentReport from '../../../components/AccidentReport';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 let mapboxPromise: Promise<any> | null = null;
@@ -118,6 +119,8 @@ export default function DriveRidePage() {
   const [pos, setPos] = useState<any>(null);
   const [mapsReady, setMapsReady] = useState(false);
   const [myToken, setMyToken] = useState('');
+  const [liveMph, setLiveMph] = useState(-1);
+  const [liveLimit, setLiveLimit] = useState(0);
 
   const mapDivRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
@@ -347,7 +350,14 @@ export default function DriveRidePage() {
           <div ref={mapDivRef} style={{ width: '100%', height: 320 }} />
         </div>
 
-        <SpeedWatch role='driver' rideId={ride ? ride.id : null} token={myToken} />
+        <SpeedWatch
+          role='driver'
+          rideId={ride ? ride.id : null}
+          token={myToken}
+          onSpeed={(m: number, l: number) => { setLiveMph(m); setLiveLimit(l); }}
+        />
+
+        <AccidentReport rideId={ride ? ride.id : null} token={myToken} mph={liveMph} limitMph={liveLimit} />
 
         {ride ? (
           <div style={card}>
