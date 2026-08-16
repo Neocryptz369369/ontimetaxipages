@@ -150,6 +150,17 @@ export default function AdminPage() {
   const [adminToken, setAdminToken] = useState("");
   const [accidents, setAccidents] = useState<any[]>([]);
   const [accidentOpen, setAccidentOpen] = useState(0);
+  const [tickerText, setTickerText] = useState("");
+  const [tickerOn, setTickerOn] = useState(false);
+  const [tickerSpeed, setTickerSpeed] = useState(5);
+  const [tickerBusy, setTickerBusy] = useState(false);
+  const [tickerMsg, setTickerMsg] = useState("");
+  const [alertText, setAlertText] = useState("");
+  const [alertTo, setAlertTo] = useState("");
+  const [alertBusy, setAlertBusy] = useState(false);
+  const [alertMsg, setAlertMsg] = useState("");
+  const [sentAlerts, setSentAlerts] = useState<any[]>([]);
+  const [alertDrivers, setAlertDrivers] = useState<any[]>([]);
   const alarmRef = useRef<any>(null);
   const seenCountRef = useRef(-1);
   const accidentSeenRef = useRef(-1);
@@ -325,6 +336,121 @@ export default function AdminPage() {
     pullAccidents();
     const t2 = setInterval(pullAccidents, 15000);
     return () => { on = false; clearInterval(t2); };
+  }, [isLoggedIn]);
+
+  async function loadTicker() {
+    try {
+      const r = await fetch("/api/ticker", { cache: "no-store" });
+      const j = await r.json();
+      if (j) {
+        setTickerOn(j.on === true);
+        setTickerText(j.text ? String(j.text) : "");
+        const sp = Number(j.speed);
+        setTickerSpeed(isFinite(sp) && sp > 0 ? sp : 5);
+      }
+    } catch (e) {}
+  }
+
+  async function saveTicker() {
+    setTickerBusy(true);
+    setTickerMsg("");
+    try {
+      const got = await supabase.auth.getSession();
+      const token = got.data.session ? got.data.session.access_token : "";
+      if (!token) {
+        setTickerMsg("Please sign in again.");
+        setTickerBusy(false);
+        return;
+      }
+      const r = await fetch("/api/ticker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, on: tickerOn, text: tickerText, speed: tickerSpeed }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j || !j.ok) {
+        setTickerMsg(j && j.error ? String(j.error) : "Could not save the ticker.");
+      } else {
+        setTickerMsg(tickerOn ? "Saved. The ticker is now showing on the rider and driver screens." : "Saved. The ticker is turned off.");
+      }
+    } catch (e) {
+      setTickerMsg("Could not save the ticker.");
+    }
+    setTickerBusy(false);
+  }
+
+  async function loadSentAlerts() {
+    try {
+      const got = await supabase.auth.getSession();
+      const token = got.data.session ? got.data.session.access_token : "";
+      if (!token) return;
+      const r = await fetch("/api/driver-alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, action: "list" }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j || !j.ok) return;
+      setSentAlerts(j.alerts ? j.alerts : []);
+      setAlertDrivers(j.drivers ? j.drivers : []);
+    } catch (e) {}
+  }
+
+  async function sendDriverAlert() {
+    const text = alertText.trim();
+    if (!text) {
+      setAlertMsg("Type the message first.");
+      return;
+    }
+    setAlertBusy(true);
+    setAlertMsg("");
+    try {
+      const got = await supabase.auth.getSession();
+      const token = got.data.session ? got.data.session.access_token : "";
+      if (!token) {
+        setAlertMsg("Please sign in again.");
+        setAlertBusy(false);
+        return;
+      }
+      const r = await fetch("/api/driver-alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, action: "send", body: text, driverId: alertTo ? alertTo : null }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j || !j.ok) {
+        setAlertMsg(j && j.error ? String(j.error) : "The alert could not be sent.");
+      } else {
+        setAlertMsg("Sent. It will pop up on their screen and read itself out to them.");
+        setAlertText("");
+        loadSentAlerts();
+      }
+    } catch (e) {
+      setAlertMsg("The alert could not be sent.");
+    }
+    setAlertBusy(false);
+  }
+
+  async function stopDriverAlert(id: string) {
+    try {
+      const got = await supabase.auth.getSession();
+      const token = got.data.session ? got.data.session.access_token : "";
+      if (!token) return;
+      await fetch("/api/driver-alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, action: "off", id: id }),
+      });
+      setSentAlerts((old: any[]) => old.map((a: any) => (String(a.id) === String(id) ? { ...a, active: false } : a)));
+    } catch (e) {}
+  }
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    loadTicker();
+    loadSentAlerts();
+    const t3 = setInterval(() => { loadSentAlerts(); }, 30000);
+    return () => { clearInterval(t3); };
   }, [isLoggedIn]);
 
   useEffect(() => {
@@ -1076,6 +1202,151 @@ export default function AdminPage() {
                     </button>
                   ) : (
                     <div style={{ marginTop: "10px", color: "#a7f3d0", fontWeight: 800, fontSize: "13px" }}>Handled</div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div
+            style={{
+              marginTop: "32px",
+              padding: "24px",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "linear-gradient(180deg, rgba(6,26,40,0.6), rgba(0,6,10,0.4))",
+            }}
+          >
+            <h2 style={{ margin: "0 0 6px", fontSize: "20px", fontWeight: 800 }}>Ticker on the rider and driver screens</h2>
+            <p style={{ color: "#b3ccd9", fontSize: "14px", margin: "0 0 14px" }}>
+              Type whatever you want scrolling across the rider page and the driver pages. Drag the slider to make it move faster or slower. You can turn it off any time.
+            </p>
+
+            <textarea
+              value={tickerText}
+              onChange={(e) => setTickerText(e.target.value)}
+              rows={3}
+              placeholder="For example: Airport runs are busy tonight, book early."
+              style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.16)", background: "rgba(0,0,0,0.3)", color: "#ffffff", fontSize: "16px", resize: "vertical" }}
+            />
+
+            <div style={{ marginTop: "14px", fontWeight: 800, color: "#d9f0ff" }}>
+              Ticker speed: {tickerSpeed} out of 10 ({tickerSpeed <= 3 ? "slow" : tickerSpeed <= 6 ? "medium" : "fast"})
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              step={1}
+              value={tickerSpeed}
+              onChange={(e) => setTickerSpeed(Number(e.target.value))}
+              style={{ width: "100%", marginTop: "8px" }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#8fb6c9", fontSize: "12px", fontWeight: 800 }}>
+              <span>Slow</span>
+              <span>Fast</span>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", fontWeight: 800, cursor: "pointer" }}>
+              <input type="checkbox" checked={tickerOn} onChange={(e) => setTickerOn(e.target.checked)} style={{ width: 20, height: 20 }} />
+              <span>Show the ticker on the rider and driver screens</span>
+            </label>
+
+            {tickerText && tickerText.trim() !== "" ? (
+              <div style={{ marginTop: "16px" }}>
+                <div style={{ color: "#8fb6c9", fontSize: "12px", fontWeight: 800, letterSpacing: "0.1em", marginBottom: "6px" }}>PREVIEW</div>
+                <div style={{ overflow: "hidden", whiteSpace: "nowrap", borderRadius: "12px", padding: "10px 0", background: "#0f172a", border: "1px solid rgba(255,255,255,0.14)" }}>
+                  <style>{'@keyframes otTickerPreview { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }'}</style>
+                  <div style={{ display: "flex", width: "max-content", animation: "otTickerPreview " + Math.max(6, Math.round(100 / tickerSpeed)) + "s linear infinite" }}>
+                    <span style={{ paddingRight: 80, color: "#ffffff", fontWeight: 800, fontSize: 15 }}>{tickerText}</span>
+                    <span style={{ paddingRight: 80, color: "#ffffff", fontWeight: 800, fontSize: 15 }}>{tickerText}</span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={saveTicker}
+              disabled={tickerBusy}
+              style={{ marginTop: "16px", border: "none", borderRadius: "12px", padding: "14px 18px", fontWeight: 900, fontSize: "16px", background: "#ffffff", color: "#09111f", cursor: "pointer", opacity: tickerBusy ? 0.6 : 1 }}
+            >
+              {tickerBusy ? "Saving..." : "Save the ticker"}
+            </button>
+
+            {tickerMsg ? (
+              <div style={{ marginTop: "12px", borderRadius: "12px", padding: "12px 14px", background: "rgba(255,255,255,0.08)", color: "#ffffff", fontWeight: 700 }}>{tickerMsg}</div>
+            ) : null}
+          </div>
+
+          <div
+            style={{
+              marginTop: "32px",
+              padding: "24px",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "linear-gradient(180deg, rgba(6,26,40,0.6), rgba(0,6,10,0.4))",
+            }}
+          >
+            <h2 style={{ margin: "0 0 6px", fontSize: "20px", fontWeight: 800 }}>Send an alert to your drivers</h2>
+            <p style={{ color: "#b3ccd9", fontSize: "14px", margin: "0 0 14px" }}>
+              This is separate from the ticker. It pops up on the driver screen, reads itself out loud to them right away, and they close it with the X or by saying "close notification". It also sits in their notifications list.
+            </p>
+
+            <textarea
+              value={alertText}
+              onChange={(e) => setAlertText(e.target.value)}
+              rows={3}
+              placeholder="For example: Watch out for flooding on Eastern Boulevard tonight."
+              style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.16)", background: "rgba(0,0,0,0.3)", color: "#ffffff", fontSize: "16px", resize: "vertical" }}
+            />
+
+            <select
+              value={alertTo}
+              onChange={(e) => setAlertTo(e.target.value)}
+              style={{ width: "100%", boxSizing: "border-box", marginTop: "12px", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.16)", background: "rgba(0,0,0,0.3)", color: "#ffffff", fontSize: "16px" }}
+            >
+              <option value="">Every driver</option>
+              {alertDrivers.map((d: any) => (
+                <option key={d.id} value={d.id}>{d.full_name} - ID {d.driver_code}</option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={sendDriverAlert}
+              disabled={alertBusy}
+              style={{ marginTop: "14px", border: "none", borderRadius: "12px", padding: "14px 18px", fontWeight: 900, fontSize: "16px", background: "#ffffff", color: "#09111f", cursor: "pointer", opacity: alertBusy ? 0.6 : 1 }}
+            >
+              {alertBusy ? "Sending..." : "Send it now"}
+            </button>
+
+            {alertMsg ? (
+              <div style={{ marginTop: "12px", borderRadius: "12px", padding: "12px 14px", background: "rgba(255,255,255,0.08)", color: "#ffffff", fontWeight: 700 }}>{alertMsg}</div>
+            ) : null}
+
+            <h3 style={{ margin: "20px 0 10px", fontSize: "16px", fontWeight: 800, color: "#d9f0ff" }}>Alerts you have sent</h3>
+            {sentAlerts.length === 0 ? (
+              <div style={{ color: "#b3ccd9" }}>None yet.</div>
+            ) : (
+              sentAlerts.slice(0, 15).map((a: any) => (
+                <div key={a.id} style={{ padding: "12px 14px", borderRadius: "12px", marginBottom: "10px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                  <div style={{ color: "#ffffff", fontWeight: 700, lineHeight: 1.6 }}>{a.body}</div>
+                  <div style={{ color: "#8fb6c9", fontSize: "12px", marginTop: "6px" }}>
+                    {a.created_at ? new Date(a.created_at).toLocaleString() : ""}
+                    {String(a.audience) === "all" ? " - every driver" : " - one driver"}
+                    {" - read by " + (a.readCount ? a.readCount : 0)}
+                  </div>
+                  {a.active ? (
+                    <button
+                      type="button"
+                      onClick={() => stopDriverAlert(String(a.id))}
+                      style={{ marginTop: "10px", border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#ffffff", borderRadius: "10px", padding: "8px 12px", fontWeight: 800, cursor: "pointer" }}
+                    >
+                      Stop showing this one
+                    </button>
+                  ) : (
+                    <div style={{ marginTop: "8px", color: "#a7f3d0", fontWeight: 800, fontSize: "13px" }}>Turned off</div>
                   )}
                 </div>
               ))
