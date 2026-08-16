@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { getLang, speakTranslated } from '../lib/i18n';
 
 type Alert = { id: string; created_at: string; body: string; read: boolean };
 
@@ -24,15 +25,8 @@ export default function DriverAlerts(props: { token?: string }) {
   }, [showing]);
 
   function sayIt(text: string) {
-    try {
-      const w: any = window;
-      if (!w.speechSynthesis || !w.SpeechSynthesisUtterance) return;
-      const u = new w.SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
-      u.volume = 1;
-      u.rate = 1;
-      w.speechSynthesis.speak(u);
-    } catch (e) {}
+    // Read out loud in whatever language this person picked.
+    try { speakTranslated(text, getLang()); } catch (e) {}
   }
 
   async function markRead(id: string) {
