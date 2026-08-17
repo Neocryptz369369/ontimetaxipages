@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-import RecordingAgreement, { RECORDING_AGREEMENT_TEXT } from '../../components/RecordingAgreement';
+import RecordingAgreement, { FeeAgreement, RECORDING_AGREEMENT_TEXT, FEE_AGREEMENT_TEXT, blankSignature, isSigned } from '../../components/RecordingAgreement';
 import RatingBox, { starRow } from '../../components/RatingBox';
 
 type DriverInfo = {
@@ -107,7 +107,8 @@ export default function DriverLoginPage() {
   const [phone, setPhone] = useState('');
   const [photo, setPhoto] = useState('');
   const [photoName, setPhotoName] = useState('');
-  const [agreeRecording, setAgreeRecording] = useState(false);
+  const [recordingSign, setRecordingSign] = useState(blankSignature);
+  const [feeSign, setFeeSign] = useState(blankSignature);
 
   const [busy, setBusy] = useState(false);
   const [shift, setShift] = useState<any>(null);
@@ -286,7 +287,8 @@ export default function DriverLoginPage() {
     if (!phone.trim()) { setError('Please enter your phone number.'); return; }
     if (password.length < 8) { setError('Please pick a password with at least 8 letters or numbers.'); return; }
     if (!photo) { setError('Please add a picture of yourself.'); return; }
-    if (!agreeRecording) { setError('Please tick the box to agree to the recording agreement.'); return; }
+    if (!isSigned(recordingSign)) { setError('Please type your full name and then sign your name in the recording agreement box.'); return; }
+    if (!isSigned(feeSign)) { setError('Please type your full name and then sign your name in the box about the 5 dollar get in fee and the 20 percent.'); return; }
 
     setBusy(true);
     try {
@@ -301,6 +303,9 @@ export default function DriverLoginPage() {
           photo: photo,
           agreedToRecording: true,
           agreementText: RECORDING_AGREEMENT_TEXT,
+          recordingSignature: recordingSign,
+          feeAgreementText: FEE_AGREEMENT_TEXT,
+          feeSignature: feeSign,
         }),
       });
       const data = await res.json();
@@ -312,21 +317,31 @@ export default function DriverLoginPage() {
       }
 
       if (!data || data.consentSaved !== true) {
-      try {
-        await fetch('/api/recording-consent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            personType: 'driver',
-            fullName: fullName.trim(),
-            email: email.trim().toLowerCase(),
-            phone: phone.trim(),
-            userId: data && data.driverId ? String(data.driverId) : null,
-            agreed: true,
-            agreementText: RECORDING_AGREEMENT_TEXT,
-          }),
-        });
-      } catch (consentErr) {}
+        const papers = [
+          { kind: 'recording', words: RECORDING_AGREEMENT_TEXT, sign: recordingSign },
+          { kind: 'fee', words: FEE_AGREEMENT_TEXT, sign: feeSign },
+        ];
+        for (let i = 0; i < papers.length; i++) {
+          try {
+            await fetch('/api/recording-consent', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                personType: 'driver',
+                agreementType: papers[i].kind,
+                fullName: fullName.trim(),
+                email: email.trim().toLowerCase(),
+                phone: phone.trim(),
+                userId: data && data.driverId ? String(data.driverId) : null,
+                agreed: true,
+                agreementText: papers[i].words,
+                signatureName: papers[i].sign.name,
+                signatureImage: papers[i].sign.image,
+                signedAt: papers[i].sign.signedAt,
+              }),
+            });
+          } catch (consentErr) {}
+        }
       }
 
       const signed = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
@@ -577,7 +592,9 @@ export default function DriverLoginPage() {
                   </div>
                 ) : null}
 
-                <RecordingAgreement checked={agreeRecording} onChange={setAgreeRecording} />
+                <RecordingAgreement value={recordingSign} onChange={setRecordingSign} />
+
+                <FeeAgreement value={feeSign} onChange={setFeeSign} />
 
                 <button type='submit' disabled={busy} style={{ ...mainButton, opacity: busy ? 0.6 : 1 }}>
                   {busy ? 'Creating your account...' : 'Create my driver account'}
