@@ -32,8 +32,16 @@ export async function POST(req: Request) {
     let rows = await sb
       .from('recording_consents')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('signed_at', { ascending: false })
       .limit(300);
+
+    if (rows.error) {
+      rows = await sb
+        .from('recording_consents')
+        .select('*')
+        .order('agreed_at', { ascending: false })
+        .limit(300);
+    }
 
     if (rows.error) {
       rows = await sb.from('recording_consents').select('*').limit(300);
