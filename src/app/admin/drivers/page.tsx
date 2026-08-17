@@ -122,7 +122,14 @@ export default function AdminDriversPage() {
       <div style={shell}>
         <Link href="/admin" style={{ color: '#ff7b7b', textDecoration: 'none', fontSize: '14px' }}>Back to the admin panel</Link>
         <h1 style={{ fontSize: '28px', margin: '14px 0 4px' }}>Drivers and reports</h1>
-        <p style={{ color: '#d9b3b3', margin: '0 0 18px' }}>Approve new drivers, and handle rider reports of drug or alcohol use.</p>
+        <p style={{ color: '#d9b3b3', margin: '0 0 14px' }}>Approve new drivers, and handle rider reports of drug or alcohol use.</p>
+
+        <Link
+          href="/admin/signatures"
+          style={{ display: 'inline-block', background: '#b81111', color: '#fff', fontWeight: 800, padding: '11px 15px', borderRadius: '10px', textDecoration: 'none', marginBottom: '18px' }}
+        >
+          See the signatures everyone signed
+        </Link>
 
         {msg && <p style={{ color: '#ffd166', fontWeight: 700 }}>{msg}</p>}
 
@@ -200,6 +207,14 @@ export default function AdminDriversPage() {
                       ? 'Recording agreement signed ' + new Date(d.recording_consent_at).toLocaleString()
                       : 'Recording agreement date not on file'}
                   </div>
+                  <div style={{ fontSize: '13px', marginTop: '3px', fontWeight: 700, color: d.fee_agreement_at ? '#86efac' : '#c9a9a9' }}>
+                    {d.fee_agreement_at
+                      ? 'Get in fee and 20 percent agreement signed ' + new Date(d.fee_agreement_at).toLocaleString()
+                      : 'Get in fee and 20 percent agreement date not on file'}
+                  </div>
+                  <Link href="/admin/signatures" style={{ display: 'inline-block', marginTop: '6px', color: '#ff7b7b', fontSize: '13px', fontWeight: 800, textDecoration: 'none' }}>
+                    Look at their signatures
+                  </Link>
                 </div>
                 <div style={{ color: color, fontWeight: 800, textTransform: 'uppercase', fontSize: '13px' }}>{d.status}</div>
               </div>
