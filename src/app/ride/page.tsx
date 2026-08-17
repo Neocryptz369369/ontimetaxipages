@@ -221,6 +221,10 @@ export default function RidePage() {
     return () => { clearInterval(id) }
   }, [])
   const [geoError, setGeoError] = useState('')
+  const [myProfile, setMyProfile] = useState<any>(null)
+  const [myPhoto, setMyPhoto] = useState('')
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const [photoMsg, setPhotoMsg] = useState('')
   const riderMarkerRef = useRef<any>(null)
   const driverMarkerRef = useRef<any>(null)
   const watchIdRef = useRef<number | null>(null)
@@ -449,7 +453,67 @@ export default function RidePage() {
     window.location.href = '/login'
   }
 
+  useEffect(() => {
+    let alive = true
+    async function loadMe() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || !alive) return
+      const got = await supabase.from('profiles').select('full_name, photo_url').eq('id', user.id).maybeSingle()
+      if (!alive) return
+      const row: any = got && got.data ? got.data : null
+      const meta: any = user.user_metadata || {}
+      setMyProfile({ full_name: (row && row.full_name) ? String(row.full_name) : String(meta.full_name || meta.name || '') })
+      const raw = row && row.photo_url ? String(row.photo_url) : ''
+      if (!raw) { setMyPhoto(''); return }
+      if (raw.indexOf('http') === 0) { setMyPhoto(raw); return }
+      const pub = supabase.storage.from('profile-photos').getPublicUrl(raw)
+      setMyPhoto(pub && pub.data ? pub.data.publicUrl : '')
+    }
+    loadMe()
+    return () => { alive = false }
+  }, [])
+
+  async function saveMyPhoto(file: File | null) {
+    if (!file) return
+    setPhotoBusy(true)
+    setPhotoMsg('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setPhotoMsg('Please sign in again.')
+        setPhotoBusy(false)
+        return
+      }
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+      const path = user.id + '/avatar.' + ext
+      const up = await supabase.storage.from('profile-photos').upload(path, file, { upsert: true, contentType: file.type })
+      if (up.error) {
+        setPhotoMsg('That picture could not be saved. Please try another one.')
+        setPhotoBusy(false)
+        return
+      }
+      const upd = await supabase.from('profiles').update({ photo_url: path }).eq('id', user.id)
+      if (upd.error) {
+        setPhotoMsg('That picture could not be saved. Please try again.')
+        setPhotoBusy(false)
+        return
+      }
+      const pub = supabase.storage.from('profile-photos').getPublicUrl(path)
+      const url = pub && pub.data ? pub.data.publicUrl : ''
+      setMyPhoto(url ? url + '?v=' + String(Date.now()) : '')
+      setPhotoMsg('Your photo is saved. This is the photo your driver will see.')
+    } catch (e) {
+      setPhotoMsg('That picture could not be saved. Please try again.')
+    }
+    setPhotoBusy(false)
+  }
+
   async function startCheckout() {
+    if (myProfile && !myPhoto) {
+      setPayError('Please add a photo of yourself first. Your driver has to know who they are picking up.')
+      return
+    }
+
     if (pendingRate) {
       setPayError('Please rate your last ride first. The stars are at the top of this page.')
       return
@@ -727,6 +791,46 @@ export default function RidePage() {
         </div>
 
         <div className="rp-card">
+          {myProfile ? (
+            <div
+              style={{
+                marginBottom: 14,
+                padding: '12px 14px',
+                borderRadius: 12,
+                background: myPhoto ? 'rgba(255,255,255,0.06)' : 'rgba(216,27,27,0.14)',
+                border: myPhoto ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(216,27,27,0.45)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {myPhoto ? (
+                  <img src={myPhoto} alt="Your photo" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5b301' }} />
+                ) : (
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#2a2a2e', border: '2px solid rgba(216,27,27,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#f3f4f6', textAlign: 'center', lineHeight: 1.1 }}>No photo</div>
+                )}
+                <div>
+                  <div style={{ fontWeight: 700 }}>{myProfile.full_name ? myProfile.full_name : 'Your profile'}</div>
+                  {myPhoto ? (
+                    <div className="rp-muted">This is the photo your driver sees when they come to get you.</div>
+                  ) : (
+                    <div style={{ color: '#ffb4b4', fontWeight: 700, fontSize: 13, lineHeight: 1.45 }}>
+                      A photo of you is required before you can book a ride. Your driver has to know who they are picking up.
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={photoBusy}
+                  onChange={(e) => saveMyPhoto(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                  style={{ fontSize: 13, color: '#cbd5e1' }}
+                />
+                {photoBusy ? <div className="rp-muted" style={{ marginTop: 6 }}>Saving your photo...</div> : null}
+                {photoMsg ? <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>{photoMsg}</div> : null}
+              </div>
+            </div>
+          ) : null}
           {pendingRate ? (
             <RatingBox
               heading='Rate your last ride'
@@ -982,10 +1086,16 @@ export default function RidePage() {
           {stage === STAGE.ONWAY && (
             <div>
               <div className="rp-row">
-                <img src="/driver.jpg" alt="Dennis, your On Time Taxi driver" className="rp-avatar" style={{ objectFit: 'cover' }} />
+                <img
+                  src={driverCard && driverCard.photo ? driverCard.photo : '/driver.jpg'}
+                  alt={driverCard && driverCard.full_name ? driverCard.full_name : 'Your On Time Taxi driver'}
+                  className="rp-avatar"
+                  style={{ objectFit: 'cover' }}
+                />
                 <div>
-                  <div style={{ fontWeight: 700 }}>Dennis &middot; On Time Taxi</div>
+                  <div style={{ fontWeight: 700 }}>{driverCard && driverCard.full_name ? driverCard.full_name : 'Your driver'} &middot; On Time Taxi</div>
                   <div className="rp-muted">Your On Time Taxi driver</div>
+                  {driverCard && driverCard.driver_code ? <div className="rp-muted">Driver number {driverCard.driver_code}</div> : null}
                 <a href="tel:+19302164166" className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: (930) 216-4166</a>
                 </div>
               </div>
