@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     const found = await sb
       .from('drivers')
-      .select('driver_code, full_name, phone, status')
+      .select('driver_code, full_name, phone, status, photo_url')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -42,7 +42,19 @@ export async function POST(req: Request) {
     }
 
     if (String(found.data.status) !== 'approved') {
-      return NextResponse.json({ ok: true, driver: found.data, approved: false, rides: [], mine: [], mustRate: null });
+      return NextResponse.json({
+        ok: true,
+        driver: found.data,
+        approved: false,
+        rides: [],
+        mine: [],
+        mustRate: null,
+        driverPhoto: (found.data as any).photo_url
+          ? (String((found.data as any).photo_url).indexOf('http') === 0
+              ? String((found.data as any).photo_url)
+              : String(process.env.NEXT_PUBLIC_SUPABASE_URL || '') + '/storage/v1/object/public/profile-photos/' + String((found.data as any).photo_url))
+          : '',
+      });
     }
 
     const open = await sb
@@ -54,17 +66,43 @@ export async function POST(req: Request) {
 
     const mine = await sb
       .from('rides')
-      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, accepted_at, rider_lat, rider_lng')
+      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, accepted_at, rider_lat, rider_lng, rider_id, rider_name')
       .eq('driver_id', user.id)
       .in('status', ['accepted', 'picked_up'])
       .order('created_at', { ascending: false })
       .limit(5);
 
     const openRows: any[] = open.data ? open.data : [];
+    const mineRows: any[] = mine.data ? mine.data : [];
+
+    const photoBase = String(process.env.NEXT_PUBLIC_SUPABASE_URL || '') + '/storage/v1/object/public/profile-photos/';
+
+    function fullPhoto(raw: any) {
+      const one = raw ? String(raw) : '';
+      if (!one) return '';
+      if (one.indexOf('http') === 0) return one;
+      return photoBase + one;
+    }
 
     const riderIds: string[] = [];
     for (const r of openRows) {
       if (r.rider_id && riderIds.indexOf(String(r.rider_id)) < 0) riderIds.push(String(r.rider_id));
+    }
+    for (const r of mineRows) {
+      if (r.rider_id && riderIds.indexOf(String(r.rider_id)) < 0) riderIds.push(String(r.rider_id));
+    }
+
+    const people: any = {};
+    if (riderIds.length > 0) {
+      const pf = await sb.from('profiles').select('id, full_name, phone, photo_url').in('id', riderIds);
+      const plist: any[] = pf.data ? pf.data : [];
+      for (const p of plist) {
+        people[String(p.id)] = {
+          name: p.full_name ? String(p.full_name) : '',
+          phone: p.phone ? String(p.phone) : '',
+          photo: fullPhoto(p.photo_url),
+        };
+      }
     }
 
     const book: any = {};
@@ -88,7 +126,22 @@ export async function POST(req: Request) {
       const k = r.rider_id ? String(r.rider_id) : '';
       const s = k && book[k] ? book[k] : null;
       const avg = s && s.count > 0 ? Math.round((s.total / s.count) * 10) / 10 : 0;
-      return Object.assign({}, r, { riderStars: avg, riderRatings: s ? s.count : 0 });
+      const who = k && people[k] ? people[k] : null;
+      return Object.assign({}, r, {
+        riderStars: avg,
+        riderRatings: s ? s.count : 0,
+        rider_photo: who ? who.photo : '',
+        rider_name: r.rider_name ? r.rider_name : (who ? who.name : ''),
+      });
+    });
+
+    const mineOut = mineRows.map((r: any) => {
+      const k = r.rider_id ? String(r.rider_id) : '';
+      const who = k && people[k] ? people[k] : null;
+      return Object.assign({}, r, {
+        rider_photo: who ? who.photo : '',
+        rider_name: r.rider_name ? r.rider_name : (who ? who.name : ''),
+      });
     });
 
     let mustRate: any = null;
@@ -127,7 +180,8 @@ export async function POST(req: Request) {
       driver: found.data,
       approved: true,
       rides: ridesOut,
-      mine: mine.data || [],
+      mine: mineOut,
+      driverPhoto: fullPhoto((found.data as any).photo_url),
       mustRate: mustRate,
     });
   } catch (e) {
