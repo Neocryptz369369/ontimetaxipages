@@ -18,6 +18,11 @@ export async function POST(req: Request) {
     const phone = String(body.phone || '').trim();
     const password = String(body.password || '');
     const photo = String(body.photo || '');
+    const vehicleMake = String(body.vehicleMake || '').trim();
+    const vehicleModel = String(body.vehicleModel || '').trim();
+    const vehicleYear = String(body.vehicleYear || '').trim();
+    const vehicleColor = String(body.vehicleColor || '').trim();
+    const plate = String(body.plate || '').trim().toUpperCase();
     const agreedToRecording = body.agreedToRecording === true;
     const agreementText = String(body.agreementText || '');
     const feeAgreementText = String(body.feeAgreementText || '');
@@ -34,6 +39,9 @@ export async function POST(req: Request) {
     if (!phone) return NextResponse.json({ error: 'Please enter your phone number.' }, { status: 400 });
     if (password.length < 8) return NextResponse.json({ error: 'Your password must be at least 8 characters.' }, { status: 400 });
     if (photo.slice(0, 11) !== 'data:image/') return NextResponse.json({ error: 'A clear photo of your face is required.' }, { status: 400 });
+    if (!vehicleMake) return NextResponse.json({ error: 'Please enter the make of your car, like Ford or Toyota.' }, { status: 400 });
+    if (!vehicleModel) return NextResponse.json({ error: 'Please enter the model of your car, like Fusion or Camry.' }, { status: 400 });
+    if (!plate) return NextResponse.json({ error: 'Please enter your licence plate number.' }, { status: 400 });
     if (!agreedToRecording) return NextResponse.json({ error: 'Please sign the recording agreement.' }, { status: 400 });
     if (recordingSignName.length < 3 || recordingSignImage.slice(0, 11) !== 'data:image/') {
       return NextResponse.json({ error: 'Please type your full name and then sign your name in the recording agreement box.' }, { status: 400 });
@@ -74,18 +82,32 @@ export async function POST(req: Request) {
       photoPath = null;
     }
 
-    const inserted = await sb
-      .from('drivers')
-      .insert({
-        id: userId,
-        full_name: fullName,
-        email: email,
-        phone: phone,
-        photo_url: photoPath,
-        status: 'pending',
-      })
-      .select('driver_code')
-      .single();
+    const plainRow: any = {
+      id: userId,
+      full_name: fullName,
+      email: email,
+      phone: phone,
+      photo_url: photoPath,
+      status: 'pending',
+    };
+    const carRow: any = {
+      id: userId,
+      full_name: fullName,
+      email: email,
+      phone: phone,
+      photo_url: photoPath,
+      status: 'pending',
+      vehicle_make: vehicleMake,
+      vehicle_model: vehicleModel,
+      vehicle_year: vehicleYear,
+      vehicle_color: vehicleColor,
+      vehicle_plate: plate,
+    };
+
+    let inserted = await sb.from('drivers').insert(carRow).select('driver_code').single();
+    if (inserted.error) {
+      inserted = await sb.from('drivers').insert(plainRow).select('driver_code').single();
+    }
 
     if (inserted.error) {
       try {
