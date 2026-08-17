@@ -20,13 +20,27 @@ export async function POST(req: Request) {
     const photo = String(body.photo || '');
     const agreedToRecording = body.agreedToRecording === true;
     const agreementText = String(body.agreementText || '');
+    const feeAgreementText = String(body.feeAgreementText || '');
+    const recordingSignature = body.recordingSignature || {};
+    const feeSignature = body.feeSignature || {};
+    const recordingSignName = String(recordingSignature.name || '').trim();
+    const recordingSignImage = String(recordingSignature.image || '');
+    const feeSignName = String(feeSignature.name || '').trim();
+    const feeSignImage = String(feeSignature.image || '');
+    const signedNow = new Date().toISOString();
 
     if (!fullName) return NextResponse.json({ error: 'Please enter your full name.' }, { status: 400 });
     if (!email || email.indexOf('@') < 1) return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     if (!phone) return NextResponse.json({ error: 'Please enter your phone number.' }, { status: 400 });
     if (password.length < 8) return NextResponse.json({ error: 'Your password must be at least 8 characters.' }, { status: 400 });
     if (photo.slice(0, 11) !== 'data:image/') return NextResponse.json({ error: 'A clear photo of your face is required.' }, { status: 400 });
-    if (!agreedToRecording) return NextResponse.json({ error: 'Please tick the box to agree to the recording agreement.' }, { status: 400 });
+    if (!agreedToRecording) return NextResponse.json({ error: 'Please sign the recording agreement.' }, { status: 400 });
+    if (recordingSignName.length < 3 || recordingSignImage.slice(0, 11) !== 'data:image/') {
+      return NextResponse.json({ error: 'Please type your full name and then sign your name in the recording agreement box.' }, { status: 400 });
+    }
+    if (feeSignName.length < 3 || feeSignImage.slice(0, 11) !== 'data:image/') {
+      return NextResponse.json({ error: 'Please type your full name and then sign your name in the box about the 5 dollar get in fee and the 20 percent.' }, { status: 400 });
+    }
 
     const sb = adminClient();
 
@@ -84,24 +98,54 @@ export async function POST(req: Request) {
 
     let consentSaved = false;
     try {
-      const consent = await sb.from('recording_consents').insert({
-        person_type: 'driver',
-        full_name: fullName,
-        email: email,
-        phone: phone,
-        user_id: userId,
-        agreed: true,
-        agreement_text: agreementText,
-      });
-      consentSaved = !consent.error;
+      const papers = [
+        { kind: 'recording', words: agreementText, who: recordingSignName, ink: recordingSignImage },
+        { kind: 'fee', words: feeAgreementText, who: feeSignName, ink: feeSignImage },
+      ];
+      let allGood = true;
+      for (let i = 0; i < papers.length; i++) {
+        const paper = papers[i];
+        let consent = await sb.from('recording_consents').insert({
+          person_type: 'driver',
+          full_name: fullName,
+          email: email,
+          phone: phone,
+          user_id: userId,
+          agreed: true,
+          agreement_text: paper.words,
+          agreement_type: paper.kind,
+          signature_name: paper.who,
+          signature_image: paper.ink,
+          signed_at: signedNow,
+        });
+        if (consent.error) {
+          consent = await sb.from('recording_consents').insert({
+            person_type: 'driver',
+            full_name: fullName,
+            email: email,
+            phone: phone,
+            user_id: userId,
+            agreed: true,
+            agreement_text: paper.words,
+          });
+        }
+        if (consent.error) allGood = false;
+      }
+      consentSaved = allGood;
     } catch (consentErr) {
       consentSaved = false;
     }
 
     try {
-      await sb.from('drivers').update({ recording_consent_at: new Date().toISOString() }).eq('id', userId);
+      const stamped = await sb
+        .from('drivers')
+        .update({ recording_consent_at: signedNow, fee_agreement_at: signedNow })
+        .eq('id', userId);
+      if (stamped.error) {
+        await sb.from('drivers').update({ recording_consent_at: signedNow }).eq('id', userId);
+      }
     } catch (stampErr) {
-      // The date stamp is a nice extra. The signed agreement row above is the real record.
+      // The date stamps are a nice extra. The signed papers above are the real record.
     }
 
     return NextResponse.json({
