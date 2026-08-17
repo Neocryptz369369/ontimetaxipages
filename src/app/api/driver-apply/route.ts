@@ -18,12 +18,15 @@ export async function POST(req: Request) {
     const phone = String(body.phone || '').trim();
     const password = String(body.password || '');
     const photo = String(body.photo || '');
+    const agreedToRecording = body.agreedToRecording === true;
+    const agreementText = String(body.agreementText || '');
 
     if (!fullName) return NextResponse.json({ error: 'Please enter your full name.' }, { status: 400 });
     if (!email || email.indexOf('@') < 1) return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     if (!phone) return NextResponse.json({ error: 'Please enter your phone number.' }, { status: 400 });
     if (password.length < 8) return NextResponse.json({ error: 'Your password must be at least 8 characters.' }, { status: 400 });
     if (photo.slice(0, 11) !== 'data:image/') return NextResponse.json({ error: 'A clear photo of your face is required.' }, { status: 400 });
+    if (!agreedToRecording) return NextResponse.json({ error: 'Please tick the box to agree to the recording agreement.' }, { status: 400 });
 
     const sb = adminClient();
 
@@ -79,10 +82,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Could not save your application. Please try again.' }, { status: 500 });
     }
 
+    let consentSaved = false;
+    try {
+      const consent = await sb.from('recording_consents').insert({
+        person_type: 'driver',
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        user_id: userId,
+        agreed: true,
+        agreement_text: agreementText,
+      });
+      consentSaved = !consent.error;
+    } catch (consentErr) {
+      consentSaved = false;
+    }
+
+    try {
+      await sb.from('drivers').update({ recording_consent_at: new Date().toISOString() }).eq('id', userId);
+    } catch (stampErr) {
+      // The date stamp is a nice extra. The signed agreement row above is the real record.
+    }
+
     return NextResponse.json({
       ok: true,
+      driverId: userId,
       driverCode: inserted.data ? inserted.data.driver_code : null,
       photoSaved: photoPath !== null,
+      consentSaved: consentSaved,
     });
   } catch (err) {
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
