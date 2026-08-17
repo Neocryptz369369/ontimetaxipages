@@ -77,12 +77,12 @@ export async function POST(req: Request) {
 
     const photoBase = String(process.env.NEXT_PUBLIC_SUPABASE_URL || '') + '/storage/v1/object/public/profile-photos/';
 
-    function fullPhoto(raw: any) {
+    const fullPhoto = (raw: any) => {
       const one = raw ? String(raw) : '';
       if (!one) return '';
       if (one.indexOf('http') === 0) return one;
       return photoBase + one;
-    }
+    };
 
     const riderIds: string[] = [];
     for (const r of openRows) {
