@@ -743,10 +743,7 @@ export default function RidePage() {
     const id = activeRide && activeRide.driver_id ? activeRide.driver_id : null
     if (!id) { setDriverCard(null); return }
     let active = true
-    supabase.rpc('driver_card', { p_driver_id: id }).then((res: any) => {
-      if (!active) return
-      const row = res && res.data && res.data.length ? res.data[0] : null
-      if (!row) { setDriverCard(null); return }
+    const makeCard = (row: any) => {
       let photo = ''
       if (row.photo_url) {
         if (String(row.photo_url).indexOf('http') === 0) {
@@ -756,8 +753,38 @@ export default function RidePage() {
           photo = pub && pub.data ? pub.data.publicUrl : ''
         }
       }
-      setDriverCard({ full_name: row.full_name || 'Your driver', driver_code: row.driver_code || '', photo: photo })
+      const carWords = [row.vehicle_year, row.vehicle_color, row.vehicle_make, row.vehicle_model]
+        .filter((x: any) => !!x)
+        .join(' ')
+      return {
+        full_name: row.full_name || 'Your driver',
+        driver_code: row.driver_code || '',
+        photo: photo,
+        phone: row.phone || '',
+        car: carWords,
+        plate: row.vehicle_plate || '',
+      }
+    }
+    const useRpc = () => {
+      supabase.rpc('driver_card', { p_driver_id: id }).then((res: any) => {
+        if (!active) return
+        const row = res && res.data && res.data.length ? res.data[0] : null
+        if (!row) { setDriverCard(null); return }
+        setDriverCard(makeCard(row))
+      })
+    }
+    fetch('/api/driver-card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ driverId: id }),
     })
+      .then((r: any) => r.json())
+      .then((d: any) => {
+        if (!active) return
+        if (d && d.driver) { setDriverCard(makeCard(d.driver)); return }
+        useRpc()
+      })
+      .catch(() => { if (active) useRpc() })
     return () => { active = false }
   }, [activeRide])
 
@@ -1096,7 +1123,9 @@ export default function RidePage() {
                   <div style={{ fontWeight: 700 }}>{driverCard && driverCard.full_name ? driverCard.full_name : 'Your driver'} &middot; On Time Taxi</div>
                   <div className="rp-muted">Your On Time Taxi driver</div>
                   {driverCard && driverCard.driver_code ? <div className="rp-muted">Driver number {driverCard.driver_code}</div> : null}
-                <a href="tel:+19302164166" className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: (930) 216-4166</a>
+                  {driverCard && driverCard.car ? <div className="rp-muted" style={{ color: '#fff', fontWeight: 700 }}>{driverCard.car}</div> : null}
+                  {driverCard && driverCard.plate ? <div className="rp-muted" style={{ color: '#fff', fontWeight: 700 }}>Plate {driverCard.plate}</div> : null}
+                <a href={'tel:' + (driverCard && driverCard.phone ? driverCard.phone : '+19302164166')} className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: {driverCard && driverCard.phone ? driverCard.phone : '(930) 216-4166'}</a>
                 </div>
               </div>
                 <div className="rp-tripline">${tripFare.toFixed(2)} Â· {tripMiles.toFixed(1)} mi Â· {tripStatus}</div>
