@@ -42,6 +42,38 @@ export async function POST(req: Request) {
     const rows: any[] = list.data ? list.data : [];
     const ids = rows.map((r: any) => r.id);
 
+    const photoBase = String(process.env.NEXT_PUBLIC_SUPABASE_URL || '') + '/storage/v1/object/public/profile-photos/';
+
+    function fullPhoto(raw: any) {
+      const one = raw ? String(raw) : '';
+      if (!one) return '';
+      if (one.indexOf('http') === 0) return one;
+      return photoBase + one;
+    }
+
+    const otherIds: string[] = [];
+    for (const r of rows) {
+      const who = role === 'driver' ? r.rider_id : r.driver_id;
+      if (who && otherIds.indexOf(String(who)) < 0) otherIds.push(String(who));
+    }
+
+    const faces: any = {};
+    if (otherIds.length > 0) {
+      if (role === 'driver') {
+        const pf = await sb.from('profiles').select('id, full_name, photo_url').in('id', otherIds);
+        const plist: any[] = pf.data ? pf.data : [];
+        for (const p of plist) {
+          faces[String(p.id)] = { name: p.full_name ? String(p.full_name) : '', photo: fullPhoto(p.photo_url) };
+        }
+      } else {
+        const df = await sb.from('drivers').select('id, full_name, photo_url').in('id', otherIds);
+        const dlist: any[] = df.data ? df.data : [];
+        for (const d of dlist) {
+          faces[String(d.id)] = { name: d.full_name ? String(d.full_name) : '', photo: fullPhoto(d.photo_url) };
+        }
+      }
+    }
+
     let ratingsWork = true;
     const mine: any = {};
     if (ids.length > 0) {
@@ -60,7 +92,10 @@ export async function POST(req: Request) {
     const rides = rows.map((r: any) => {
       const done = r.status !== 'cancelled' && (r.completed_at || r.status === 'completed');
       const seen = mine[r.id] ? mine[r.id] : null;
+      const otherId = role === 'driver' ? r.rider_id : r.driver_id;
+      const face = otherId && faces[String(otherId)] ? faces[String(otherId)] : null;
       return {
+        otherPhoto: face ? face.photo : '',
         id: r.id,
         createdAt: r.created_at,
         acceptedAt: r.accepted_at,
@@ -77,9 +112,9 @@ export async function POST(req: Request) {
         paid: r.paid === true,
         status: String(r.status || ''),
         riderId: r.rider_id,
-        riderName: r.rider_name ? String(r.rider_name) : 'Rider',
+        riderName: r.rider_name ? String(r.rider_name) : (role === 'driver' && face && face.name ? face.name : 'Rider'),
         driverId: r.driver_id,
-        driverName: r.driver_name ? String(r.driver_name) : '',
+        driverName: r.driver_name ? String(r.driver_name) : (role !== 'driver' && face && face.name ? face.name : ''),
         finished: done ? true : false,
         myStars: seen ? Number(seen.stars) : 0,
         myReview: seen && seen.review ? String(seen.review) : '',
