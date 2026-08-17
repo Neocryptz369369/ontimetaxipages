@@ -9,6 +9,7 @@ import SpeedWatch from '../../../components/SpeedWatch';
 import AccidentReport from '../../../components/AccidentReport';
 import Ticker from '../../../components/Ticker';
 import DriverAlerts from '../../../components/DriverAlerts';
+import TellAdmin from '../../../components/TellAdmin';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 let mapboxPromise: Promise<any> | null = null;
@@ -351,6 +352,8 @@ export default function DriveRidePage() {
         <Ticker />
 
         <DriverAlerts token={myToken} />
+
+        <TellAdmin token={myToken} compact={true} />
 
         <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
           <div ref={mapDivRef} style={{ width: '100%', height: 320 }} />
