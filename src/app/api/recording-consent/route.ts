@@ -14,10 +14,14 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (body.agreed !== true) {
-      return NextResponse.json({ error: 'The recording agreement was not accepted.' }, { status: 400 });
+      return NextResponse.json({ error: 'The agreement was not accepted.' }, { status: 400 });
     }
 
-    const row = {
+    const signatureName = String(body.signatureName || body.fullName || '').trim();
+    const signatureImage = String(body.signatureImage || '');
+    const signedAt = body.signedAt ? String(body.signedAt) : new Date().toISOString();
+
+    const basic = {
       person_type: String(body.personType || 'rider'),
       full_name: String(body.fullName || ''),
       email: String(body.email || '').toLowerCase(),
@@ -27,15 +31,34 @@ export async function POST(request: Request) {
       agreement_text: String(body.agreementText || ''),
     };
 
+    const full = {
+      person_type: basic.person_type,
+      full_name: basic.full_name,
+      email: basic.email,
+      phone: basic.phone,
+      user_id: basic.user_id,
+      agreed: true,
+      agreement_text: basic.agreement_text,
+      agreement_type: String(body.agreementType || 'recording'),
+      signature_name: signatureName,
+      signature_image: signatureImage,
+      signed_at: signedAt,
+    };
+
     const sb = adminClient();
-    const saved = await sb.from('recording_consents').insert(row);
+
+    let saved = await sb.from('recording_consents').insert(full);
 
     if (saved.error) {
-      return NextResponse.json({ error: 'Could not save the recording agreement.' }, { status: 500 });
+      saved = await sb.from('recording_consents').insert(basic);
+    }
+
+    if (saved.error) {
+      return NextResponse.json({ error: 'Could not save the signed agreement.' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json({ error: 'Something went wrong saving the recording agreement.' }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong saving the signed agreement.' }, { status: 500 });
   }
 }
