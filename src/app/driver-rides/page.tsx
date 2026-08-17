@@ -21,6 +21,7 @@ type Ride = {
   created_at: string;
   accepted_at?: string | null;
   rider_name?: string | null;
+  rider_photo?: string | null;
   riderStars?: number;
   riderRatings?: number;
 };
@@ -55,6 +56,41 @@ const takeBtn: any = {
 };
 const rowLine: any = { color: '#0f172a', fontWeight: 700, lineHeight: 1.5 };
 const small: any = { color: '#64748b', fontSize: 13, marginTop: 4 };
+
+function Avatar(props: { src?: string | null; size?: number; label?: string }) {
+  const size = props.size ? props.size : 46;
+  const src = props.src ? String(props.src) : '';
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={props.label ? props.label : 'photo'}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '2px solid #cbd5e1', flexShrink: 0, background: '#e2e8f0' }}
+      />
+    );
+  }
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: '#e2e8f0',
+        border: '2px solid #cbd5e1',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#64748b',
+        fontSize: 11,
+        textAlign: 'center',
+        lineHeight: 1.1,
+      }}
+    >
+      No photo
+    </div>
+  );
+}
 
 function money(n: any) {
   const v = Number(n);
@@ -99,6 +135,10 @@ export default function DriverRidesPage() {
   const [rateError, setRateError] = useState('');
   const busyRef = useRef(false);
   const [myToken, setMyToken] = useState('');
+  const [driverPhoto, setDriverPhoto] = useState('');
+  const [myEmail, setMyEmail] = useState('');
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState('');
 
   const load = useCallback(async function load() {
     const got = await supabase.auth.getSession();
@@ -110,6 +150,7 @@ export default function DriverRidesPage() {
     }
     setSignedIn(true);
     setMyToken(token);
+    setMyEmail(got.data.session && got.data.session.user ? String(got.data.session.user.email || '') : '');
     try {
       const res = await fetch('/api/open-rides', {
         method: 'POST',
@@ -124,6 +165,7 @@ export default function DriverRidesPage() {
         setRides(j.rides || []);
         setMine(j.mine || []);
         setMustRate(j.mustRate ? j.mustRate : null);
+        setDriverPhoto(j.driverPhoto ? String(j.driverPhoto) : '');
       }
     } catch (e) {}
     setReady(true);
@@ -136,6 +178,36 @@ export default function DriverRidesPage() {
     }, 5000);
     return () => clearInterval(t);
   }, [load]);
+
+  async function uploadMyPhoto(file: File | null) {
+    if (!file) return;
+    setPhotoBusy(true);
+    setPhotoMsg('');
+    try {
+      const dataUrl: string = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(String(reader.result));
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch('/api/driver-photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo: dataUrl, email: myEmail }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setPhotoMsg(String(j.error || 'That picture could not be saved.'));
+      } else {
+        setDriverPhoto(j.url ? String(j.url) : '');
+        setPhotoMsg('Your photo is saved. This is the photo riders will see.');
+        load();
+      }
+    } catch (e) {
+      setPhotoMsg('That picture could not be saved.');
+    }
+    setPhotoBusy(false);
+  }
 
   async function sendMyRating(stars: number, review: string) {
     if (!mustRate) return;
@@ -216,6 +288,35 @@ export default function DriverRidesPage() {
 
         {ready && signedIn && hasDriver ? <DriverAlerts token={myToken} /> : null}
 
+        {ready && signedIn && hasDriver ? (
+          <div style={driverPhoto ? card : { ...card, background: '#fef2f2', border: '1px solid #fecaca' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Avatar src={driverPhoto} size={64} label='Your photo' />
+              <div>
+                <div style={rowLine}>{name ? name : 'Your driver account'}</div>
+                {driverPhoto ? (
+                  <div style={small}>This is the photo every rider sees when you take their ride.</div>
+                ) : (
+                  <div style={{ ...small, color: '#b91c1c', fontWeight: 800 }}>
+                    A photo of you is required. The rider has to be able to see who is picking them up.
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <input
+                type='file'
+                accept='image/*'
+                disabled={photoBusy}
+                onChange={(e) => uploadMyPhoto(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                style={{ fontSize: 14, color: '#475569' }}
+              />
+              {photoBusy ? <div style={small}>Saving your photo...</div> : null}
+              {photoMsg ? <div style={{ ...small, fontWeight: 700, color: '#0f172a' }}>{photoMsg}</div> : null}
+            </div>
+          </div>
+        ) : null}
+
         {!ready ? <div style={card}>Loading...</div> : null}
 
         {ready && !signedIn ? (
@@ -263,6 +364,13 @@ export default function DriverRidesPage() {
             <div style={{ fontWeight: 800, color: '#065f46', marginBottom: 8 }}>The ride you are on now</div>
             {mine.map((r) => (
               <div key={r.id} style={{ paddingTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                  <Avatar src={r.rider_photo} size={52} label={r.rider_name ? String(r.rider_name) : 'Rider'} />
+                  <div>
+                    <div style={rowLine}>{r.rider_name ? r.rider_name : 'Your rider'}</div>
+                    <div style={small}>This is who you are picking up.</div>
+                  </div>
+                </div>
                 <div style={rowLine}>Pick up: {r.pickup || 'Not given'}</div>
                 <div style={rowLine}>Drop off: {r.dropoff || 'Not given'}</div>
                 <div style={small}>{money(r.fare)} fare. Status: {r.status}.</div>
@@ -293,9 +401,15 @@ export default function DriverRidesPage() {
 
         {ready && approved && rides.map((r) => (
           <div key={r.id} style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+              <Avatar src={r.rider_photo} size={52} label={r.rider_name ? String(r.rider_name) : 'Rider'} />
+              <div>
+                <div style={rowLine}>{r.rider_name ? r.rider_name : 'Rider'}</div>
+                <div style={small}>This is who you would be picking up.</div>
+              </div>
+            </div>
             <div style={rowLine}>Pick up: {r.pickup || 'Not given'}</div>
             <div style={rowLine}>Drop off: {r.dropoff || 'Not given'}</div>
-            {r.rider_name ? <div style={small}>Rider: {r.rider_name}</div> : null}
             {r.riderRatings && r.riderRatings > 0 ? (
               <div style={{ ...small, color: '#b45309', fontWeight: 800, fontSize: 15 }}>
                 {starRow(r.riderStars || 0)} {r.riderStars} stars from {r.riderRatings} drivers
