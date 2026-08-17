@@ -32,6 +32,7 @@ export default function AdminDriversPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState('');
+  const [carEdits, setCarEdits] = useState<any>({});
 
   const load = useCallback(async () => {
     const d = await supabase.from('drivers').select('*').order('created_at', { ascending: false });
@@ -72,6 +73,41 @@ export default function AdminDriversPage() {
       setMsg('The database refused that change. Run the driver fix SQL and try again.');
     } else {
       setMsg('Saved.');
+    }
+    setBusy('');
+    load();
+  }
+
+  function carField(id: string, key: string, value: string) {
+    setCarEdits((prev: any) => {
+      const next: any = {};
+      Object.keys(prev).forEach((k) => { next[k] = prev[k]; });
+      const one: any = {};
+      const had: any = prev[id] || {};
+      Object.keys(had).forEach((k) => { one[k] = had[k]; });
+      one[key] = value;
+      next[id] = one;
+      return next;
+    });
+  }
+
+  async function saveCar(id: string, current: any) {
+    setBusy(id);
+    setMsg('');
+    const res = await supabase
+      .from('drivers')
+      .update({
+        vehicle_make: String(current.make || '').trim(),
+        vehicle_model: String(current.model || '').trim(),
+        vehicle_year: String(current.year || '').trim(),
+        vehicle_color: String(current.color || '').trim(),
+        vehicle_plate: String(current.plate || '').trim().toUpperCase(),
+      })
+      .eq('id', id);
+    if (res.error) {
+      setMsg('The car did not save: ' + res.error.message);
+    } else {
+      setMsg('Car saved.');
     }
     setBusy('');
     load();
@@ -190,6 +226,23 @@ export default function AdminDriversPage() {
         {drivers.map((d) => {
           const src = photoLink(d.photo_url || '');
           const color = d.status === 'approved' ? '#4ade80' : d.status === 'suspended' ? '#ff7b7b' : d.status === 'rejected' ? '#9c8080' : '#ffd166';
+          const saved: any = {
+            make: d.vehicle_make || '',
+            model: d.vehicle_model || '',
+            year: d.vehicle_year || '',
+            color: d.vehicle_color || '',
+            plate: d.vehicle_plate || '',
+          };
+          const edit: any = carEdits[d.id] || {};
+          const carNow: any = {
+            make: edit.make !== undefined ? edit.make : saved.make,
+            model: edit.model !== undefined ? edit.model : saved.model,
+            year: edit.year !== undefined ? edit.year : saved.year,
+            color: edit.color !== undefined ? edit.color : saved.color,
+            plate: edit.plate !== undefined ? edit.plate : saved.plate,
+          };
+          const carText = [saved.year, saved.color, saved.make, saved.model].filter((x: any) => !!x).join(' ');
+          const carInput: any = { padding: '9px 10px', borderRadius: '8px', border: '1px solid rgba(255,77,77,0.35)', background: '#1a0808', color: '#f6eaea', fontSize: '14px', width: '120px' };
           return (
             <div key={d.id} style={card}>
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -217,6 +270,21 @@ export default function AdminDriversPage() {
                   </Link>
                 </div>
                 <div style={{ color: color, fontWeight: 800, textTransform: 'uppercase', fontSize: '13px' }}>{d.status}</div>
+              </div>
+              <div style={{ marginTop: '12px', padding: '12px', border: carText ? '1px solid rgba(255,77,77,0.28)' : '2px solid #ff3b3b', borderRadius: '12px' }}>
+                <div style={{ fontWeight: 900, fontSize: '14px', marginBottom: '8px', color: carText ? '#86efac' : '#ff9d9d' }}>
+                  {carText ? 'Car: ' + carText + (saved.plate ? ' - plate ' + saved.plate : ' - no plate on file') : 'No car on file. Riders cannot see a car for this driver.'}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <input style={carInput} placeholder="Make" value={carNow.make} onChange={(e) => carField(d.id, 'make', e.target.value)} />
+                  <input style={carInput} placeholder="Model" value={carNow.model} onChange={(e) => carField(d.id, 'model', e.target.value)} />
+                  <input style={carInput} placeholder="Year" value={carNow.year} onChange={(e) => carField(d.id, 'year', e.target.value)} />
+                  <input style={carInput} placeholder="Color" value={carNow.color} onChange={(e) => carField(d.id, 'color', e.target.value)} />
+                  <input style={carInput} placeholder="Plate" value={carNow.plate} onChange={(e) => carField(d.id, 'plate', e.target.value)} />
+                </div>
+                <button type="button" disabled={busy === d.id} onClick={() => saveCar(d.id, carNow)} style={{ ...btn, background: '#128a3d', color: '#fff' }}>
+                  Save this car
+                </button>
               </div>
               {d.suspended_reason && <p style={{ color: '#ff9d9d', fontSize: '14px', marginTop: '8px' }}>{d.suspended_reason}</p>}
               <label style={{ display: 'block', marginTop: '10px', color: '#d9b3b3', fontSize: '14px' }}>
