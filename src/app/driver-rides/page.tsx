@@ -7,6 +7,7 @@ import RatingBox, { starRow } from '../../components/RatingBox';
 import AccidentReport from '../../components/AccidentReport';
 import Ticker from '../../components/Ticker';
 import DriverAlerts from '../../components/DriverAlerts';
+import PanicButton from '../../components/PanicButton';
 
 type Ride = {
   id: string;
@@ -315,6 +316,9 @@ export default function DriverRidesPage() {
             </button>
           </div>
         ))}
+        {ready && signedIn && hasDriver ? (
+          <PanicButton role="driver" token={myToken} whoName={name || null} rideId={mine.length > 0 ? mine[0].id : null} />
+        ) : null}
         {ready && signedIn && hasDriver ? (
           <AccidentReport token={myToken} />
         ) : null}
