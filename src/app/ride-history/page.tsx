@@ -199,8 +199,19 @@ export default function RideHistoryPage() {
             </div>
             <div style={{ color: '#0f172a', fontWeight: 700, marginBottom: 4 }}>From {r.pickup}</div>
             <div style={{ color: '#0f172a', fontWeight: 700, marginBottom: 8 }}>To {r.dropoff}</div>
-            <div style={{ color: '#475569', fontSize: 14, marginBottom: 4 }}>
-              {r.driverName ? 'Driver: ' + r.driverName : 'No driver on this one'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              {r.otherPhoto ? (
+                <img
+                  src={r.otherPhoto}
+                  alt={r.driverName ? String(r.driverName) : 'Your driver'}
+                  style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0' }}
+                />
+              ) : (
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e2e8f0', border: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: 10, textAlign: 'center', lineHeight: 1.1 }}>No photo</div>
+              )}
+              <div style={{ color: '#475569', fontSize: 14 }}>
+                {r.driverName ? 'Driver: ' + r.driverName : 'No driver on this one'}
+              </div>
             </div>
             <div style={{ color: '#475569', fontSize: 14, marginBottom: 10 }}>
               {r.tip > 0 ? 'Tip ' + money(r.tip) + '  ' : ''}
