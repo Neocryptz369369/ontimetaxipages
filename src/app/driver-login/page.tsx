@@ -14,6 +14,11 @@ type DriverInfo = {
   status: string;
   calledIn: boolean;
   photoUrl: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  vehicleColor: string;
+  plate: string;
 };
 
 const shell = {
@@ -107,6 +112,11 @@ export default function DriverLoginPage() {
   const [phone, setPhone] = useState('');
   const [photo, setPhoto] = useState('');
   const [photoName, setPhotoName] = useState('');
+  const [vehicleMake, setVehicleMake] = useState('');
+  const [vehicleModel, setVehicleModel] = useState('');
+  const [vehicleYear, setVehicleYear] = useState('');
+  const [vehicleColor, setVehicleColor] = useState('');
+  const [plate, setPlate] = useState('');
   const [recordingSign, setRecordingSign] = useState(blankSignature);
   const [feeSign, setFeeSign] = useState(blankSignature);
 
@@ -287,6 +297,9 @@ export default function DriverLoginPage() {
     if (!phone.trim()) { setError('Please enter your phone number.'); return; }
     if (password.length < 8) { setError('Please pick a password with at least 8 letters or numbers.'); return; }
     if (!photo) { setError('Please add a picture of yourself.'); return; }
+    if (!vehicleMake.trim()) { setError('Please enter the make of your car, like Ford or Toyota.'); return; }
+    if (!vehicleModel.trim()) { setError('Please enter the model of your car, like Fusion or Camry.'); return; }
+    if (!plate.trim()) { setError('Please enter your licence plate number.'); return; }
     if (!isSigned(recordingSign)) { setError('Please type your full name and then sign your name in the recording agreement box.'); return; }
     if (!isSigned(feeSign)) { setError('Please type your full name and then sign your name in the box about the 5 dollar get in fee and the 20 percent.'); return; }
 
@@ -301,6 +314,11 @@ export default function DriverLoginPage() {
           phone: phone.trim(),
           password: password,
           photo: photo,
+          vehicleMake: vehicleMake.trim(),
+          vehicleModel: vehicleModel.trim(),
+          vehicleYear: vehicleYear.trim(),
+          vehicleColor: vehicleColor.trim(),
+          plate: plate.trim().toUpperCase(),
           agreedToRecording: true,
           agreementText: RECORDING_AGREEMENT_TEXT,
           recordingSignature: recordingSign,
@@ -396,6 +414,16 @@ export default function DriverLoginPage() {
               <div>
                 <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{driver.fullName}</div>
                 <div style={{ color: '#64748b', marginTop: 4 }}>{driver.email}</div>
+                {driver.vehicleMake || driver.vehicleModel || driver.plate ? (
+                  <div style={{ color: '#0f172a', marginTop: 6, fontWeight: 700, fontSize: 14 }}>
+                    {[driver.vehicleYear, driver.vehicleColor, driver.vehicleMake, driver.vehicleModel].filter(function (x) { return !!x; }).join(' ')}
+                    {driver.plate ? ' - plate ' + driver.plate : ''}
+                  </div>
+                ) : (
+                  <div style={{ color: '#991b1b', marginTop: 6, fontWeight: 800, fontSize: 13 }}>
+                    Your car is not on file yet. Call the owner at 930-216-4166 to add it.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -591,6 +619,28 @@ export default function DriverLoginPage() {
                     <div style={{ color: '#475569', fontSize: 14 }}>{photoName}</div>
                   </div>
                 ) : null}
+
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 14, marginBottom: 16 }}>
+                  <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 16, marginBottom: 4 }}>Your car</div>
+                  <div style={{ color: '#64748b', fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>
+                    Riders must be able to see the car that is coming for them. This is required.
+                  </div>
+
+                  <label style={label}>Make</label>
+                  <input style={input} type='text' value={vehicleMake} onChange={(e) => setVehicleMake(e.target.value)} placeholder='Ford' />
+
+                  <label style={label}>Model</label>
+                  <input style={input} type='text' value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} placeholder='Fusion' />
+
+                  <label style={label}>Year (you can leave this blank)</label>
+                  <input style={input} type='text' value={vehicleYear} onChange={(e) => setVehicleYear(e.target.value)} placeholder='2018' />
+
+                  <label style={label}>Color (you can leave this blank)</label>
+                  <input style={input} type='text' value={vehicleColor} onChange={(e) => setVehicleColor(e.target.value)} placeholder='Silver' />
+
+                  <label style={label}>Licence plate number</label>
+                  <input style={{ ...input, marginBottom: 0, textTransform: 'uppercase' }} type='text' value={plate} onChange={(e) => setPlate(e.target.value)} placeholder='ABC1234' />
+                </div>
 
                 <RecordingAgreement value={recordingSign} onChange={setRecordingSign} />
 
