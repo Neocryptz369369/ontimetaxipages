@@ -195,6 +195,11 @@ export default function AdminDriversPage() {
                   <div style={{ fontWeight: 800, fontSize: '17px' }}>{d.full_name || 'No name yet'}</div>
                   <div style={{ color: '#d9b3b3', fontSize: '14px' }}>{d.email} {d.phone ? ' - ' + d.phone : ''}</div>
                   <div style={{ fontFamily: 'ui-monospace, Menlo, Consolas, monospace', letterSpacing: '2px', marginTop: '4px' }}>{d.driver_code}</div>
+                  <div style={{ fontSize: '13px', marginTop: '6px', fontWeight: 700, color: d.recording_consent_at ? '#86efac' : '#c9a9a9' }}>
+                    {d.recording_consent_at
+                      ? 'Recording agreement signed ' + new Date(d.recording_consent_at).toLocaleString()
+                      : 'Recording agreement date not on file'}
+                  </div>
                 </div>
                 <div style={{ color: color, fontWeight: 800, textTransform: 'uppercase', fontSize: '13px' }}>{d.status}</div>
               </div>
