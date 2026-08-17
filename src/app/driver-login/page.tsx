@@ -299,6 +299,8 @@ export default function DriverLoginPage() {
           phone: phone.trim(),
           password: password,
           photo: photo,
+          agreedToRecording: true,
+          agreementText: RECORDING_AGREEMENT_TEXT,
         }),
       });
       const data = await res.json();
@@ -309,6 +311,7 @@ export default function DriverLoginPage() {
         return;
       }
 
+      if (!data || data.consentSaved !== true) {
       try {
         await fetch('/api/recording-consent', {
           method: 'POST',
@@ -324,6 +327,7 @@ export default function DriverLoginPage() {
           }),
         });
       } catch (consentErr) {}
+      }
 
       const signed = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: password });
       setBusy(false);
