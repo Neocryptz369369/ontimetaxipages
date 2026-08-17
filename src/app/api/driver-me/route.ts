@@ -27,11 +27,13 @@ export async function POST(req: Request) {
 
     const user = got.data.user;
 
-    const found = await sb
-      .from('drivers')
-      .select('driver_code, full_name, email, phone, photo_url, status, called_in, created_at')
-      .eq('id', user.id)
-      .maybeSingle();
+    const carCols = 'driver_code, full_name, email, phone, photo_url, status, called_in, created_at, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate';
+    const plainCols = 'driver_code, full_name, email, phone, photo_url, status, called_in, created_at';
+
+    let found: any = await sb.from('drivers').select(carCols).eq('id', user.id).maybeSingle();
+    if (found.error) {
+      found = await sb.from('drivers').select(plainCols).eq('id', user.id).maybeSingle();
+    }
 
     if (found.error) {
       return NextResponse.json({ error: 'Could not load your driver record.' }, { status: 500 });
@@ -99,6 +101,11 @@ export async function POST(req: Request) {
         status: found.data.status || 'pending',
         calledIn: found.data.called_in === true,
         photoUrl: photoUrl,
+        vehicleMake: found.data.vehicle_make || '',
+        vehicleModel: found.data.vehicle_model || '',
+        vehicleYear: found.data.vehicle_year || '',
+        vehicleColor: found.data.vehicle_color || '',
+        plate: found.data.vehicle_plate || '',
       },
       earnings: {
         rides: rideCount,
