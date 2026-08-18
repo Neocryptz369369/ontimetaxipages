@@ -330,6 +330,27 @@ export default function DriveRidePage() {
           <Link href='/driver-rides' style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>Open rides</Link>
         </div>
 
+        {ride ? (
+          (ride.my_car || ride.my_plate) ? (
+            <div style={{ ...card, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+              <div style={{ fontWeight: 800, color: '#166534' }}>Your vehicle</div>
+              <div style={{ marginTop: 4, color: '#0f172a', fontWeight: 700 }}>Car: {ride.my_car || 'Not saved yet'}</div>
+              <div style={{ color: '#0f172a', fontWeight: 700 }}>Licence plate: {ride.my_plate || 'Not saved yet'}</div>
+              <div style={small}>This is what your rider sees. You can change it under My details on your driver page.</div>
+            </div>
+          ) : (
+            <div style={{ ...card, background: '#fef2f2', border: '1px solid #fecaca' }}>
+              <div style={{ fontWeight: 900, color: '#991b1b' }}>No car or licence plate on file</div>
+              <div style={{ marginTop: 4, color: '#991b1b', fontWeight: 700, lineHeight: 1.6 }}>
+                Your rider cannot see what car is picking them up. Put your car and your licence plate in My details on your driver page.
+              </div>
+              <Link href='/driver-rides' style={{ display: 'inline-block', marginTop: 8, color: '#2563eb', fontWeight: 800, textDecoration: 'none' }}>
+                Go to My details
+              </Link>
+            </div>
+          )
+        ) : null}
+
         {!rideId ? (
           <div style={card}>
             <div style={rowLine}>No ride was picked.</div>
