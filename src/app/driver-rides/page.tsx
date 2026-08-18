@@ -122,6 +122,16 @@ function stopCount(stops: any) {
   }
 }
 
+function myCarLine(d: any) {
+  if (!d) return '';
+  const bits: string[] = [];
+  if (d.vehicle_color) bits.push(String(d.vehicle_color));
+  if (d.vehicle_year) bits.push(String(d.vehicle_year));
+  if (d.vehicle_make) bits.push(String(d.vehicle_make));
+  if (d.vehicle_model) bits.push(String(d.vehicle_model));
+  return bits.join(' ');
+}
+
 export default function DriverRidesPage() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
@@ -141,6 +151,8 @@ export default function DriverRidesPage() {
   const [myEmail, setMyEmail] = useState('');
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoMsg, setPhotoMsg] = useState('');
+  const [myCar, setMyCar] = useState('');
+  const [myPlate, setMyPlate] = useState('');
 
   const load = useCallback(async function load() {
     const got = await supabase.auth.getSession();
@@ -168,6 +180,8 @@ export default function DriverRidesPage() {
         setMine(j.mine || []);
         setMustRate(j.mustRate ? j.mustRate : null);
         setDriverPhoto(j.driverPhoto ? String(j.driverPhoto) : '');
+        setMyCar(myCarLine(j.driver));
+        setMyPlate(j.driver && j.driver.vehicle_plate ? String(j.driver.vehicle_plate) : '');
       }
     } catch (e) {}
     setReady(true);
@@ -319,6 +333,19 @@ export default function DriverRidesPage() {
               />
               {photoBusy ? <div style={small}>Saving your photo...</div> : null}
               {photoMsg ? <div style={{ ...small, fontWeight: 700, color: '#0f172a' }}>{photoMsg}</div> : null}
+            </div>
+            <div style={{ marginTop: 10, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
+              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 14, marginBottom: 4 }}>Your vehicle</div>
+              {myCar ? (
+                <div style={{ ...small, color: '#166534', fontWeight: 700 }}>Car: {myCar}</div>
+              ) : (
+                <div style={{ ...small, color: '#b91c1c', fontWeight: 800 }}>No car on file. Riders have to be able to see the car that is picking them up. Call 930-216-4166 to get it added.</div>
+              )}
+              {myPlate ? (
+                <div style={{ ...small, color: '#166534', fontWeight: 700 }}>Licence plate: {myPlate}</div>
+              ) : (
+                <div style={{ ...small, color: '#b91c1c', fontWeight: 800 }}>No licence plate on file. Riders have to be able to see your plate.</div>
+              )}
             </div>
           </div>
         ) : null}
