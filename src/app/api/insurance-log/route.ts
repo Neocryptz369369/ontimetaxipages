@@ -11,6 +11,16 @@ function adminClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+function carText(d: any) {
+  if (!d) return '';
+  const bits: string[] = [];
+  if (d.vehicle_color) bits.push(String(d.vehicle_color));
+  if (d.vehicle_year) bits.push(String(d.vehicle_year));
+  if (d.vehicle_make) bits.push(String(d.vehicle_make));
+  if (d.vehicle_model) bits.push(String(d.vehicle_model));
+  return bits.join(' ');
+}
+
 export async function GET() {
   try {
     const sb = adminClient();
@@ -37,7 +47,10 @@ export async function GET() {
 
     const book: any = {};
     if (ids.length > 0) {
-      const dr = await sb.from('drivers').select('id, driver_code, full_name, phone, status').in('id', ids);
+      let dr = await sb.from('drivers').select('id, driver_code, full_name, phone, status, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate').in('id', ids);
+      if (dr.error) {
+        dr = await sb.from('drivers').select('id, driver_code, full_name, phone, status').in('id', ids);
+      }
       const list: any[] = dr.data ? dr.data : [];
       for (const d of list) {
         book[d.id] = d;
@@ -60,6 +73,8 @@ export async function GET() {
         driverName: d && d.full_name ? String(d.full_name) : String(r.driver_name || 'Driver'),
         driverPhone: d && d.phone ? String(d.phone) : String(r.driver_phone || ''),
         driverStatus: d && d.status ? String(d.status) : '',
+        driverCar: carText(d),
+        driverPlate: d && d.vehicle_plate ? String(d.vehicle_plate) : '',
         pickup: r.pickup ? String(r.pickup) : '',
         dropoff: r.dropoff ? String(r.dropoff) : '',
         fare: typeof r.fare === 'number' ? r.fare : Number(r.fare || 0),
@@ -72,7 +87,7 @@ export async function GET() {
 
     const perDriver: any = {};
     for (const run of runs) {
-      const keep = perDriver[run.driverId] ? perDriver[run.driverId] : { driverId: run.driverId, driverCode: run.driverCode, driverName: run.driverName, driverPhone: run.driverPhone, driverStatus: run.driverStatus, runs: 0, minutes: 0, firstAt: null, lastAt: null };
+      const keep = perDriver[run.driverId] ? perDriver[run.driverId] : { driverId: run.driverId, driverCode: run.driverCode, driverName: run.driverName, driverPhone: run.driverPhone, driverStatus: run.driverStatus, driverCar: run.driverCar, driverPlate: run.driverPlate, runs: 0, minutes: 0, firstAt: null, lastAt: null };
       keep.runs = keep.runs + 1;
       keep.minutes = keep.minutes + run.minutes;
       if (run.startedAt) {
