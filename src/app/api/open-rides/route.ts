@@ -27,11 +27,19 @@ export async function POST(req: Request) {
 
     const user = got.data.user;
 
-    const found = await sb
+    let found: any = await sb
       .from('drivers')
-      .select('driver_code, full_name, phone, status, photo_url')
+      .select('driver_code, full_name, phone, status, photo_url, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate')
       .eq('id', user.id)
       .maybeSingle();
+
+    if (found.error) {
+      found = await sb
+        .from('drivers')
+        .select('driver_code, full_name, phone, status, photo_url')
+        .eq('id', user.id)
+        .maybeSingle();
+    }
 
     if (found.error) {
       return NextResponse.json({ error: 'Could not load your driver record.' }, { status: 500 });
