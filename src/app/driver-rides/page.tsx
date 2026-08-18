@@ -156,6 +156,17 @@ function myCarLine(d: any) {
   return bits.join(' ');
 }
 
+function digitsOnly(v: any) {
+  return String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+}
+
+function prettyPhone(v: any) {
+  const d = digitsOnly(v);
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
 export default function DriverRidesPage() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
@@ -220,7 +231,7 @@ export default function DriverRidesPage() {
           filledRef.current = true;
           const dd: any = j.driver ? j.driver : {};
           setFName(dd.full_name ? String(dd.full_name) : '');
-          setFPhone(dd.phone ? String(dd.phone) : '');
+          setFPhone(prettyPhone(dd.phone));
           setFMake(dd.vehicle_make ? String(dd.vehicle_make) : '');
           setFModel(dd.vehicle_model ? String(dd.vehicle_model) : '');
           setFYear(dd.vehicle_year ? String(dd.vehicle_year) : '');
@@ -271,6 +282,11 @@ export default function DriverRidesPage() {
   }
 
   async function saveMyDetails() {
+    const phoneDigits = digitsOnly(fPhone);
+    if (fPhone.trim() !== '' && phoneDigits.length !== 10 && phoneDigits.length !== 11) {
+      setDetMsg('That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.');
+      return;
+    }
     setDetBusy(true);
     setDetMsg('');
     try {
@@ -282,7 +298,7 @@ export default function DriverRidesPage() {
         body: JSON.stringify({
           token: tok,
           fullName: fName,
-          phone: fPhone,
+          phone: prettyPhone(fPhone),
           make: fMake,
           model: fModel,
           year: fYear,
@@ -296,7 +312,7 @@ export default function DriverRidesPage() {
       } else {
         const dd: any = j.driver ? j.driver : {};
         setFName(dd.full_name ? String(dd.full_name) : '');
-        setFPhone(dd.phone ? String(dd.phone) : '');
+        setFPhone(prettyPhone(dd.phone));
         setFMake(dd.vehicle_make ? String(dd.vehicle_make) : '');
         setFModel(dd.vehicle_model ? String(dd.vehicle_model) : '');
         setFYear(dd.vehicle_year ? String(dd.vehicle_year) : '');
@@ -457,10 +473,11 @@ export default function DriverRidesPage() {
               <div>
                 <span style={detLabel}>Your phone number</span>
                 <input
-                  type='text'
+                  type='tel'
+                  inputMode='tel'
                   value={fPhone}
                   placeholder='Phone riders can reach you on'
-                  onChange={(e) => setFPhone(e.target.value)}
+                  onChange={(e) => setFPhone(prettyPhone(e.target.value))}
                   style={detBox}
                 />
               </div>
@@ -574,6 +591,13 @@ export default function DriverRidesPage() {
                   <div>
                     <div style={rowLine}>{r.rider_name ? r.rider_name : 'Your rider'}</div>
                     <div style={small}>This is who you are picking up.</div>
+                    {r.rider_phone ? (
+                      <a href={'tel:' + String(r.rider_phone)} style={{ color: '#2563eb', fontWeight: 800, textDecoration: 'none', fontSize: 14 }}>
+                        Call {String(r.rider_phone)}
+                      </a>
+                    ) : (
+                      <div style={small}>No phone number on file for this rider.</div>
+                    )}
                   </div>
                 </div>
                 <div style={rowLine}>Pick up: {r.pickup || 'Not given'}</div>
@@ -611,6 +635,13 @@ export default function DriverRidesPage() {
               <div>
                 <div style={rowLine}>{r.rider_name ? r.rider_name : 'Rider'}</div>
                 <div style={small}>This is who you would be picking up.</div>
+                {r.rider_phone ? (
+                  <a href={'tel:' + String(r.rider_phone)} style={{ color: '#2563eb', fontWeight: 800, textDecoration: 'none', fontSize: 14 }}>
+                    Call {String(r.rider_phone)}
+                  </a>
+                ) : (
+                  <div style={small}>No phone number on file for this rider.</div>
+                )}
               </div>
             </div>
             <div style={rowLine}>Pick up: {r.pickup || 'Not given'}</div>
