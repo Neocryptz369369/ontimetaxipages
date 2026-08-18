@@ -9,6 +9,16 @@ function adminClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+function carText(d: any) {
+  if (!d) return '';
+  const bits: string[] = [];
+  if (d.vehicle_color) bits.push(String(d.vehicle_color));
+  if (d.vehicle_year) bits.push(String(d.vehicle_year));
+  if (d.vehicle_make) bits.push(String(d.vehicle_make));
+  if (d.vehicle_model) bits.push(String(d.vehicle_model));
+  return bits.join(' ');
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -66,10 +76,13 @@ export async function POST(req: Request) {
           faces[String(p.id)] = { name: p.full_name ? String(p.full_name) : '', photo: fullPhoto(p.photo_url) };
         }
       } else {
-        const df = await sb.from('drivers').select('id, full_name, photo_url').in('id', otherIds);
+        let df: any = await sb.from('drivers').select('id, full_name, photo_url, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate').in('id', otherIds);
+        if (df.error) {
+          df = await sb.from('drivers').select('id, full_name, photo_url').in('id', otherIds);
+        }
         const dlist: any[] = df.data ? df.data : [];
         for (const d of dlist) {
-          faces[String(d.id)] = { name: d.full_name ? String(d.full_name) : '', photo: fullPhoto(d.photo_url) };
+          faces[String(d.id)] = { name: d.full_name ? String(d.full_name) : '', photo: fullPhoto(d.photo_url), car: carText(d), plate: d.vehicle_plate ? String(d.vehicle_plate) : '' };
         }
       }
     }
@@ -96,6 +109,8 @@ export async function POST(req: Request) {
       const face = otherId && faces[String(otherId)] ? faces[String(otherId)] : null;
       return {
         otherPhoto: face ? face.photo : '',
+        driverCar: role !== 'driver' && face && face.car ? String(face.car) : '',
+        driverPlate: role !== 'driver' && face && face.plate ? String(face.plate) : '',
         id: r.id,
         createdAt: r.created_at,
         acceptedAt: r.accepted_at,
