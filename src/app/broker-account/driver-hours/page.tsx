@@ -9,6 +9,8 @@ type Run = {
   driverName: string;
   driverPhone: string;
   driverStatus: string;
+  driverCar: string;
+  driverPlate: string;
   pickup: string;
   dropoff: string;
   fare: number;
@@ -24,6 +26,8 @@ type DriverRow = {
   driverName: string;
   driverPhone: string;
   driverStatus: string;
+  driverCar: string;
+  driverPlate: string;
   runs: number;
   minutes: number;
   firstAt: string | null;
@@ -169,6 +173,9 @@ export default function DriverHoursPage() {
                   <div style={{ color: '#bcd0f8', fontSize: '14px', marginTop: '6px' }}>
                     Driver ID: {d.driverCode ? d.driverCode : 'not set'} — Phone: {d.driverPhone ? d.driverPhone : 'not set'} — Standing: {d.driverStatus ? d.driverStatus : 'unknown'}
                   </div>
+                  <div style={{ color: d.driverCar ? '#8affa1' : '#ff9a9a', fontSize: '14px', marginTop: '6px', fontWeight: 700 }}>
+                    Car: {d.driverCar ? d.driverCar : 'no car on file'} — Licence plate: {d.driverPlate ? d.driverPlate : 'no plate on file'}
+                  </div>
                   <div style={{ color: '#d9e5ff', fontSize: '14px', marginTop: '6px' }}>
                     {d.runs} runs — {span(d.minutes)} behind the wheel — first run {dayOf(d.firstAt)} — last run {dayOf(d.lastAt)}
                   </div>
@@ -200,6 +207,9 @@ export default function DriverHoursPage() {
                       </div>
                       <div style={{ color: '#9fb7e5', fontSize: '13px', marginTop: '6px' }}>
                         Fare {r.fare ? '$' + Number(r.fare).toFixed(2) : 'not set'} — Ride status: {r.status}
+                      </div>
+                      <div style={{ color: r.driverCar ? '#8affa1' : '#ff9a9a', fontSize: '13px', marginTop: '6px', fontWeight: 700 }}>
+                        Car on this run: {r.driverCar ? r.driverCar : 'no car on file'} — Licence plate: {r.driverPlate ? r.driverPlate : 'no plate on file'}
                       </div>
                     </div>
                   ))}
