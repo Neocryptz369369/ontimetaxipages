@@ -24,6 +24,7 @@ type Ride = {
   accepted_at?: string | null;
   rider_name?: string | null;
   rider_photo?: string | null;
+  rider_phone?: string | null;
   riderStars?: number;
   riderRatings?: number;
 };
