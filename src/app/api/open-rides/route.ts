@@ -139,6 +139,7 @@ export async function POST(req: Request) {
         riderStars: avg,
         riderRatings: s ? s.count : 0,
         rider_photo: who ? who.photo : '',
+        rider_phone: who ? who.phone : '',
         rider_name: r.rider_name ? r.rider_name : (who ? who.name : ''),
       });
     });
@@ -148,6 +149,7 @@ export async function POST(req: Request) {
       const who = k && people[k] ? people[k] : null;
       return Object.assign({}, r, {
         rider_photo: who ? who.photo : '',
+        rider_phone: who ? who.phone : '',
         rider_name: r.rider_name ? r.rider_name : (who ? who.name : ''),
       });
     });
