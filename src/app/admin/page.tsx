@@ -1083,7 +1083,7 @@ export default function AdminPage() {
           </p>
           {lowRatings.length > 0 ? (
             <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, padding: "10px 14px", borderRadius: "10px", marginBottom: "14px" }}>
-              {lowRatings.length} low rating{lowRatings.length === 1 ? "" : "s"} need a look
+              {lowRatings.length === 1 ? "1 low rating needs a look" : lowRatings.length + " low ratings need a look"}
             </div>
           ) : null}
           {ratings.length === 0 ? (
@@ -1141,7 +1141,7 @@ export default function AdminPage() {
                       <div style={{ fontWeight: 800, color: "#ffd7d7" }}>{d.full_name}</div>
                       <div style={{ color: "#c79a9a", fontSize: "12px" }}>
                         ID {d.driver_code}
-                        {Number(d.speeding_strikes || 0) > 0 ? " - " + d.speeding_strikes + " speeding strikes" : ""}
+                        {Number(d.speeding_strikes || 0) > 0 ? (Number(d.speeding_strikes) === 1 ? " - 1 speeding strike" : " - " + d.speeding_strikes + " speeding strikes") : ""}
                       </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
