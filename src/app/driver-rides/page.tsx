@@ -58,6 +58,30 @@ const takeBtn: any = {
 };
 const rowLine: any = { color: '#0f172a', fontWeight: 700, lineHeight: 1.5 };
 const small: any = { color: '#64748b', fontSize: 13, marginTop: 4 };
+const detLabel: any = { display: 'block', color: '#475569', fontWeight: 800, fontSize: 13, marginBottom: 4 };
+const detBox: any = {
+  width: '100%',
+  padding: '11px 12px',
+  borderRadius: 10,
+  border: '1px solid #cbd5e1',
+  fontSize: 16,
+  color: '#0f172a',
+  background: '#fff',
+  boxSizing: 'border-box',
+};
+const detBtn: any = {
+  display: 'block',
+  width: '100%',
+  marginTop: 14,
+  padding: '14px 16px',
+  borderRadius: 12,
+  border: 'none',
+  background: '#2563eb',
+  color: '#fff',
+  fontWeight: 800,
+  fontSize: 16,
+  cursor: 'pointer',
+};
 
 function Avatar(props: { src?: string | null; size?: number; label?: string }) {
   const size = props.size ? props.size : 46;
@@ -153,6 +177,16 @@ export default function DriverRidesPage() {
   const [photoMsg, setPhotoMsg] = useState('');
   const [myCar, setMyCar] = useState('');
   const [myPlate, setMyPlate] = useState('');
+  const [detBusy, setDetBusy] = useState(false);
+  const [detMsg, setDetMsg] = useState('');
+  const [fName, setFName] = useState('');
+  const [fPhone, setFPhone] = useState('');
+  const [fMake, setFMake] = useState('');
+  const [fModel, setFModel] = useState('');
+  const [fYear, setFYear] = useState('');
+  const [fColor, setFColor] = useState('');
+  const [fPlate, setFPlate] = useState('');
+  const filledRef = useRef(false);
 
   const load = useCallback(async function load() {
     const got = await supabase.auth.getSession();
@@ -182,6 +216,17 @@ export default function DriverRidesPage() {
         setDriverPhoto(j.driverPhoto ? String(j.driverPhoto) : '');
         setMyCar(myCarLine(j.driver));
         setMyPlate(j.driver && j.driver.vehicle_plate ? String(j.driver.vehicle_plate) : '');
+        if (!filledRef.current) {
+          filledRef.current = true;
+          const dd: any = j.driver ? j.driver : {};
+          setFName(dd.full_name ? String(dd.full_name) : '');
+          setFPhone(dd.phone ? String(dd.phone) : '');
+          setFMake(dd.vehicle_make ? String(dd.vehicle_make) : '');
+          setFModel(dd.vehicle_model ? String(dd.vehicle_model) : '');
+          setFYear(dd.vehicle_year ? String(dd.vehicle_year) : '');
+          setFColor(dd.vehicle_color ? String(dd.vehicle_color) : '');
+          setFPlate(dd.vehicle_plate ? String(dd.vehicle_plate) : '');
+        }
       }
     } catch (e) {}
     setReady(true);
@@ -223,6 +268,50 @@ export default function DriverRidesPage() {
       setPhotoMsg('That picture could not be saved.');
     }
     setPhotoBusy(false);
+  }
+
+  async function saveMyDetails() {
+    setDetBusy(true);
+    setDetMsg('');
+    try {
+      const got = await supabase.auth.getSession();
+      const tok = got.data.session ? got.data.session.access_token : '';
+      const res = await fetch('/api/driver-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: tok,
+          fullName: fName,
+          phone: fPhone,
+          make: fMake,
+          model: fModel,
+          year: fYear,
+          color: fColor,
+          plate: fPlate,
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok || !j.ok) {
+        setDetMsg(String(j.error || 'That could not be saved. Please try again.'));
+      } else {
+        const dd: any = j.driver ? j.driver : {};
+        setFName(dd.full_name ? String(dd.full_name) : '');
+        setFPhone(dd.phone ? String(dd.phone) : '');
+        setFMake(dd.vehicle_make ? String(dd.vehicle_make) : '');
+        setFModel(dd.vehicle_model ? String(dd.vehicle_model) : '');
+        setFYear(dd.vehicle_year ? String(dd.vehicle_year) : '');
+        setFColor(dd.vehicle_color ? String(dd.vehicle_color) : '');
+        setFPlate(dd.vehicle_plate ? String(dd.vehicle_plate) : '');
+        setMyCar(myCarLine(dd));
+        setMyPlate(dd.vehicle_plate ? String(dd.vehicle_plate) : '');
+        setName(dd.full_name ? String(dd.full_name) : '');
+        setDetMsg('Saved. Riders will see this now.');
+        load();
+      }
+    } catch (e) {
+      setDetMsg('That could not be saved. Please try again.');
+    }
+    setDetBusy(false);
   }
 
   async function sendMyRating(stars: number, review: string) {
@@ -347,6 +436,89 @@ export default function DriverRidesPage() {
                 <div style={{ ...small, color: '#b91c1c', fontWeight: 800 }}>No licence plate on file. Riders have to be able to see your plate.</div>
               )}
             </div>
+          </div>
+        ) : null}
+
+        {ready && signedIn && hasDriver ? (
+          <div style={card}>
+            <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 18 }}>My details</div>
+            <div style={small}>Put your name, your phone number and your car in here. Press Save. You can come back and change any of it any time you need to.</div>
+            <div style={{ display: 'grid', gap: 12, marginTop: 14 }}>
+              <div>
+                <span style={detLabel}>Your name</span>
+                <input
+                  type='text'
+                  value={fName}
+                  placeholder='Your full name'
+                  onChange={(e) => setFName(e.target.value)}
+                  style={detBox}
+                />
+              </div>
+              <div>
+                <span style={detLabel}>Your phone number</span>
+                <input
+                  type='text'
+                  value={fPhone}
+                  placeholder='Phone riders can reach you on'
+                  onChange={(e) => setFPhone(e.target.value)}
+                  style={detBox}
+                />
+              </div>
+              <div>
+                <span style={detLabel}>Car make</span>
+                <input
+                  type='text'
+                  value={fMake}
+                  placeholder='Toyota'
+                  onChange={(e) => setFMake(e.target.value)}
+                  style={detBox}
+                />
+              </div>
+              <div>
+                <span style={detLabel}>Car model</span>
+                <input
+                  type='text'
+                  value={fModel}
+                  placeholder='Camry'
+                  onChange={(e) => setFModel(e.target.value)}
+                  style={detBox}
+                />
+              </div>
+              <div>
+                <span style={detLabel}>Car year</span>
+                <input
+                  type='text'
+                  value={fYear}
+                  placeholder='2018'
+                  onChange={(e) => setFYear(e.target.value)}
+                  style={detBox}
+                />
+              </div>
+              <div>
+                <span style={detLabel}>Car colour</span>
+                <input
+                  type='text'
+                  value={fColor}
+                  placeholder='Silver'
+                  onChange={(e) => setFColor(e.target.value)}
+                  style={detBox}
+                />
+              </div>
+              <div>
+                <span style={detLabel}>Licence plate</span>
+                <input
+                  type='text'
+                  value={fPlate}
+                  placeholder='ABC1234'
+                  onChange={(e) => setFPlate(e.target.value)}
+                  style={detBox}
+                />
+              </div>
+            </div>
+            <button type='button' disabled={detBusy} onClick={saveMyDetails} style={{ ...detBtn, opacity: detBusy ? 0.6 : 1 }}>
+              {detBusy ? 'Saving...' : 'Save my details'}
+            </button>
+            {detMsg ? <div style={{ ...small, fontWeight: 800, color: '#0f172a' }}>{detMsg}</div> : null}
           </div>
         ) : null}
 
