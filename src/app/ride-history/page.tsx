@@ -210,7 +210,10 @@ export default function RideHistoryPage() {
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e2e8f0', border: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: 10, textAlign: 'center', lineHeight: 1.1 }}>No photo</div>
               )}
               <div style={{ color: '#475569', fontSize: 14 }}>
-                {r.driverName ? 'Driver: ' + r.driverName : 'No driver on this one'}
+                <div>{r.driverName ? 'Driver: ' + r.driverName : 'No driver on this one'}</div>
+                {r.driverCar ? <div style={{ color: '#166534', fontWeight: 700 }}>Car: {r.driverCar}</div> : null}
+                {r.driverPlate ? <div style={{ color: '#166534', fontWeight: 700 }}>Licence plate: {r.driverPlate}</div> : null}
+                {r.driverName && !r.driverCar && !r.driverPlate ? <div style={{ color: '#94a3b8' }}>No car or plate saved for this driver.</div> : null}
               </div>
             </div>
             <div style={{ color: '#475569', fontSize: 14, marginBottom: 10 }}>
