@@ -7,6 +7,7 @@ import RideChat from "../../components/RideChat";
 import PanicButton from "../../components/PanicButton";
 import { starRow } from "../../components/RatingBox";
 import SpeedWatch from "../../components/SpeedWatch";
+import DriverMessages from "../../components/DriverMessages";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -1277,6 +1278,10 @@ export default function AdminPage() {
             {tickerMsg ? (
               <div style={{ marginTop: "12px", borderRadius: "12px", padding: "12px 14px", background: "rgba(255,255,255,0.08)", color: "#ffffff", fontWeight: 700 }}>{tickerMsg}</div>
             ) : null}
+          </div>
+
+          <div style={{ marginTop: "32px" }}>
+            <DriverMessages />
           </div>
 
           <div
