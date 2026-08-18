@@ -630,9 +630,15 @@ export default function DriverRidesPage() {
             ) : (
               <div style={{ ...small, color: '#b45309', fontWeight: 700 }}>Not paid by card. Collect this one as a cash run.</div>
             )}
-            <button style={{ ...takeBtn, opacity: busyId === r.id ? 0.6 : 1 }} onClick={() => take(r.id)} disabled={busyId === r.id || mustRate !== null}>
-              {busyId === r.id ? 'Taking it...' : 'Take this ride'}
-            </button>
+            {!myCar || !myPlate ? (
+              <div style={{ ...small, color: '#b91c1c', fontWeight: 800, marginTop: 12 }}>
+                You cannot take rides yet. Put your car and your licence plate in My details above and press Save. A rider has to be able to see what car is picking them up.
+              </div>
+            ) : (
+              <button style={{ ...takeBtn, opacity: busyId === r.id ? 0.6 : 1 }} onClick={() => take(r.id)} disabled={busyId === r.id || mustRate !== null}>
+                {busyId === r.id ? 'Taking it...' : 'Take this ride'}
+              </button>
+            )}
           </div>
         ))}
         {ready && signedIn && hasDriver ? (
