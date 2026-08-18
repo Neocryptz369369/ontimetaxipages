@@ -11,6 +11,16 @@ import DriverMessages from "../../components/DriverMessages";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
+function driverCarLine(d: any) {
+  if (!d) return "";
+  const bits: string[] = [];
+  if (d.vehicle_color) bits.push(String(d.vehicle_color));
+  if (d.vehicle_year) bits.push(String(d.vehicle_year));
+  if (d.vehicle_make) bits.push(String(d.vehicle_make));
+  if (d.vehicle_model) bits.push(String(d.vehicle_model));
+  return bits.join(" ");
+}
+
 const ADMIN_MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 let adminMapboxPromise: Promise<any> | null = null;
 function loadAdminMapbox(): Promise<any> {
@@ -137,6 +147,7 @@ export default function AdminPage() {
   const [incoming, setIncoming] = useState<any[]>([]);
   const [rideMsg, setRideMsg] = useState("");
   const [activeDrive, setActiveDrive] = useState<any>(null);
+  const [activeDriveCar, setActiveDriveCar] = useState<any>(null);
   const [riderPos, setRiderPos] = useState<{ lat: number; lng: number } | null>(null);
   const [driveGeoError, setDriveGeoError] = useState("");
   const [adminMapsReady, setAdminMapsReady] = useState(false);
@@ -599,6 +610,28 @@ export default function AdminPage() {
       });
     return () => { alive = false; };
   }, [isLoggedIn]);
+
+  // Look up the car, plate and phone for whoever is on this ride
+  useEffect(() => {
+    const dId = activeDrive && activeDrive.driver_id ? String(activeDrive.driver_id) : "";
+    if (!dId) {
+      setActiveDriveCar(null);
+      return;
+    }
+    let alive = true;
+    fetch("/api/driver-card", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ driverId: dId }),
+    })
+      .then((r) => r.json())
+      .then((j) => {
+        if (!alive) return;
+        setActiveDriveCar(j && j.driver ? j.driver : null);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [activeDrive ? activeDrive.driver_id : null]);
 
   // While driving an active ride: stream driver GPS out, receive rider GPS in
   useEffect(() => {
@@ -1464,6 +1497,50 @@ export default function AdminPage() {
                 <br />
                 {activeDrive.fare != null ? <span style={{ color: "#fff", fontWeight: 700 }}>Rider paid: ${Number(activeDrive.fare).toFixed(2)}{Number(activeDrive.tip || 0) > 0 ? " + $" + Number(activeDrive.tip).toFixed(2) + " tip" : ""}</span> : ""}
             </p>
+            <div
+              style={{
+                marginBottom: "16px",
+                padding: "14px 16px",
+                borderRadius: "12px",
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: "rgba(0,0,0,0.3)",
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+              }}
+            >
+              {activeDriveCar && activeDriveCar.photo_url ? (
+                <img
+                  src={activeDriveCar.photo_url}
+                  alt="Driver"
+                  style={{ width: "56px", height: "56px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.35)" }}
+                />
+              ) : null}
+              <div style={{ fontSize: "13px", color: "#c98f8f", lineHeight: 1.7 }}>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: "15px" }}>
+                  Driver: {activeDriveCar && activeDriveCar.full_name ? activeDriveCar.full_name : (activeDrive.driver_name ? activeDrive.driver_name : "Not picked up by a driver yet")}
+                  {activeDriveCar && activeDriveCar.driver_code ? " (ID " + activeDriveCar.driver_code + ")" : ""}
+                </div>
+                {driverCarLine(activeDriveCar) ? (
+                  <div style={{ color: "#8affa1", fontWeight: 700 }}>Car: {driverCarLine(activeDriveCar)}</div>
+                ) : (
+                  <div style={{ color: "#ff9a9a", fontWeight: 700 }}>No car on file for this driver.</div>
+                )}
+                {activeDriveCar && activeDriveCar.vehicle_plate ? (
+                  <div style={{ color: "#8affa1", fontWeight: 700 }}>Licence plate: {activeDriveCar.vehicle_plate}</div>
+                ) : (
+                  <div style={{ color: "#ff9a9a", fontWeight: 700 }}>No licence plate on file for this driver.</div>
+                )}
+                {(activeDriveCar && activeDriveCar.phone) || activeDrive.driver_phone ? (
+                  <a
+                    href={"tel:" + (activeDriveCar && activeDriveCar.phone ? activeDriveCar.phone : activeDrive.driver_phone)}
+                    style={{ color: "#7fd1ff", textDecoration: "underline", fontWeight: 600 }}
+                  >
+                    {"Call driver: " + (activeDriveCar && activeDriveCar.phone ? activeDriveCar.phone : activeDrive.driver_phone)}
+                  </a>
+                ) : null}
+              </div>
+            </div>
             <div
               ref={adminMapDivRef}
               style={{ width: "100%", height: "320px", borderRadius: "12px", overflow: "hidden", background: "#111" }}
