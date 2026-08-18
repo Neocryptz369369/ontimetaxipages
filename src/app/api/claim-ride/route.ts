@@ -31,11 +31,21 @@ export async function POST(req: Request) {
 
     const user = got.data.user;
 
-    const found = await sb
+    let wide = true;
+    let found: any = await sb
       .from('drivers')
-      .select('driver_code, full_name, phone, status')
+      .select('driver_code, full_name, phone, status, vehicle_make, vehicle_model, vehicle_plate')
       .eq('id', user.id)
       .maybeSingle();
+
+    if (found.error) {
+      wide = false;
+      found = await sb
+        .from('drivers')
+        .select('driver_code, full_name, phone, status')
+        .eq('id', user.id)
+        .maybeSingle();
+    }
 
     if (found.error) {
       return NextResponse.json({ error: 'Could not load your driver record.' }, { status: 500 });
@@ -45,6 +55,14 @@ export async function POST(req: Request) {
     }
     if (String(found.data.status) !== 'approved') {
       return NextResponse.json({ error: 'You are not approved to take rides yet.' }, { status: 403 });
+    }
+
+    if (wide) {
+      const hasCar = !!(found.data.vehicle_make || found.data.vehicle_model);
+      const hasPlate = !!found.data.vehicle_plate;
+      if (!hasCar || !hasPlate) {
+        return NextResponse.json({ error: 'Put your car and your licence plate in My details on your driver page first. A rider has to be able to see what car is picking them up.' }, { status: 403 });
+      }
     }
 
     const taken = await sb
