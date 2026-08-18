@@ -106,6 +106,17 @@ function clearRouteLine(m: any) {
   } catch (e) {}
 }
 
+function digitsOnly(v: any) {
+  return String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '')
+}
+
+function prettyPhone(v: any) {
+  const d = digitsOnly(v)
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6)
+  return ten
+}
+
 export default function RidePage() {
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
@@ -471,7 +482,7 @@ export default function RidePage() {
       const meta: any = user.user_metadata || {}
       setMyProfile({ full_name: (row && row.full_name) ? String(row.full_name) : String(meta.full_name || meta.name || '') })
       setRName((row && row.full_name) ? String(row.full_name) : String(meta.full_name || meta.name || ''))
-      setRPhone((row && row.phone) ? String(row.phone) : String(meta.phone || ''))
+      setRPhone(prettyPhone((row && row.phone) ? String(row.phone) : String(meta.phone || '')))
       const raw = row && row.photo_url ? String(row.photo_url) : ''
       if (!raw) { setMyPhoto(''); return }
       if (raw.indexOf('http') === 0) { setMyPhoto(raw); return }
@@ -493,7 +504,13 @@ export default function RidePage() {
         return
       }
       const cleanName = String(rName || '').trim().slice(0, 120)
-      const cleanPhone = String(rPhone || '').trim().slice(0, 40)
+      const cleanPhone = prettyPhone(rPhone)
+      const typedPhone = String(rPhone || '').trim()
+      if (typedPhone !== '' && digitsOnly(typedPhone).length !== 10 && digitsOnly(typedPhone).length !== 11) {
+        setRMsg('That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.')
+        setRBusy(false)
+        return
+      }
       if (!cleanName) {
         setRMsg('Please put in your name so your driver knows who they are picking up.')
         setRBusy(false)
@@ -508,6 +525,7 @@ export default function RidePage() {
       } else {
         setMyProfile({ full_name: cleanName })
         setRName(cleanName)
+        setRPhone(cleanPhone)
         setRMsg('Saved. Your driver will see this.')
       }
     } catch (e) {
@@ -573,7 +591,7 @@ export default function RidePage() {
           const rideFare = miles > 0 ? baseFare + perMile * miles : baseFare
           const meta = (user.user_metadata || {})
           const riderName = meta.full_name || meta.name || user.email || ''
-          const riderPhone = meta.phone || meta.phone_number || ''
+          const riderPhone = prettyPhone(rPhone) || meta.phone || meta.phone_number || ''
           const stopsPayload = stops.filter((st: Stop) => st.address.trim().length > 0).map((st: Stop) => ({ address: st.address, lat: st.lat, lng: st.lng }))
           const rideRow: any = {
             rider_id: user.id,
@@ -909,7 +927,7 @@ export default function RidePage() {
                   </div>
                   <div>
                     <span style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#cbd5e1', marginBottom: 4 }}>Your phone number</span>
-                    <input type="text" value={rPhone} placeholder="Phone your driver can reach you on" onChange={(e) => setRPhone(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 16, boxSizing: 'border-box' }} />
+                    <input type="tel" inputMode="tel" value={rPhone} placeholder="Phone your driver can reach you on" onChange={(e) => setRPhone(prettyPhone(e.target.value))} style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 16, boxSizing: 'border-box' }} />
                   </div>
                 </div>
                 <button type="button" disabled={rBusy} onClick={saveRiderDetails} className="rp-btn" style={{ marginTop: 12, opacity: rBusy ? 0.6 : 1 }}>
@@ -1170,7 +1188,7 @@ export default function RidePage() {
                 <span className="rp-spin" />
                 <span>Finding your driver...</span>
               </div>
-                  <div className="rp-muted">${tripFare.toFixed(2)} Â· {tripMiles.toFixed(1)} mi</div>
+                  <div className="rp-muted">${tripFare.toFixed(2)} ÃÂ· {tripMiles.toFixed(1)} mi</div>
                 {!ridePaid && (
                   <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
                     {trackUnlocked
@@ -1200,7 +1218,7 @@ export default function RidePage() {
                 <a href={'tel:' + (driverCard && driverCard.phone ? driverCard.phone : '+19302164166')} className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: {driverCard && driverCard.phone ? driverCard.phone : '(930) 216-4166'}</a>
                 </div>
               </div>
-                <div className="rp-tripline">${tripFare.toFixed(2)} Â· {tripMiles.toFixed(1)} mi Â· {tripStatus}</div>
+                <div className="rp-tripline">${tripFare.toFixed(2)} ÃÂ· {tripMiles.toFixed(1)} mi ÃÂ· {tripStatus}</div>
               {!ridePaid && (
                 <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
                   {trackUnlocked
