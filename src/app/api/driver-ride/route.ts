@@ -35,11 +35,19 @@ export async function POST(req: Request) {
 
     const user = got.data.user;
 
-    const drv = await sb
+    let drv = await sb
       .from('drivers')
-      .select('status, full_name, phone')
+      .select('status, full_name, phone, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate')
       .eq('id', user.id)
       .maybeSingle();
+
+    if (drv.error) {
+      drv = await sb
+        .from('drivers')
+        .select('status, full_name, phone')
+        .eq('id', user.id)
+        .maybeSingle();
+    }
 
     if (drv.error) {
       return NextResponse.json({ error: 'Could not load your driver record.' }, { status: 500 });
@@ -50,6 +58,13 @@ export async function POST(req: Request) {
     if (String(drv.data.status) !== 'approved') {
       return NextResponse.json({ error: 'You are not approved to drive yet.' }, { status: 403 });
     }
+
+    const dv: any = drv.data || {};
+    const carBits = [dv.vehicle_color, dv.vehicle_year, dv.vehicle_make, dv.vehicle_model]
+      .map((x: any) => (x === null || x === undefined ? '' : String(x).trim()))
+      .filter((x: string) => x !== '');
+    const myCar = carBits.join(' ');
+    const myPlate = dv.vehicle_plate === null || dv.vehicle_plate === undefined ? '' : String(dv.vehicle_plate).trim();
 
     const own = await sb
       .from('rides')
@@ -103,6 +118,8 @@ export async function POST(req: Request) {
       if (!out.rider_name && riderFullName) out.rider_name = riderFullName;
       if (!out.rider_phone && riderPhoneAlt) out.rider_phone = riderPhoneAlt;
       out.terms = terms;
+      out.my_car = myCar;
+      out.my_plate = myPlate;
       return out;
     };
 
