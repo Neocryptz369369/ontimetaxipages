@@ -225,6 +225,10 @@ export default function RidePage() {
   const [myPhoto, setMyPhoto] = useState('')
   const [photoBusy, setPhotoBusy] = useState(false)
   const [photoMsg, setPhotoMsg] = useState('')
+  const [rName, setRName] = useState('')
+  const [rPhone, setRPhone] = useState('')
+  const [rBusy, setRBusy] = useState(false)
+  const [rMsg, setRMsg] = useState('')
   const riderMarkerRef = useRef<any>(null)
   const driverMarkerRef = useRef<any>(null)
   const watchIdRef = useRef<number | null>(null)
@@ -458,11 +462,16 @@ export default function RidePage() {
     async function loadMe() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user || !alive) return
-      const got = await supabase.from('profiles').select('full_name, photo_url').eq('id', user.id).maybeSingle()
+      let got: any = await supabase.from('profiles').select('full_name, phone, photo_url').eq('id', user.id).maybeSingle()
+      if (got.error) {
+        got = await supabase.from('profiles').select('full_name, photo_url').eq('id', user.id).maybeSingle()
+      }
       if (!alive) return
       const row: any = got && got.data ? got.data : null
       const meta: any = user.user_metadata || {}
       setMyProfile({ full_name: (row && row.full_name) ? String(row.full_name) : String(meta.full_name || meta.name || '') })
+      setRName((row && row.full_name) ? String(row.full_name) : String(meta.full_name || meta.name || ''))
+      setRPhone((row && row.phone) ? String(row.phone) : String(meta.phone || ''))
       const raw = row && row.photo_url ? String(row.photo_url) : ''
       if (!raw) { setMyPhoto(''); return }
       if (raw.indexOf('http') === 0) { setMyPhoto(raw); return }
@@ -472,6 +481,40 @@ export default function RidePage() {
     loadMe()
     return () => { alive = false }
   }, [])
+
+  async function saveRiderDetails() {
+    setRBusy(true)
+    setRMsg('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setRMsg('Please sign in again.')
+        setRBusy(false)
+        return
+      }
+      const cleanName = String(rName || '').trim().slice(0, 120)
+      const cleanPhone = String(rPhone || '').trim().slice(0, 40)
+      if (!cleanName) {
+        setRMsg('Please put in your name so your driver knows who they are picking up.')
+        setRBusy(false)
+        return
+      }
+      let upd: any = await supabase.from('profiles').update({ full_name: cleanName, phone: cleanPhone }).eq('id', user.id)
+      if (upd.error) {
+        upd = await supabase.from('profiles').update({ full_name: cleanName }).eq('id', user.id)
+      }
+      if (upd.error) {
+        setRMsg('That could not be saved. Please try again.')
+      } else {
+        setMyProfile({ full_name: cleanName })
+        setRName(cleanName)
+        setRMsg('Saved. Your driver will see this.')
+      }
+    } catch (e) {
+      setRMsg('That could not be saved. Please try again.')
+    }
+    setRBusy(false)
+  }
 
   async function saveMyPhoto(file: File | null) {
     if (!file) return
@@ -855,6 +898,24 @@ export default function RidePage() {
                 />
                 {photoBusy ? <div className="rp-muted" style={{ marginTop: 6 }}>Saving your photo...</div> : null}
                 {photoMsg ? <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>{photoMsg}</div> : null}
+              </div>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.14)' }}>
+                <div style={{ fontWeight: 800, marginBottom: 2 }}>My details</div>
+                <div className="rp-muted" style={{ marginBottom: 10 }}>Your name and phone number. Press Save. You can change this any time you need to.</div>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  <div>
+                    <span style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#cbd5e1', marginBottom: 4 }}>Your name</span>
+                    <input type="text" value={rName} placeholder="Your full name" onChange={(e) => setRName(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 16, boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <span style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#cbd5e1', marginBottom: 4 }}>Your phone number</span>
+                    <input type="text" value={rPhone} placeholder="Phone your driver can reach you on" onChange={(e) => setRPhone(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 16, boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+                <button type="button" disabled={rBusy} onClick={saveRiderDetails} className="rp-btn" style={{ marginTop: 12, opacity: rBusy ? 0.6 : 1 }}>
+                  {rBusy ? 'Saving...' : 'Save my details'}
+                </button>
+                {rMsg ? <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>{rMsg}</div> : null}
               </div>
             </div>
           ) : null}
