@@ -900,6 +900,17 @@ export default function RidePage() {
                     <div style={{ fontSize: '12px', color: '#bbb', fontFamily: 'ui-monospace, Menlo, monospace', letterSpacing: '1px' }}>
                       Driver ID {driverCard.driver_code}
                     </div>
+                    {driverCard.car ? (
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginTop: 2 }}>Car: {driverCard.car}</div>
+                    ) : null}
+                    {driverCard.plate ? (
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#f5b301' }}>Licence plate: {driverCard.plate}</div>
+                    ) : null}
+                    {driverCard.phone ? (
+                      <div style={{ fontSize: '13px', marginTop: 2 }}>
+                        Call driver: <a href={'tel:' + driverCard.phone} style={{ color: '#ffb4b4' }}>{driverCard.phone}</a>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               )}
