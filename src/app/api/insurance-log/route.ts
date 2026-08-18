@@ -47,7 +47,7 @@ export async function GET() {
 
     const book: any = {};
     if (ids.length > 0) {
-      let dr = await sb.from('drivers').select('id, driver_code, full_name, phone, status, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate').in('id', ids);
+      let dr: any = await sb.from('drivers').select('id, driver_code, full_name, phone, status, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate').in('id', ids);
       if (dr.error) {
         dr = await sb.from('drivers').select('id, driver_code, full_name, phone, status').in('id', ids);
       }
