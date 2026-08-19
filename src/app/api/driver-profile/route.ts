@@ -14,6 +14,13 @@ function clean(v: any) {
   return s.trim().slice(0, 120);
 }
 
+function phoneClean(v: any) {
+  const d = String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -39,7 +46,7 @@ export async function POST(req: Request) {
     }
 
     const name = clean(body.fullName);
-    const phone = clean(body.phone);
+    const phone = phoneClean(body.phone);
     const make = clean(body.make);
     const model = clean(body.model);
     const color = clean(body.color);
