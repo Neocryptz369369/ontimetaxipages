@@ -1188,7 +1188,7 @@ export default function RidePage() {
                 <span className="rp-spin" />
                 <span>Finding your driver...</span>
               </div>
-                  <div className="rp-muted">${tripFare.toFixed(2)} ÃÂ· {tripMiles.toFixed(1)} mi</div>
+                  <div className="rp-muted">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi</div>
                 {!ridePaid && (
                   <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
                     {trackUnlocked
@@ -1218,7 +1218,7 @@ export default function RidePage() {
                 <a href={'tel:' + (driverCard && driverCard.phone ? driverCard.phone : '+19302164166')} className="rp-muted" style={{ display: 'block', color: '#4aa3ff', textDecoration: 'underline', marginTop: 2 }}>Call driver: {driverCard && driverCard.phone ? driverCard.phone : '(930) 216-4166'}</a>
                 </div>
               </div>
-                <div className="rp-tripline">${tripFare.toFixed(2)} ÃÂ· {tripMiles.toFixed(1)} mi ÃÂ· {tripStatus}</div>
+                <div className="rp-tripline">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi · {tripStatus}</div>
               {!ridePaid && (
                 <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
                   {trackUnlocked
