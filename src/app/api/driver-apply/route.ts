@@ -9,13 +9,20 @@ function adminClient() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+function phoneClean(v: any) {
+  const d = String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
     const fullName = String(body.fullName || '').trim();
     const email = String(body.email || '').trim().toLowerCase();
-    const phone = String(body.phone || '').trim();
+    const phone = phoneClean(body.phone);
     const password = String(body.password || '');
     const photo = String(body.photo || '');
     const vehicleMake = String(body.vehicleMake || '').trim();
@@ -37,6 +44,7 @@ export async function POST(req: Request) {
     if (!fullName) return NextResponse.json({ error: 'Please enter your full name.' }, { status: 400 });
     if (!email || email.indexOf('@') < 1) return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     if (!phone) return NextResponse.json({ error: 'Please enter your phone number.' }, { status: 400 });
+    if (phone.replace(/[^0-9]/g, '').length !== 10 && phone.replace(/[^0-9]/g, '').length !== 11) return NextResponse.json({ error: 'That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.' }, { status: 400 });
     if (password.length < 8) return NextResponse.json({ error: 'Your password must be at least 8 characters.' }, { status: 400 });
     if (photo.slice(0, 11) !== 'data:image/') return NextResponse.json({ error: 'A clear photo of your face is required.' }, { status: 400 });
     if (!vehicleMake) return NextResponse.json({ error: 'Please enter the make of your car, like Ford or Toyota.' }, { status: 400 });
