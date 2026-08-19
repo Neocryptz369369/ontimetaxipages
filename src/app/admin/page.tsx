@@ -135,6 +135,17 @@ function Frame() {
 }
 
 
+function digitsOnly(v: any) {
+  return String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+}
+
+function prettyPhone(v: any) {
+  const d = digitsOnly(v);
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
 export default function AdminPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -1692,7 +1703,7 @@ export default function AdminPage() {
                         ))}
                       </select>
                       <input type="text" placeholder="Driver name" value={(driverInputs[r.id] && driverInputs[r.id].name) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), name: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
-                      <input type="text" placeholder="Driver phone" value={(driverInputs[r.id] && driverInputs[r.id].phone) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), phone: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                      <input type="tel" inputMode="tel" placeholder="Driver phone" value={(driverInputs[r.id] && driverInputs[r.id].phone) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), phone: prettyPhone(e.target.value) } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
                       <input type="text" placeholder="Vehicle" value={(driverInputs[r.id] && driverInputs[r.id].vehicle) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), vehicle: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
                       <input type="text" placeholder="Plate" value={(driverInputs[r.id] && driverInputs[r.id].plate) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), plate: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
                     </div>
