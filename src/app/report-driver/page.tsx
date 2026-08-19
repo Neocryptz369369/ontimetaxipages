@@ -16,6 +16,17 @@ const card: any = { background: '#141418', border: '1px solid #26262e', borderRa
 const label: any = { display: 'block', fontSize: '13px', fontWeight: 700, color: '#b9b9c4', marginBottom: '6px', marginTop: '14px' };
 const input: any = { width: '100%', boxSizing: 'border-box', background: '#0b0b0d', border: '1px solid #33333d', borderRadius: '10px', color: '#f4f4f5', padding: '12px 14px', fontSize: '16px' };
 
+function digitsOnly(v: any) {
+  return String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+}
+
+function prettyPhone(v: any) {
+  const d = digitsOnly(v);
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
 export default function ReportDriverPage() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
@@ -52,6 +63,10 @@ export default function ReportDriverPage() {
       setError('Please choose what you saw.');
       return;
     }
+    if (phone.trim() !== '' && digitsOnly(phone).length !== 10 && digitsOnly(phone).length !== 11) {
+      setError('That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.');
+      return;
+    }
     setBusy(true);
     try {
       const got = await supabase.auth.getSession();
@@ -65,7 +80,7 @@ export default function ReportDriverPage() {
           kind: kind,
           details: details,
           reporterName: name,
-          reporterPhone: phone,
+          reporterPhone: prettyPhone(phone),
         }),
       });
       const j = await res.json();
@@ -159,7 +174,7 @@ export default function ReportDriverPage() {
             <input style={input} value={name} onChange={(e) => setName(e.target.value)} placeholder={email} />
 
             <label style={label}>Your phone (so the owner can call you)</label>
-            <input style={input} value={phone} inputMode="tel" onChange={(e) => setPhone(e.target.value)} placeholder="555 555 5555" />
+            <input style={input} value={phone} type="tel" inputMode="tel" onChange={(e) => setPhone(prettyPhone(e.target.value))} placeholder="930-216-4166" />
 
             {error && <p style={{ color: '#f87171', fontWeight: 700, marginTop: '14px' }}>{error}</p>}
 
