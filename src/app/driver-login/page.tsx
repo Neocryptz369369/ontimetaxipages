@@ -98,6 +98,17 @@ function hoursText(mins: any) {
   return h + ' hr ' + m + ' min';
 }
 
+function digitsOnly(v: any) {
+  return String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+}
+
+function prettyPhone(v: any) {
+  const d = digitsOnly(v);
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
 export default function DriverLoginPage() {
   const [checking, setChecking] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
@@ -295,6 +306,7 @@ export default function DriverLoginPage() {
     if (!fullName.trim()) { setError('Please enter your full name.'); return; }
     if (!email.trim()) { setError('Please enter your email address.'); return; }
     if (!phone.trim()) { setError('Please enter your phone number.'); return; }
+    if (digitsOnly(phone).length !== 10 && digitsOnly(phone).length !== 11) { setError('That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.'); return; }
     if (password.length < 8) { setError('Please pick a password with at least 8 letters or numbers.'); return; }
     if (!photo) { setError('Please add a picture of yourself.'); return; }
     if (!vehicleMake.trim()) { setError('Please enter the make of your car, like Ford or Toyota.'); return; }
@@ -311,7 +323,7 @@ export default function DriverLoginPage() {
         body: JSON.stringify({
           fullName: fullName.trim(),
           email: email.trim().toLowerCase(),
-          phone: phone.trim(),
+          phone: prettyPhone(phone),
           password: password,
           photo: photo,
           vehicleMake: vehicleMake.trim(),
@@ -349,7 +361,7 @@ export default function DriverLoginPage() {
                 agreementType: papers[i].kind,
                 fullName: fullName.trim(),
                 email: email.trim().toLowerCase(),
-                phone: phone.trim(),
+                phone: prettyPhone(phone),
                 userId: data && data.driverId ? String(data.driverId) : null,
                 agreed: true,
                 agreementText: papers[i].words,
@@ -605,7 +617,7 @@ export default function DriverLoginPage() {
                 <input style={input} type='email' value={email} onChange={(e) => setEmail(e.target.value)} placeholder='you@example.com' />
 
                 <label style={label}>Phone number</label>
-                <input style={input} type='tel' value={phone} onChange={(e) => setPhone(e.target.value)} placeholder='555 555 5555' />
+                <input style={input} type='tel' inputMode='tel' value={phone} onChange={(e) => setPhone(prettyPhone(e.target.value))} placeholder='930-216-4166' />
 
                 <label style={label}>Password you want to use</label>
                 <input style={input} type='password' value={password} onChange={(e) => setPassword(e.target.value)} placeholder='At least 8 characters' />
