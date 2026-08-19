@@ -19,6 +19,17 @@ async function uploadPhoto(userId: string, photo: File) {
   if (updErr) throw updErr;
 }
 
+function digitsOnly(v: any) {
+  return String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+}
+
+function prettyPhone(v: any) {
+  const d = digitsOnly(v);
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
 export default function SignUpPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -44,6 +55,7 @@ export default function SignUpPage() {
     if (!fullName.trim()) { setError('Please enter your full name.'); return; }
     if (!email.trim()) { setError('Please enter your email.'); return; }
     if (!phone.trim()) { setError('Please enter your phone number.'); return; }
+    if (digitsOnly(phone).length !== 10 && digitsOnly(phone).length !== 11) { setError('That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.'); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (!photo) { setError('A profile photo is required so your driver can recognize you.'); return; }
     if (!isSigned(recordingSign)) { setError('Please type your full name and then sign your name in the recording agreement box.'); return; }
@@ -54,7 +66,7 @@ export default function SignUpPage() {
         email: email.trim(),
         password,
         options: {
-          data: { full_name: fullName.trim(), phone: phone.trim() },
+          data: { full_name: fullName.trim(), phone: prettyPhone(phone) },
           emailRedirectTo: `${window.location.origin}/login`,
         },
       });
@@ -87,7 +99,7 @@ export default function SignUpPage() {
             agreementType: 'recording',
             fullName: fullName.trim(),
             email: email.trim().toLowerCase(),
-            phone: phone.trim(),
+            phone: prettyPhone(phone),
             userId: userId ? userId : null,
             agreed: true,
             agreementText: RECORDING_AGREEMENT_TEXT,
@@ -133,7 +145,7 @@ export default function SignUpPage() {
               <input style={inputStyle} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
 
               <label style={labelStyle}>Phone number</label>
-              <input style={inputStyle} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(812) 555-0100" autoComplete="tel" />
+              <input style={inputStyle} type="tel" inputMode="tel" value={phone} onChange={e => setPhone(prettyPhone(e.target.value))} placeholder="930-216-4166" autoComplete="tel" />
 
               <label style={labelStyle}>Password</label>
               <input style={inputStyle} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" autoComplete="new-password" />
