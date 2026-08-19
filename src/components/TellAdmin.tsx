@@ -21,7 +21,7 @@ export default function TellAdmin(props: { token?: string; compact?: boolean }) 
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [listening, setListening] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   const tokenRef = useRef('');
   const recRef = useRef<any>(null);
