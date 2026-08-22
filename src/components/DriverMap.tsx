@@ -41,6 +41,7 @@ type Driver = {
   over_by: number | null;
   minutes_ago: number | null;
   live: boolean;
+  job: any;
 };
 
 type Rider = {
@@ -154,6 +155,28 @@ function speedLine(d: Driver) {
   return s;
 }
 
+function milesBetween(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const R = 3958.8;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const la1 = (aLat * Math.PI) / 180;
+  const la2 = (bLat * Math.PI) / 180;
+  const h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function nearestDriver(r: Rider, list: Driver[]) {
+  let best: any = null;
+  let anyOne: any = null;
+  list.forEach(function (d) {
+    const mi = milesBetween(r.lat, r.lng, d.lat, d.lng);
+    if (!anyOne || mi < anyOne.miles) anyOne = { driver: d, miles: mi };
+    if (!d.live) return;
+    if (!best || mi < best.miles) best = { driver: d, miles: mi };
+  });
+  return best || anyOne;
+}
+
 function savedView(): any {
   try {
     const raw = window.localStorage.getItem(VIEW_KEY);
@@ -170,6 +193,7 @@ export default function DriverMap() {
   const marksRef = useRef<any>({});
   const riderMarksRef = useRef<any>({});
   const trailRef = useRef<any>({});
+  const routeRef = useRef<any>({});
   const listRef = useRef<Driver[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [riders, setRiders] = useState<Rider[]>([]);
@@ -180,6 +204,7 @@ export default function DriverMap() {
   const [sound, setSound] = useState(true);
   const [showRiders, setShowRiders] = useState(true);
   const [showTrails, setShowTrails] = useState(true);
+  const [routes, setRoutes] = useState<any>({});
 
   async function myToken() {
     try {
@@ -262,6 +287,16 @@ export default function DriverMap() {
                 source: 'ottrails',
                 layout: { 'line-cap': 'round', 'line-join': 'round' },
                 paint: { 'line-color': ['get', 'colour'], 'line-width': 5, 'line-opacity': 0.8 },
+              });
+            }
+            if (!m.getSource('otroutes')) {
+              m.addSource('otroutes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+              m.addLayer({
+                id: 'otroutes-line',
+                type: 'line',
+                source: 'otroutes',
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: { 'line-color': ['get', 'colour'], 'line-width': 6, 'line-opacity': 0.9 },
               });
             }
           } catch (e) {}
@@ -376,6 +411,7 @@ export default function DriverMap() {
         d.plate ? 'Plate ' + d.plate : 'No plate on file',
         speedLine(d),
         'Last heard from ' + ago(d.minutes_ago),
+        d.job ? (d.job.stage === 'dropoff' ? 'Taking ' + d.job.rider_name + ' to ' + (d.job.where || 'the map pin') : 'On the way to pick up ' + d.job.rider_name) : '',
         d.phone ? 'Phone ' + d.phone : '',
       ];
       lines.forEach(function (line, n) {
@@ -468,12 +504,14 @@ export default function DriverMap() {
       holder.style.color = '#04121c';
       holder.style.fontSize = '13px';
       holder.style.lineHeight = '1.35';
+      const nb = nearestDriver(r, listRef.current);
       const lines = [
         'Waiting for a ride - ' + r.name,
         r.pickup ? 'Pick up ' + r.pickup : '',
         r.dropoff ? 'Going to ' + r.dropoff : '',
         r.fare !== null ? 'Fare $' + r.fare.toFixed(2) : '',
         'Waiting ' + waited(r.waiting_minutes),
+        nb ? 'Nearest driver ' + nb.driver.name + ' - ' + nb.miles.toFixed(1) + ' miles away' : '',
       ];
       lines.forEach(function (line, n) {
         if (!line) return;
@@ -502,6 +540,63 @@ export default function DriverMap() {
     const t = setInterval(alarmBurst, 2600);
     return function () { clearInterval(t); };
   }, [drivers, sound]);
+
+  useEffect(function () {
+    const m = mapRef.current;
+    if (!m) return;
+    let dead = false;
+    (async function () {
+      const keep: any = {};
+      for (let i = 0; i < drivers.length; i++) {
+        const d = drivers[i];
+        if (!d.job) continue;
+        const tLat = Number(d.job.to_lat);
+        const tLng = Number(d.job.to_lng);
+        if (!isFinite(tLat) || !isFinite(tLng)) continue;
+        keep[d.id] = true;
+        const key = d.lng.toFixed(4) + ',' + d.lat.toFixed(4) + '|' + tLng.toFixed(4) + ',' + tLat.toFixed(4);
+        const have = routeRef.current[d.id];
+        if (have && have.key === key) continue;
+        try {
+          const url =
+            'https://api.mapbox.com/directions/v5/mapbox/driving/' +
+            d.lng + ',' + d.lat + ';' + tLng + ',' + tLat +
+            '?geometries=geojson&overview=full&access_token=' + MAP_TOKEN;
+          const j = await fetch(url).then(function (rr) { return rr.json(); });
+          if (j && j.routes && j.routes[0] && j.routes[0].geometry) {
+            routeRef.current[d.id] = {
+              key: key,
+              coords: j.routes[0].geometry.coordinates,
+              mins: Math.max(1, Math.round((j.routes[0].duration || 0) / 60)),
+              miles: Math.round(((j.routes[0].distance || 0) / 1609.34) * 10) / 10,
+              stage: d.job.stage,
+            };
+          }
+        } catch (e) {}
+      }
+      Object.keys(routeRef.current).forEach(function (id) { if (!keep[id]) delete routeRef.current[id]; });
+      if (dead) return;
+      try {
+        const feats: any[] = [];
+        drivers.forEach(function (d) {
+          const rr = routeRef.current[d.id];
+          if (rr && rr.coords && rr.coords.length > 1) {
+            feats.push({
+              type: 'Feature',
+              properties: { colour: rr.stage === 'dropoff' ? '#38bdf8' : '#facc15' },
+              geometry: { type: 'LineString', coordinates: rr.coords },
+            });
+          }
+        });
+        const src = m.getSource('otroutes');
+        if (src) src.setData({ type: 'FeatureCollection', features: feats });
+      } catch (e) {}
+      const copy: any = {};
+      Object.keys(routeRef.current).forEach(function (id) { copy[id] = routeRef.current[id]; });
+      setRoutes(copy);
+    })();
+    return function () { dead = true; };
+  }, [drivers, mapUp]);
 
   function zoomIn() { const m = mapRef.current; if (m) { try { m.zoomIn(); } catch (e) {} } }
   function zoomOut() { const m = mapRef.current; if (m) { try { m.zoomOut(); } catch (e) {} } }
@@ -715,6 +810,13 @@ export default function DriverMap() {
               </div>
               <div style={{ color: '#b3ccd9', fontSize: '13px' }}>{speedLine(d)}</div>
               <div style={{ color: '#b3ccd9', fontSize: '13px' }}>Last heard from {ago(d.minutes_ago)}</div>
+              {d.job ? (
+                <div style={{ color: '#7dd3fc', fontSize: '13px', fontWeight: 700 }}>
+                  {d.job.stage === 'dropoff' ? 'Taking ' + d.job.rider_name + ' to ' : 'On the way to pick up ' + d.job.rider_name + ' at '}
+                  {d.job.where ? d.job.where : 'the map pin'}
+                  {routes[d.id] ? ' - ' + routes[d.id].miles + ' miles, about ' + routes[d.id].mins + ' minutes' : ''}
+                </div>
+              ) : null}
             </div>
           );
         })}
@@ -724,6 +826,7 @@ export default function DriverMap() {
         <div style={{ marginTop: '6px' }}>
           <div style={{ fontWeight: 800, marginBottom: '6px' }}>Customers waiting for a ride</div>
           {riders.map(function (r) {
+            const near = nearestDriver(r, drivers);
             return (
               <div
                 key={r.id}
@@ -746,6 +849,11 @@ export default function DriverMap() {
                   <div style={{ color: '#b3ccd9', fontSize: '13px' }}>Going to {r.dropoff}</div>
                 ) : null}
                 <div style={{ color: '#b3ccd9', fontSize: '13px' }}>Waiting {waited(r.waiting_minutes)}</div>
+                {near ? (
+                  <div style={{ color: '#ffd166', fontSize: '13px', fontWeight: 700 }}>
+                    Nearest driver {near.driver.name} - {near.miles.toFixed(1)} miles away
+                  </div>
+                ) : null}
               </div>
             );
           })}
