@@ -9,6 +9,7 @@ import Ticker from '../../components/Ticker';
 import DriverAlerts from '../../components/DriverAlerts';
 import TellAdmin from '../../components/TellAdmin';
 import DriverRecord from '../../components/DriverRecord';
+import MyTrail from '../../components/MyTrail';
 import PanicButton from '../../components/PanicButton';
 import TodayPay from '../../components/TodayPay';
 
@@ -416,6 +417,8 @@ export default function DriverRidesPage() {
         {ready && signedIn && hasDriver ? <TellAdmin token={myToken} /> : null}
 
         {ready && signedIn && hasDriver ? <DriverRecord token={myToken} /> : null}
+
+        {ready && signedIn && hasDriver ? <MyTrail token={myToken} /> : null}
 
         {ready && signedIn && hasDriver ? (
           <div style={driverPhoto ? card : { ...card, background: '#fef2f2', border: '1px solid #fecaca' }}>
