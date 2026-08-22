@@ -1116,65 +1116,6 @@ export default function AdminPage() {
 
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: "22px",
-          }}
-        >
-          {sections.map((s) => (
-            <div
-              key={s.href}
-              style={{
-                background: "linear-gradient(160deg, #170606 0%, #0b0303 100%)",
-                border: "1px solid rgba(255,77,77,0.28)",
-                borderRadius: "16px",
-                padding: "22px",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "14px",
-                  background: CHECKER,
-                }}
-              />
-              <h2 style={{ margin: "10px 0 10px", fontSize: "20px", fontWeight: 800 }}>
-                {s.title}
-              </h2>
-              {s.href === "/admin/drivers" && openReports > 0 && (
-                <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, display: "inline-block", padding: "4px 10px", borderRadius: "999px", fontSize: "13px", marginBottom: "8px" }}>
-                  {openReports} new driver report{openReports === 1 ? "" : "s"}
-                </div>
-              )}
-              <p style={{ color: "#d9b3b3", fontSize: "14px", minHeight: "44px", marginBottom: "16px" }}>
-                {s.text}
-              </p>
-              <Link
-                href={s.href}
-                style={{
-                  display: "inline-block",
-                  textDecoration: "none",
-                  color: "#ffffff",
-                  background: "linear-gradient(135deg,#ff3b3b 0%,#b81111 100%)",
-                  padding: "10px 16px",
-                  borderRadius: "10px",
-                  fontWeight: 800,
-                  fontSize: "14px",
-                }}
-              >
-                {s.cta}
-              </Link>
-            </div>
-          ))}
-        </div>
-
-        <div
-          style={{
             marginTop: "32px",
             padding: "24px",
             borderRadius: "16px",
@@ -1735,6 +1676,65 @@ export default function AdminPage() {
           </div>
         )}
 
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "22px",
+          }}
+        >
+          {sections.map((s) => (
+            <div
+              key={s.href}
+              style={{
+                background: "linear-gradient(160deg, #170606 0%, #0b0303 100%)",
+                border: "1px solid rgba(255,77,77,0.28)",
+                borderRadius: "16px",
+                padding: "22px",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "14px",
+                  background: CHECKER,
+                }}
+              />
+              <h2 style={{ margin: "10px 0 10px", fontSize: "20px", fontWeight: 800 }}>
+                {s.title}
+              </h2>
+              {s.href === "/admin/drivers" && openReports > 0 && (
+                <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, display: "inline-block", padding: "4px 10px", borderRadius: "999px", fontSize: "13px", marginBottom: "8px" }}>
+                  {openReports} new driver report{openReports === 1 ? "" : "s"}
+                </div>
+              )}
+              <p style={{ color: "#d9b3b3", fontSize: "14px", minHeight: "44px", marginBottom: "16px" }}>
+                {s.text}
+              </p>
+              <Link
+                href={s.href}
+                style={{
+                  display: "inline-block",
+                  textDecoration: "none",
+                  color: "#ffffff",
+                  background: "linear-gradient(135deg,#ff3b3b 0%,#b81111 100%)",
+                  padding: "10px 16px",
+                  borderRadius: "10px",
+                  fontWeight: 800,
+                  fontSize: "14px",
+                }}
+              >
+                {s.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
 
         <div
           style={{
