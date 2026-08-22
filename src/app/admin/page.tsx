@@ -8,6 +8,7 @@ import PanicButton from "../../components/PanicButton";
 import { starRow } from "../../components/RatingBox";
 import SpeedWatch from "../../components/SpeedWatch";
 import DriverMessages from "../../components/DriverMessages";
+import DriverMap from "../../components/DriverMap";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -1325,6 +1326,8 @@ export default function AdminPage() {
           </div>
 
           <div style={{ marginTop: "32px" }}>
+            <DriverMap />
+            <div style={{ height: 18 }} />
             <DriverMessages />
           </div>
 
