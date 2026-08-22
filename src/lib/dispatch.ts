@@ -54,7 +54,18 @@ export async function freeDrivers(sb: any): Promise<FreeDriver[]> {
   return out;
 }
 
-export function orderForRide(ride: any, list: FreeDriver[]): string[] {
+export function blockedFor(ride: any): any {
+  const blocked: any = {};
+  const raw = ride && ride.no_pay_driver_ids ? ride.no_pay_driver_ids : null;
+  const list: any[] = Array.isArray(raw) ? raw : [];
+  list.forEach(function (x: any) {
+    if (x) blocked[String(x)] = true;
+  });
+  if (ride && ride.removed_driver_id) blocked[String(ride.removed_driver_id)] = true;
+  return blocked;
+}
+
+export function pickPoint(ride: any) {
   const pickLat = ride && ride.pickup_lat !== null && ride.pickup_lat !== undefined ? Number(ride.pickup_lat) : null;
   const pickLng = ride && ride.pickup_lng !== null && ride.pickup_lng !== undefined ? Number(ride.pickup_lng) : null;
   let rl = ride && ride.rider_lat !== null && ride.rider_lat !== undefined ? Number(ride.rider_lat) : null;
@@ -63,13 +74,25 @@ export function orderForRide(ride: any, list: FreeDriver[]): string[] {
     rl = pickLat;
     rg = pickLng;
   }
-  const scored = list.map(function (d) {
-    let mi = 99999;
-    if (rl !== null && rg !== null && isFinite(rl) && isFinite(rg) && d.lat !== null && d.lng !== null && d.fresh) {
-      mi = milesBetween(rl, rg, d.lat, d.lng);
-    }
-    return { id: d.id, miles: mi };
-  });
+  const okLat = rl !== null && isFinite(rl as number) ? (rl as number) : null;
+  const okLng = rg !== null && isFinite(rg as number) ? (rg as number) : null;
+  return { lat: okLat, lng: okLng };
+}
+
+export function orderForRide(ride: any, list: FreeDriver[]): string[] {
+  const blocked = blockedFor(ride);
+  const spot = pickPoint(ride);
+  const scored = list
+    .filter(function (d) {
+      return !blocked[d.id];
+    })
+    .map(function (d) {
+      let mi = 99999;
+      if (spot.lat !== null && spot.lng !== null && d.lat !== null && d.lng !== null && d.fresh) {
+        mi = milesBetween(spot.lat, spot.lng, d.lat, d.lng);
+      }
+      return { id: d.id, miles: mi };
+    });
   scored.sort(function (a, b) {
     if (a.miles !== b.miles) return a.miles - b.miles;
     return a.id < b.id ? -1 : 1;
@@ -77,6 +100,20 @@ export function orderForRide(ride: any, list: FreeDriver[]): string[] {
   return scored.map(function (x) {
     return x.id;
   });
+}
+
+export function nearestFreeMiles(ride: any, list: FreeDriver[]): number {
+  const blocked = blockedFor(ride);
+  const spot = pickPoint(ride);
+  if (spot.lat === null || spot.lng === null) return -1;
+  let best = -1;
+  list.forEach(function (d) {
+    if (blocked[d.id]) return;
+    if (!d.fresh || d.lat === null || d.lng === null) return;
+    const mi = milesBetween(spot.lat as number, spot.lng as number, d.lat, d.lng);
+    if (best < 0 || mi < best) best = mi;
+  });
+  return best;
 }
 
 export function allowedCount(ride: any): number {
@@ -87,8 +124,12 @@ export function allowedCount(ride: any): number {
 }
 
 export function turnInfo(ride: any, list: FreeDriver[], driverId: string) {
+  const blocked = blockedFor(ride);
+  if (blocked[String(driverId)]) {
+    return { rank: 999, allowed: 0, mine: false, waitSecs: 0, queue: 0, blocked: true };
+  }
   if (!list || list.length === 0) {
-    return { rank: 0, allowed: 1, mine: true, waitSecs: 0, queue: 0 };
+    return { rank: 0, allowed: 1, mine: true, waitSecs: 0, queue: 0, blocked: false };
   }
   const order = orderForRide(ride, list);
   let rank = order.indexOf(driverId);
@@ -100,5 +141,5 @@ export function turnInfo(ride: any, list: FreeDriver[], driverId: string) {
     const made = ride && ride.created_at ? new Date(ride.created_at).getTime() : Date.now();
     waitSecs = Math.max(1, Math.round((made + rank * OFFER_SECONDS * 1000 - Date.now()) / 1000));
   }
-  return { rank: rank, allowed: allowed, mine: mine, waitSecs: waitSecs, queue: order.length };
+  return { rank: rank, allowed: allowed, mine: mine, waitSecs: waitSecs, queue: order.length, blocked: false };
 }
