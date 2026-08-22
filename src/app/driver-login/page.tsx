@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import RecordingAgreement, { FeeAgreement, RECORDING_AGREEMENT_TEXT, FEE_AGREEMENT_TEXT, blankSignature, isSigned } from '../../components/RecordingAgreement';
 import RatingBox, { starRow } from '../../components/RatingBox';
+import Ticker from '../../components/Ticker';
+import DriverAlerts from '../../components/DriverAlerts';
+import TellAdmin from '../../components/TellAdmin';
+import DriverRecord from '../../components/DriverRecord';
+import PanicButton from '../../components/PanicButton';
+import AccidentReport from '../../components/AccidentReport';
 
 type DriverInfo = {
   driverCode: string;
@@ -141,6 +147,7 @@ export default function DriverLoginPage() {
   const [pendingRate, setPendingRate] = useState<any>(null);
   const [rateBusy, setRateBusy] = useState(false);
   const [rateError, setRateError] = useState('');
+  const [myToken, setMyToken] = useState('');
 
   useEffect(() => {
     loadMe();
@@ -151,6 +158,7 @@ export default function DriverLoginPage() {
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session ? session.data.session.access_token : '';
+      setMyToken(token);
 
       if (!token) {
         setSignedIn(false);
@@ -405,6 +413,8 @@ export default function DriverLoginPage() {
           </div>
         </div>
 
+        <Ticker />
+
         {checking ? (
           <div style={card}>
             <div style={{ color: '#334155', fontWeight: 700 }}>Loading your driver account...</div>
@@ -522,6 +532,19 @@ export default function DriverLoginPage() {
                 ))
               )}
             </div>
+
+
+            {myToken ? <DriverAlerts token={myToken} /> : null}
+
+            {myToken ? <TellAdmin token={myToken} /> : null}
+
+            {myToken ? <DriverRecord token={myToken} /> : null}
+
+            <div style={{ marginTop: 16 }}>
+              <PanicButton role="driver" token={myToken} whoName={driver.fullName || null} whoPhone={driver.phone || null} />
+            </div>
+
+            {myToken ? <AccidentReport token={myToken} /> : null}
 
             <Link
               href='/driver-rides'
