@@ -9,6 +9,7 @@ import Ticker from '../../components/Ticker';
 import DriverAlerts from '../../components/DriverAlerts';
 import TellAdmin from '../../components/TellAdmin';
 import DriverRecord from '../../components/DriverRecord';
+import MyTrail from '../../components/MyTrail';
 import PanicButton from '../../components/PanicButton';
 import AccidentReport from '../../components/AccidentReport';
 
@@ -539,6 +540,8 @@ export default function DriverLoginPage() {
             {myToken ? <TellAdmin token={myToken} /> : null}
 
             {myToken ? <DriverRecord token={myToken} /> : null}
+
+            {myToken ? <MyTrail token={myToken} /> : null}
 
             <div style={{ marginTop: 16 }}>
               <PanicButton role="driver" token={myToken} whoName={driver.fullName || null} whoPhone={driver.phone || null} />
