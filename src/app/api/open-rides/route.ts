@@ -68,14 +68,14 @@ export async function POST(req: Request) {
 
     const open = await sb
       .from('rides')
-      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, rider_id, rider_name')
+      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name')
       .eq('status', 'requested')
       .order('created_at', { ascending: true })
       .limit(25);
 
     const mine = await sb
       .from('rides')
-      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, accepted_at, rider_lat, rider_lng, rider_id, rider_name')
+      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, accepted_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name')
       .eq('driver_id', user.id)
       .in('status', ['accepted', 'picked_up'])
       .order('created_at', { ascending: false })
@@ -136,6 +136,15 @@ export async function POST(req: Request) {
     const myTurn = openRows.filter(function (r: any) {
       return turnInfo(r, freeList, myId).mine;
     });
+
+  let holdCount = 0;
+  let holdSecs = 0;
+  openRows.forEach(function (r: any) {
+    const info = turnInfo(r, freeList, myId);
+    if (info.mine) return;
+    holdCount = holdCount + 1;
+    if (holdSecs === 0 || info.waitSecs < holdSecs) holdSecs = info.waitSecs;
+  });
     const ridesOut = myTurn.map((r: any) => {
       const k = r.rider_id ? String(r.rider_id) : '';
       const s = k && book[k] ? book[k] : null;
@@ -199,6 +208,7 @@ export async function POST(req: Request) {
       mine: mineOut,
       driverPhoto: fullPhoto((found.data as any).photo_url),
       mustRate: mustRate,
+      holding: { count: holdCount, secs: holdSecs },
     });
   } catch (e) {
     return NextResponse.json({ error: 'Something went wrong loading the rides.' }, { status: 500 });
