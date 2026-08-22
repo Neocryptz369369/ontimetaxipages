@@ -177,6 +177,14 @@ function nearestDriver(r: Rider, list: Driver[]) {
   return best || anyOne;
 }
 
+function histLabel(mins: number) {
+  if (mins === 1440) return 'today';
+  if (mins === 10080) return 'the last 7 days';
+  if (mins === 43200) return 'the last 30 days';
+  if (mins === 525600) return 'the last year';
+  return 'that stretch of time';
+}
+
 function savedView(): any {
   try {
     const raw = window.localStorage.getItem(VIEW_KEY);
@@ -205,6 +213,8 @@ export default function DriverMap() {
   const [showRiders, setShowRiders] = useState(true);
   const [showTrails, setShowTrails] = useState(true);
   const [routes, setRoutes] = useState<any>({});
+  const [histMins, setHistMins] = useState(0);
+  const [histNote, setHistNote] = useState('');
 
   async function myToken() {
     try {
@@ -454,10 +464,12 @@ export default function DriverMap() {
           }
         });
       }
-      const src = m.getSource('ottrails');
-      if (src) src.setData({ type: 'FeatureCollection', features: feats });
+      if (histMins === 0) {
+        const src = m.getSource('ottrails');
+        if (src) src.setData({ type: 'FeatureCollection', features: feats });
+      }
     } catch (e) {}
-  }, [drivers, mapUp, showTrails]);
+  }, [drivers, mapUp, showTrails, histMins]);
 
   useEffect(function () {
     const mapboxgl = (window as any).mapboxgl;
@@ -597,6 +609,58 @@ export default function DriverMap() {
     })();
     return function () { dead = true; };
   }, [drivers, mapUp]);
+
+  useEffect(function () {
+    const m = mapRef.current;
+    if (!m) return;
+    if (histMins === 0) {
+      setHistNote('');
+      return;
+    }
+    let dead = false;
+    (async function () {
+      try {
+        const tk = await myToken();
+        if (!tk) return;
+        const r = await fetch('/api/driver-trail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tk, minutes: histMins }),
+        });
+        const j = await r.json();
+        if (dead) return;
+        if (j && j.ok && j.trails) {
+          const feats: any[] = [];
+          Object.keys(j.trails).forEach(function (id) {
+            const pts = j.trails[id];
+            if (pts && pts.length > 1) {
+              feats.push({
+                type: 'Feature',
+                properties: { colour: '#a78bfa' },
+                geometry: { type: 'LineString', coordinates: pts },
+              });
+            }
+          });
+          try {
+            const src = m.getSource('ottrails');
+            if (src) src.setData({ type: 'FeatureCollection', features: feats });
+          } catch (e) {}
+          if (!j.ready) {
+            setHistNote('The history store is not switched on yet. Once the database step is run in Supabase it starts filling up on its own.');
+          } else if (feats.length === 0) {
+            setHistNote('Nothing was saved for ' + histLabel(histMins) + ' yet. History builds up from now on.');
+          } else {
+            setHistNote('Showing ' + j.points + ' saved spots from ' + histLabel(histMins) + '.');
+          }
+        } else if (j && j.error) {
+          setHistNote(String(j.error));
+        }
+      } catch (e) {
+        setHistNote('Could not read the driver history right now.');
+      }
+    })();
+    return function () { dead = true; };
+  }, [histMins, mapUp]);
 
   function zoomIn() { const m = mapRef.current; if (m) { try { m.zoomIn(); } catch (e) {} } }
   function zoomOut() { const m = mapRef.current; if (m) { try { m.zoomOut(); } catch (e) {} } }
@@ -757,6 +821,19 @@ export default function DriverMap() {
           {sound ? 'Speeding alarm is ON' : 'Speeding alarm is OFF'}
         </button>
       </div>
+
+      <div>
+        <div style={{ fontWeight: 800, fontSize: '14px', marginTop: '10px' }}>Look back at where my drivers went</div>
+        <button onClick={function () { setHistMins(0); }} style={Object.assign({}, btn, { background: histMins === 0 ? '#a78bfa' : '#ffffff' })}>Live now</button>
+        <button onClick={function () { setHistMins(1440); }} style={Object.assign({}, btn, { background: histMins === 1440 ? '#a78bfa' : '#ffffff' })}>Today</button>
+        <button onClick={function () { setHistMins(10080); }} style={Object.assign({}, btn, { background: histMins === 10080 ? '#a78bfa' : '#ffffff' })}>Last 7 days</button>
+        <button onClick={function () { setHistMins(43200); }} style={Object.assign({}, btn, { background: histMins === 43200 ? '#a78bfa' : '#ffffff' })}>Last 30 days</button>
+        <button onClick={function () { setHistMins(525600); }} style={Object.assign({}, btn, { background: histMins === 525600 ? '#a78bfa' : '#ffffff' })}>Last year</button>
+      </div>
+
+      {histNote ? (
+        <p style={{ color: '#c4b5fd', fontSize: '13px', fontWeight: 700, margin: '8px 0 0' }}>{histNote}</p>
+      ) : null}
 
       <div
         ref={boxRef}
