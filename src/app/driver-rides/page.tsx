@@ -10,6 +10,7 @@ import DriverAlerts from '../../components/DriverAlerts';
 import TellAdmin from '../../components/TellAdmin';
 import DriverRecord from '../../components/DriverRecord';
 import PanicButton from '../../components/PanicButton';
+import TodayPay from '../../components/TodayPay';
 
 type Ride = {
   id: string;
@@ -403,10 +404,12 @@ export default function DriverRidesPage() {
         </div>
 
         <p style={{ color: '#475569', marginTop: 0, marginBottom: 18, lineHeight: 1.6 }}>
-          Every approved driver sees the same list. The first driver to tap Take this ride gets it, and it disappears for everyone else.
+          The closest free driver to the rider gets first shot at a new ride. If they do not take it in 30 seconds it opens up to the next closest, and so on, until somebody takes it.
         </p>
 
         <Ticker />
+
+        {ready && signedIn && hasDriver ? <TodayPay token={myToken} /> : null}
 
         {ready && signedIn && hasDriver ? <DriverAlerts token={myToken} /> : null}
 
