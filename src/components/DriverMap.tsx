@@ -270,20 +270,20 @@ export default function DriverMap() {
     const list = listRef.current;
     if (!list.length) return;
     if (list.length === 1) {
-      try { m.easeTo({ center: [list[0].lng, list[0].lat], zoom: 15, duration: 700 }); } catch (e) {}
+      try { m.easeTo({ center: [list[0].lng, list[0].lat], zoom: 15, pitch: tilted ? 60 : 0, duration: 700 }); } catch (e) {}
       return;
     }
     try {
       const b = new mapboxgl.LngLatBounds();
       list.forEach(function (d) { b.extend([d.lng, d.lat]); });
-      m.fitBounds(b, { padding: 70, maxZoom: 15, duration: 800 });
+      m.fitBounds(b, { padding: 70, maxZoom: 15, pitch: tilted ? 60 : 0, duration: 800 });
     } catch (e) {}
   }
 
   function goTo(d: Driver) {
     const m = mapRef.current;
     if (!m) return;
-    try { m.easeTo({ center: [d.lng, d.lat], zoom: 16, duration: 800 }); } catch (e) {}
+    try { m.easeTo({ center: [d.lng, d.lat], zoom: 16, pitch: tilted ? 60 : 0, bearing: tilted ? -18 : 0, duration: 800 }); } catch (e) {}
     const mk = marksRef.current[d.id];
     if (mk) { try { mk.togglePopup(); } catch (e) {} }
   }
