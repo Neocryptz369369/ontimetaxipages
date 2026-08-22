@@ -47,6 +47,35 @@ export async function POST(req: Request) {
 
     const now = Date.now();
     const rows: any[] = res.data || [];
+
+    const jobs: any = {};
+    try {
+      const jr = await sb
+        .from('rides')
+        .select('id, driver_id, status, rider_name, rider_lat, rider_lng, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, pickup, dropoff')
+        .in('status', ['accepted', 'picked_up'])
+        .not('driver_id', 'is', null)
+        .limit(300);
+      const jl: any[] = (jr && jr.data) || [];
+      jl.forEach(function (j: any) {
+        const did = String(j.driver_id || '');
+        if (!did) return;
+        const goingTo = String(j.status) === 'picked_up';
+        const rl = num(j.rider_lat);
+        const rg = num(j.rider_lng);
+        const tlat = goingTo ? num(j.dropoff_lat) : (rl !== null ? rl : num(j.pickup_lat));
+        const tlng = goingTo ? num(j.dropoff_lng) : (rg !== null ? rg : num(j.pickup_lng));
+        if (tlat === null || tlng === null) return;
+        jobs[did] = {
+          ride_id: String(j.id),
+          stage: goingTo ? 'dropoff' : 'pickup',
+          to_lat: tlat,
+          to_lng: tlng,
+          rider_name: String(j.rider_name || 'the rider'),
+          where: goingTo ? String(j.dropoff || '') : String(j.pickup || ''),
+        };
+      });
+    } catch (e) {}
     const drivers = rows
       .map(function (d: any) {
         const lat = num(d.last_lat);
@@ -76,6 +105,7 @@ export async function POST(req: Request) {
           over_by: over,
           minutes_ago: mins,
           live: mins !== null && mins <= 10,
+          job: jobs[String(d.id)] || null,
         };
       })
       .filter(function (d: any) { return d.lat !== null && d.lng !== null; });
