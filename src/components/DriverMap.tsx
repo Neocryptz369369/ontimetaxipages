@@ -31,6 +31,7 @@ type Driver = {
   code: string;
   status: string;
   phone: string;
+  photo: string | null;
   car: string;
   plate: string;
   lat: number;
@@ -82,7 +83,7 @@ function addFlashStyle() {
   styleAdded = true;
   const st = document.createElement('style');
   st.textContent =
-    '@keyframes otflash { 0% { transform: scale(1); } 50% { transform: scale(1.7); } 100% { transform: scale(1); } }' +
+    '@keyframes otflash { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } }' +
     ' .otflash { animation: otflash 0.6s infinite; }';
   document.head.appendChild(st);
 }
@@ -304,11 +305,21 @@ export default function DriverMap() {
         el.style.gap = '6px';
         el.style.cursor = 'pointer';
         const dot = document.createElement('div');
-        dot.style.width = '18px';
-        dot.style.height = '18px';
+        dot.style.width = '34px';
+        dot.style.height = '34px';
         dot.style.borderRadius = '50%';
         dot.style.border = '3px solid #ffffff';
-        dot.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.35)';
+        dot.style.overflow = 'hidden';
+        dot.style.display = 'flex';
+        dot.style.alignItems = 'center';
+        dot.style.justifyContent = 'center';
+        const face = document.createElement('img');
+        face.alt = '';
+        face.style.width = '100%';
+        face.style.height = '100%';
+        face.style.objectFit = 'cover';
+        face.style.display = 'none';
+        dot.appendChild(face);
         const tag = document.createElement('div');
         tag.style.padding = '2px 7px';
         tag.style.borderRadius = '8px';
@@ -321,14 +332,22 @@ export default function DriverMap() {
         const pop = new mapboxgl.Popup({ offset: 18, closeButton: true });
         mk = new mapboxgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).setPopup(pop).addTo(m);
         mk.__dot = dot;
+        mk.__face = face;
         mk.__tag = tag;
         mk.__pop = pop;
         marksRef.current[d.id] = mk;
       }
       try { mk.setLngLat([d.lng, d.lat]); } catch (e) {}
       mk.__dot.style.background = colour;
+      mk.__dot.style.boxShadow = '0 0 0 3px ' + colour;
       mk.__tag.style.background = colour;
       mk.__dot.className = speeding ? 'otflash' : '';
+      if (d.photo) {
+        if (mk.__face.getAttribute('src') !== d.photo) { mk.__face.setAttribute('src', d.photo); }
+        mk.__face.style.display = 'block';
+      } else {
+        mk.__face.style.display = 'none';
+      }
       let label = d.name;
       if (d.mph !== null) label = label + ' - ' + d.mph + ' mph';
       if (speeding) label = label + ' - OVER BY ' + d.over_by;
@@ -337,6 +356,19 @@ export default function DriverMap() {
       holder.style.color = '#04121c';
       holder.style.fontSize = '13px';
       holder.style.lineHeight = '1.35';
+      if (d.photo) {
+        const ph = document.createElement('img');
+        ph.setAttribute('src', d.photo);
+        ph.alt = '';
+        ph.style.width = '64px';
+        ph.style.height = '64px';
+        ph.style.borderRadius = '50%';
+        ph.style.objectFit = 'cover';
+        ph.style.display = 'block';
+        ph.style.marginBottom = '6px';
+        ph.style.border = '2px solid ' + colour;
+        holder.appendChild(ph);
+      }
       const lines = [
         d.name,
         d.code ? 'ID ' + d.code : '',
@@ -662,9 +694,20 @@ export default function DriverMap() {
                 marginBottom: '8px',
               }}
             >
-              <div style={{ fontWeight: 800, fontSize: '15px' }}>
-                {d.name}
-                {d.code ? ' - ID ' + d.code : ''}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 800, fontSize: '15px' }}>
+                {d.photo ? (
+                  <img
+                    src={d.photo}
+                    alt=''
+                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid ' + colourFor(d) }}
+                  />
+                ) : (
+                  <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: colourFor(d), display: 'inline-block' }} />
+                )}
+                <span>
+                  {d.name}
+                  {d.code ? ' - ID ' + d.code : ''}
+                </span>
               </div>
               <div style={{ color: '#b3ccd9', fontSize: '13px' }}>
                 {d.car ? d.car : 'No car on file'}
