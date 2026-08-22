@@ -81,7 +81,38 @@ export async function POST(req: Request) {
       .filter(function (d: any) { return d.lat !== null && d.lng !== null; });
 
     const liveCount = drivers.filter(function (d: any) { return d.live; }).length;
-    return NextResponse.json({ ok: true, drivers: drivers, live: liveCount });
+    let riders: any[] = [];
+    try {
+      const rr = await sb
+        .from('rides')
+        .select('id, rider_name, pickup, dropoff, fare, created_at, rider_lat, rider_lng')
+        .eq('status', 'requested')
+        .not('rider_lat', 'is', null)
+        .not('rider_lng', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(200);
+      const rlist: any[] = (rr && rr.data) || [];
+      riders = rlist
+        .map(function (r: any) {
+          const rlat = num(r.rider_lat);
+          const rlng = num(r.rider_lng);
+          const made = r.created_at ? new Date(r.created_at).getTime() : 0;
+          const wait = made ? Math.max(0, Math.round((now - made) / 60000)) : null;
+          return {
+            id: String(r.id),
+            name: String(r.rider_name || 'Rider'),
+            pickup: String(r.pickup || ''),
+            dropoff: String(r.dropoff || ''),
+            fare: num(r.fare),
+            lat: rlat,
+            lng: rlng,
+            waiting_minutes: wait,
+          };
+        })
+        .filter(function (r: any) { return r.lat !== null && r.lng !== null; });
+    } catch (e) {}
+
+    return NextResponse.json({ ok: true, drivers: drivers, live: liveCount, riders: riders });
   } catch (e: any) {
     return NextResponse.json({ error: 'Could not read the driver map.' }, { status: 500 });
   }
