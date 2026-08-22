@@ -55,8 +55,14 @@ export async function freeDrivers(sb: any): Promise<FreeDriver[]> {
 }
 
 export function orderForRide(ride: any, list: FreeDriver[]): string[] {
-  const rl = ride && ride.rider_lat !== null && ride.rider_lat !== undefined ? Number(ride.rider_lat) : null;
-  const rg = ride && ride.rider_lng !== null && ride.rider_lng !== undefined ? Number(ride.rider_lng) : null;
+  const pickLat = ride && ride.pickup_lat !== null && ride.pickup_lat !== undefined ? Number(ride.pickup_lat) : null;
+  const pickLng = ride && ride.pickup_lng !== null && ride.pickup_lng !== undefined ? Number(ride.pickup_lng) : null;
+  let rl = ride && ride.rider_lat !== null && ride.rider_lat !== undefined ? Number(ride.rider_lat) : null;
+  let rg = ride && ride.rider_lng !== null && ride.rider_lng !== undefined ? Number(ride.rider_lng) : null;
+  if (rl === null || rg === null || !isFinite(rl as number) || !isFinite(rg as number)) {
+    rl = pickLat;
+    rg = pickLng;
+  }
   const scored = list.map(function (d) {
     let mi = 99999;
     if (rl !== null && rg !== null && isFinite(rl) && isFinite(rg) && d.lat !== null && d.lng !== null && d.fresh) {
