@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { freeDrivers, turnInfo } from '../../../lib/dispatch';
 
 export const runtime = 'nodejs';
 
@@ -65,6 +66,23 @@ export async function POST(req: Request) {
       }
     }
 
+    const ahead = await sb
+      .from('rides')
+      .select('id, status, created_at, rider_lat, rider_lng')
+      .eq('id', rideId)
+      .maybeSingle();
+    
+    if (ahead.data && String(ahead.data.status) === 'requested') {
+      const freeList = await freeDrivers(sb);
+      const turn = turnInfo(ahead.data, freeList, String(user.id));
+      if (!turn.mine) {
+        return NextResponse.json(
+          { error: 'A driver closer to this rider is being offered it first. If they do not take it, it opens up to you in about ' + turn.waitSecs + ' seconds.' },
+          { status: 409 }
+        );
+      }
+    }
+    
     const taken = await sb
       .from('rides')
       .update({
