@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { freeDrivers, turnInfo } from '../../../lib/dispatch';
 
 export const runtime = 'nodejs';
 
@@ -130,7 +131,12 @@ export async function POST(req: Request) {
       }
     }
 
-    const ridesOut = openRows.map((r: any) => {
+    const freeList = await freeDrivers(sb);
+    const myId = String(user.id);
+    const myTurn = openRows.filter(function (r: any) {
+      return turnInfo(r, freeList, myId).mine;
+    });
+    const ridesOut = myTurn.map((r: any) => {
       const k = r.rider_id ? String(r.rider_id) : '';
       const s = k && book[k] ? book[k] : null;
       const avg = s && s.count > 0 ? Math.round((s.total / s.count) * 10) / 10 : 0;
