@@ -1003,6 +1003,117 @@ export default function AdminPage() {
           Manage operations, driver compliance and system access.
         </p>
 
+        <div style={{ marginBottom: "32px" }}>
+          <DriverMap />
+        </div>
+        <div
+          style={{
+            marginTop: "32px",
+            padding: "28px",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "linear-gradient(180deg, rgba(40,6,6,0.6), rgba(10,0,0,0.4))",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 17h14M6 17l1-5a3 3 0 0 1 3-2h4a3 3 0 0 1 3 2l1 5" />
+              <circle cx="7.5" cy="17.5" r="1.5" />
+              <circle cx="16.5" cy="17.5" r="1.5" />
+            </svg>
+            <h2 style={{ margin: 0, fontSize: "18px", color: "#fff" }}>Incoming rides</h2>
+          </div>
+          <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
+            New ride requests appear here in real time. Accept one to pick it up.
+          </p>
+          {rideMsg ? (
+            <p style={{ color: "#ffd7d7", fontSize: "13px", marginBottom: "12px" }}>{rideMsg}</p>
+          ) : null}
+          {incoming.length === 0 ? (
+            <p style={{ color: "#c98f8f", fontSize: "14px" }}>No ride requests right now.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {incoming.map((r) => (
+                <div
+                  key={r.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    padding: "16px",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {r.profiles && r.profiles.photo_url ? (
+                    <img
+                      src={r.profiles.photo_url}
+                      alt=""
+                      style={{ width: "52px", height: "52px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: "#fff", fontSize: "15px", fontWeight: 600 }}>
+                      {r.profiles ? r.profiles.full_name : "Rider"}
+                    </div>
+                    <div style={{ color: "#c98f8f", fontSize: "13px" }}>
+                      {r.profiles ? r.profiles.phone : ""}
+                    </div>
+                    <div style={{ color: "#e9c7c7", fontSize: "13px", marginTop: "6px" }}>
+                      <strong>From:</strong> {r.pickup}
+                    </div>
+                    <div style={{ color: "#e9c7c7", fontSize: "13px" }}>
+                      <strong>To:</strong> {r.dropoff}
+                    </div>
+                    <div style={{ color: "#fff", fontSize: "13px", marginTop: "6px" }}>
+                      Fare: ${Number(r.fare || 0).toFixed(2)}{Number(r.tip || 0) > 0 ? " + $" + Number(r.tip).toFixed(2) + " tip" : ""}
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                      <select
+                        value={(driverInputs[r.id] && driverInputs[r.id].driverId) || ""}
+                        onChange={(e) => {
+                          const picked = approvedDrivers.filter((x: any) => x.id === e.target.value)[0];
+                          setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), driverId: e.target.value, name: picked ? (picked.full_name || "") : ((prev[r.id] || {}).name || ""), phone: picked ? (picked.phone || "") : ((prev[r.id] || {}).phone || "") } }));
+                        }}
+                        style={{ flex: "1 1 100%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff" }}
+                      >
+                        <option value="">Pick an approved driver, or just type a name below</option>
+                        {approvedDrivers.map((x: any) => (
+                          <option key={x.id} value={x.id}>{(x.full_name || x.email || "Driver") + " - " + x.driver_code}</option>
+                        ))}
+                      </select>
+                      <input type="text" placeholder="Driver name" value={(driverInputs[r.id] && driverInputs[r.id].name) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), name: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                      <input type="tel" inputMode="tel" placeholder="Driver phone" value={(driverInputs[r.id] && driverInputs[r.id].phone) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), phone: prettyPhone(e.target.value) } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                      <input type="text" placeholder="Vehicle" value={(driverInputs[r.id] && driverInputs[r.id].vehicle) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), vehicle: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                      <input type="text" placeholder="Plate" value={(driverInputs[r.id] && driverInputs[r.id].plate) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), plate: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => acceptRide(r.id)}
+                    style={{
+                      flexShrink: 0,
+                      padding: "10px 18px",
+                      borderRadius: "10px",
+                      border: "none",
+                      cursor: "pointer",
+                      background: "#e11d1d",
+                      color: "#fff",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Accept / Pick up
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div
           style={{
             display: "grid",
@@ -1326,8 +1437,6 @@ export default function AdminPage() {
           </div>
 
           <div style={{ marginTop: "32px" }}>
-            <DriverMap />
-            <div style={{ height: 18 }} />
             <DriverMessages />
           </div>
 
@@ -1626,113 +1735,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        <div
-          style={{
-            marginTop: "32px",
-            padding: "28px",
-            borderRadius: "16px",
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "linear-gradient(180deg, rgba(40,6,6,0.6), rgba(10,0,0,0.4))",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M5 17h14M6 17l1-5a3 3 0 0 1 3-2h4a3 3 0 0 1 3 2l1 5" />
-              <circle cx="7.5" cy="17.5" r="1.5" />
-              <circle cx="16.5" cy="17.5" r="1.5" />
-            </svg>
-            <h2 style={{ margin: 0, fontSize: "18px", color: "#fff" }}>Incoming rides</h2>
-          </div>
-          <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
-            New ride requests appear here in real time. Accept one to pick it up.
-          </p>
-          {rideMsg ? (
-            <p style={{ color: "#ffd7d7", fontSize: "13px", marginBottom: "12px" }}>{rideMsg}</p>
-          ) : null}
-          {incoming.length === 0 ? (
-            <p style={{ color: "#c98f8f", fontSize: "14px" }}>No ride requests right now.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {incoming.map((r) => (
-                <div
-                  key={r.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    padding: "16px",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(0,0,0,0.3)",
-                  }}
-                >
-                  {r.profiles && r.profiles.photo_url ? (
-                    <img
-                      src={r.profiles.photo_url}
-                      alt=""
-                      style={{ width: "52px", height: "52px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-                    />
-                  ) : (
-                    <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: "#fff", fontSize: "15px", fontWeight: 600 }}>
-                      {r.profiles ? r.profiles.full_name : "Rider"}
-                    </div>
-                    <div style={{ color: "#c98f8f", fontSize: "13px" }}>
-                      {r.profiles ? r.profiles.phone : ""}
-                    </div>
-                    <div style={{ color: "#e9c7c7", fontSize: "13px", marginTop: "6px" }}>
-                      <strong>From:</strong> {r.pickup}
-                    </div>
-                    <div style={{ color: "#e9c7c7", fontSize: "13px" }}>
-                      <strong>To:</strong> {r.dropoff}
-                    </div>
-                    <div style={{ color: "#fff", fontSize: "13px", marginTop: "6px" }}>
-                      Fare: ${Number(r.fare || 0).toFixed(2)}{Number(r.tip || 0) > 0 ? " + $" + Number(r.tip).toFixed(2) + " tip" : ""}
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
-                      <select
-                        value={(driverInputs[r.id] && driverInputs[r.id].driverId) || ""}
-                        onChange={(e) => {
-                          const picked = approvedDrivers.filter((x: any) => x.id === e.target.value)[0];
-                          setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), driverId: e.target.value, name: picked ? (picked.full_name || "") : ((prev[r.id] || {}).name || ""), phone: picked ? (picked.phone || "") : ((prev[r.id] || {}).phone || "") } }));
-                        }}
-                        style={{ flex: "1 1 100%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff" }}
-                      >
-                        <option value="">Pick an approved driver, or just type a name below</option>
-                        {approvedDrivers.map((x: any) => (
-                          <option key={x.id} value={x.id}>{(x.full_name || x.email || "Driver") + " - " + x.driver_code}</option>
-                        ))}
-                      </select>
-                      <input type="text" placeholder="Driver name" value={(driverInputs[r.id] && driverInputs[r.id].name) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), name: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
-                      <input type="tel" inputMode="tel" placeholder="Driver phone" value={(driverInputs[r.id] && driverInputs[r.id].phone) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), phone: prettyPhone(e.target.value) } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
-                      <input type="text" placeholder="Vehicle" value={(driverInputs[r.id] && driverInputs[r.id].vehicle) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), vehicle: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
-                      <input type="text" placeholder="Plate" value={(driverInputs[r.id] && driverInputs[r.id].plate) || ""} onChange={(e) => setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), plate: e.target.value } }))} style={{ flex: "1 1 45%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff", fontSize: "13px" }} />
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => acceptRide(r.id)}
-                    style={{
-                      flexShrink: 0,
-                      padding: "10px 18px",
-                      borderRadius: "10px",
-                      border: "none",
-                      cursor: "pointer",
-                      background: "#e11d1d",
-                      color: "#fff",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Accept / Pick up
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         <div
           style={{
