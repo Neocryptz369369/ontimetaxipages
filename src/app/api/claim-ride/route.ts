@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 
     const ahead = await sb
       .from('rides')
-      .select('id, status, created_at, rider_lat, rider_lng')
+      .select('id, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng')
       .eq('id', rideId)
       .maybeSingle();
     
