@@ -181,6 +181,7 @@ export default function DriverRidesPage() {
   const [msg, setMsg] = useState('');
   const [busyId, setBusyId] = useState('');
   const [mustRate, setMustRate] = useState<any>(null);
+  const [holding, setHolding] = useState<any>(null);
   const [rateBusy, setRateBusy] = useState(false);
   const [rateError, setRateError] = useState('');
   const busyRef = useRef(false);
@@ -227,6 +228,7 @@ export default function DriverRidesPage() {
         setRides(j.rides || []);
         setMine(j.mine || []);
         setMustRate(j.mustRate ? j.mustRate : null);
+        setHolding(j.holding ? j.holding : null);
         setDriverPhoto(j.driverPhoto ? String(j.driverPhoto) : '');
         setMyCar(myCarLine(j.driver));
         setMyPlate(j.driver && j.driver.vehicle_plate ? String(j.driver.vehicle_plate) : '');
@@ -631,6 +633,11 @@ export default function DriverRidesPage() {
         {ready && approved && rides.length === 0 ? (
           <div style={card}>
             <div style={rowLine}>No rides waiting right now{name ? ', ' + name : ''}.</div>
+            {holding && holding.count > 0 ? (
+              <div style={{ ...rowLine, color: '#b45309', fontWeight: 800 }}>
+                {holding.count === 1 ? '1 ride is' : holding.count + ' rides are'} being offered to a driver closer to the rider first. If they do not take it, it opens up to you in about {holding.secs} seconds.
+              </div>
+            ) : null}
             <div style={small}>This page checks again every few seconds by itself. Leave it open.</div>
           </div>
         ) : null}
