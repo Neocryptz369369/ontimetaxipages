@@ -56,6 +56,27 @@ export async function POST(req: Request) {
       } catch (e) {}
     }
 
+    if (lat !== null && lng !== null && isFinite(lat) && isFinite(lng)) {
+      try {
+        const pingSince = new Date(Date.now() - 15000).toISOString();
+        const lastPing = await sb
+          .from('driver_pings')
+          .select('id')
+          .eq('driver_id', user.id)
+          .gte('created_at', pingSince)
+          .limit(1);
+        if (!lastPing.error && (!lastPing.data || lastPing.data.length === 0)) {
+          await sb.from('driver_pings').insert({
+            driver_id: user.id,
+            lat: lat,
+            lng: lng,
+            mph: Math.round(mph),
+            limit_mph: limitMph > 0 ? Math.round(limitMph) : null,
+          });
+        }
+      } catch (e) {}
+    }
+    
     const overBy = limitMph > 0 ? Math.round(mph) - Math.round(limitMph) : 0;
 
     if (limitMph <= 0 || overBy < 4) {
