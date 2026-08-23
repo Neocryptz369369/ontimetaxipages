@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { freeDrivers, turnInfo } from '../../../lib/dispatch';
+import { blockedFor } from '../../../lib/dispatch';
 
 export const runtime = 'nodejs';
 
@@ -68,13 +69,28 @@ export async function POST(req: Request) {
 
     const ahead = await sb
       .from('rides')
-      .select('id, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng')
+      .select('id, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng, no_pay_driver_ids, removed_driver_id, removed_driver_name, handoff_needed')
       .eq('id', rideId)
       .maybeSingle();
     
-    if (ahead.data && String(ahead.data.status) === 'requested') {
+    let ahead2: any = ahead;
+    if (ahead.error) {
+      ahead2 = await sb
+        .from('rides')
+        .select('id, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng')
+        .eq('id', rideId)
+        .maybeSingle();
+    }
+
+    if (ahead2.data && blockedFor(ahead2.data)[String(user.id)]) {
+      return NextResponse.json(
+        { error: 'You were taken off this run for speeding. Another driver has to take it over. You are not paid for this one.' },
+        { status: 403 }
+      );
+    }
+    if (ahead2.data && String(ahead.data.status) === 'requested') {
       const freeList = await freeDrivers(sb);
-      const turn = turnInfo(ahead.data, freeList, String(user.id));
+      const turn = turnInfo(ahead2.data, freeList, String(user.id));
       if (!turn.mine) {
         return NextResponse.json(
           { error: 'A driver closer to this rider is being offered it first. If they do not take it, it opens up to you in about ' + turn.waitSecs + ' seconds.' },
@@ -99,6 +115,10 @@ export async function POST(req: Request) {
     if (taken.error) {
       return NextResponse.json({ error: 'Could not take that ride.' }, { status: 500 });
     }
+
+    try {
+      await sb.from('rides').update({ handoff_needed: false }).eq('id', rideId);
+    } catch (e) {}
 
     if (!taken.data || taken.data.length === 0) {
       return NextResponse.json({ ok: true, got: false });
