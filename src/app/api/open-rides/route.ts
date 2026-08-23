@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { freeDrivers, turnInfo } from '../../../lib/dispatch';
+import { runHandoffChecks } from '../../../lib/handoff';
 
 export const runtime = 'nodejs';
 
@@ -66,12 +67,30 @@ export async function POST(req: Request) {
       });
     }
 
-    const open = await sb
+    try {
+      await runHandoffChecks(sb);
+    } catch (e) {}
+
+    const OPEN_WIDE =
+      'id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name, no_pay_driver_ids, removed_driver_id, removed_driver_name, removed_reason, removed_at, handoff_needed';
+    const OPEN_PLAIN =
+      'id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name';
+
+    let open: any = await sb
       .from('rides')
-      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name')
+      .select(OPEN_WIDE)
       .eq('status', 'requested')
       .order('created_at', { ascending: true })
       .limit(25);
+
+    if (open.error) {
+      open = await sb
+        .from('rides')
+        .select(OPEN_PLAIN)
+        .eq('status', 'requested')
+        .order('created_at', { ascending: true })
+        .limit(25);
+    }
 
     const mine = await sb
       .from('rides')
@@ -151,6 +170,8 @@ export async function POST(req: Request) {
       const avg = s && s.count > 0 ? Math.round((s.total / s.count) * 10) / 10 : 0;
       const who = k && people[k] ? people[k] : null;
       return Object.assign({}, r, {
+        takeover: r.handoff_needed === true,
+        pulledDriver: r.removed_driver_name ? String(r.removed_driver_name) : '',
         riderStars: avg,
         riderRatings: s ? s.count : 0,
         rider_photo: who ? who.photo : '',
