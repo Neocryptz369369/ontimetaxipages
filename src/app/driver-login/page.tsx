@@ -12,6 +12,7 @@ import DriverRecord from '../../components/DriverRecord';
 import MyTrail from '../../components/MyTrail';
 import PanicButton from '../../components/PanicButton';
 import AccidentReport from '../../components/AccidentReport';
+import DriverEarnings from '../../components/DriverEarnings';
 
 type DriverInfo = {
   driverCode: string;
@@ -415,6 +416,7 @@ export default function DriverLoginPage() {
         </div>
 
         <Ticker />
+        <DriverEarnings />
 
         {checking ? (
           <div style={card}>
