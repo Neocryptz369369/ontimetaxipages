@@ -88,7 +88,7 @@ export async function POST(req: Request) {
         { status: 403 }
       );
     }
-    if (ahead2.data && String(ahead.data.status) === 'requested') {
+    if (ahead2.data && String(ahead2.data.status) === 'requested') {
       const freeList = await freeDrivers(sb);
       const turn = turnInfo(ahead2.data, freeList, String(user.id));
       if (!turn.mine) {
