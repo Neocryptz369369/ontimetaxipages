@@ -81,6 +81,12 @@ const sections = [
     cta: "Open drivers",
   },
   {
+    title: "Signed agreements",
+    text: "Every agreement a driver or a rider signed, their signature, the day and time, and the exact words they agreed to.",
+    href: "/admin/signatures",
+    cta: "Open agreements",
+  },
+  {
     title: "Panic archive",
     text: "View and manage emergency alerts and history from users.",
     href: "/admin/panic-archive",
@@ -176,7 +182,12 @@ export default function AdminPage() {
   const [accidentOpen, setAccidentOpen] = useState(0);
   const [tickerText, setTickerText] = useState("");
   const [tickerOn, setTickerOn] = useState(false);
-  const [tickerSpeed, setTickerSpeed] = useState(5);
+  const [tickerSpeed, setTickerSpeed] = useState(5)
+  const [speedPullOn, setSpeedPullOn] = useState(true)
+  const [speedPullOver, setSpeedPullOver] = useState(15)
+  const [speedWarnOver, setSpeedWarnOver] = useState(10)
+  const [savingSpeedRules, setSavingSpeedRules] = useState(false)
+  const [speedRulesMsg, setSpeedRulesMsg] = useState("");
   const [tickerBusy, setTickerBusy] = useState(false);
   const [tickerMsg, setTickerMsg] = useState("");
   const [alertText, setAlertText] = useState("");
@@ -570,6 +581,23 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isLoggedIn) return;
+    async function loadSpeedRules() {
+      const got: any = await supabase
+        .from("app_settings")
+        .select("speed_pulloff_on, speed_pulloff_over, speed_warn_over")
+        .eq("id", 1)
+        .maybeSingle()
+      const row: any = got && got.data ? got.data : null
+      if (!row) return
+      if (row.speed_pulloff_on === false) setSpeedPullOn(false)
+      if (row.speed_pulloff_on === true) setSpeedPullOn(true)
+      const pv = Number(row.speed_pulloff_over)
+      if (isFinite(pv) && pv > 0) setSpeedPullOver(Math.round(pv))
+      const wv = Number(row.speed_warn_over)
+      if (isFinite(wv) && wv > 0) setSpeedWarnOver(Math.round(wv))
+    }
+    loadSpeedRules()
+
     async function loadRides() {
       const { data } = await supabase
         .from("rides")
@@ -758,6 +786,25 @@ export default function AdminPage() {
       if (acceptedRide.rider_lat != null && acceptedRide.rider_lng != null) {
         setRiderPos({ lat: acceptedRide.rider_lat, lng: acceptedRide.rider_lng });
       }
+    }
+  }
+
+  async function saveSpeedRules() {
+    setSavingSpeedRules(true)
+    setSpeedRulesMsg("")
+    const { error: sErr } = await supabase
+      .from("app_settings")
+      .update({
+        speed_pulloff_on: speedPullOn,
+        speed_pulloff_over: speedPullOver,
+        speed_warn_over: speedWarnOver,
+      })
+      .eq("id", 1)
+    setSavingSpeedRules(false)
+    if (sErr) {
+      setSpeedRulesMsg("Could not save. The speed settings need to be added in Supabase first.")
+    } else {
+      setSpeedRulesMsg("Saved. Every driver phone picks this up within a few seconds.")
     }
   }
 
@@ -1189,6 +1236,95 @@ export default function AdminPage() {
             <p style={{ color: "#d9b3b3", fontSize: "14px", margin: "0 0 14px" }}>
               Every driver speed shows here while they are working, next to the posted limit on the road they are on. Anything over the limit is written down. At 15 over the driver is taken off that run with no pay for it, and the run goes back out for another driver.
             </p>
+
+            <div
+              style={{
+                border: "1px solid rgba(255,255,255,0.16)",
+                borderRadius: "14px",
+                padding: "14px",
+                marginBottom: "16px",
+                background: "rgba(0,0,0,0.28)",
+              }}
+            >
+              <div style={{ fontWeight: 900, fontSize: "16px", marginBottom: "4px" }}>The speeding rules</div>
+              <p style={{ color: "#d9b3b3", fontSize: "13px", margin: "0 0 12px" }}>
+                You decide what happens out there. Change it here and every driver phone picks it up on its own.
+              </p>
+
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", cursor: "pointer" }}>
+                <input
+                  type={"checkbox"}
+                  checked={speedPullOn}
+                  onChange={(e) => setSpeedPullOn(e.target.checked)}
+                  style={{ width: "20px", height: "20px" }}
+                />
+                <span style={{ fontWeight: 800, fontSize: "15px" }}>
+                  Take a driver off the run when they go too far over the limit
+                </span>
+              </label>
+              {!speedPullOn ? (
+                <div style={{ background: "#7a5a00", color: "#fff", fontWeight: 800, padding: "9px 12px", borderRadius: "10px", marginBottom: "12px", fontSize: "13px" }}>
+                  This is switched off. Speeding is still written down and you still get the alerts, but nobody gets pulled off a run.
+                </div>
+              ) : null}
+
+              <div style={{ marginBottom: "12px" }}>
+                <div style={{ fontWeight: 800, fontSize: "14px", marginBottom: "6px" }}>
+                  Warn the driver at {speedWarnOver} mph over the limit
+                </div>
+                <input
+                  type={"range"}
+                  min={3}
+                  max={25}
+                  step={1}
+                  value={speedWarnOver}
+                  onChange={(e) => setSpeedWarnOver(Number(e.target.value))}
+                  style={{ width: "100%" }}
+                />
+                <div style={{ color: "#9c8080", fontSize: "12px" }}>
+                  A big red warning pops up on their screen and is read out loud to them, telling them they can be deactivated for speeding.
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "12px" }}>
+                <div style={{ fontWeight: 800, fontSize: "14px", marginBottom: "6px" }}>
+                  Take them off the run at {speedPullOver} mph over the limit
+                </div>
+                <input
+                  type={"range"}
+                  min={5}
+                  max={40}
+                  step={1}
+                  value={speedPullOver}
+                  onChange={(e) => setSpeedPullOver(Number(e.target.value))}
+                  style={{ width: "100%" }}
+                />
+                <div style={{ color: "#9c8080", fontSize: "12px" }}>
+                  No pay for that run, another driver is sent to take it over, and the rider is told. If nobody can reach them the fare refunds itself.
+                </div>
+              </div>
+
+              <button
+                type={"button"}
+                onClick={saveSpeedRules}
+                disabled={savingSpeedRules}
+                style={{
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "11px 16px",
+                  fontWeight: 800,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  background: "#128a3d",
+                  color: "#fff",
+                }}
+              >
+                {savingSpeedRules ? "Saving..." : "Save the speeding rules"}
+              </button>
+              {speedRulesMsg ? (
+                <span style={{ marginLeft: "10px", fontWeight: 700, fontSize: "13px", color: "#ffd166" }}>{speedRulesMsg}</span>
+              ) : null}
+            </div>
             {speedUnseen > 0 ? (
               <div style={{ background: "#ff3b3b", color: "#ffffff", fontWeight: 900, padding: "10px 14px", borderRadius: "10px", marginBottom: "14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
                 <span>{speedUnseen} new speeding alert{speedUnseen === 1 ? "" : "s"}</span>
