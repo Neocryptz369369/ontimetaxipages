@@ -78,7 +78,9 @@ export async function POST(req: Request) {
       if (head && head !== event) say = say + ' ' + head + '.';
       if (doThis) say = say + ' ' + doThis;
 
-      const loud = kind === 'amber' || kind === 'emergency' || sev === 'Extreme' || sev === 'Severe';
+      // The owner wants weather, emergency and amber alerts all read out loud.
+      // Each one is only ever read once, so nobody hears the same thing twice.
+      const loud = true;
 
       out.push({
         id: String(f.id || p.id || event + area),
