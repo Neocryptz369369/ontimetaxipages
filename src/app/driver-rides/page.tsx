@@ -644,6 +644,12 @@ export default function DriverRidesPage() {
 
         {ready && approved && rides.map((r) => (
           <div key={r.id} style={card}>
+            {(r as any).takeover ? (
+              <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', color: '#92400e', borderRadius: 12, padding: '10px 12px', marginBottom: 10, fontWeight: 800, lineHeight: 1.5 }}>
+                TAKE-OVER RUN. The driver who had this run was pulled off for speeding. This run is yours to take and you get
+                paid for it. Please get to the rider as fast as it is safe to.
+              </div>
+            ) : null}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
               <Avatar src={r.rider_photo} size={52} label={r.rider_name ? String(r.rider_name) : 'Rider'} />
               <div>
