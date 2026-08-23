@@ -5,6 +5,32 @@ export const runtime = 'nodejs';
 
 const OWNER_EMAIL = 'neocryptz@yahoo.com';
 
+// The owner sets these in the admin panel. These are the fall backs
+// used if the settings row cannot be read for any reason.
+const PULL_OFF_ON = true;
+const PULL_OFF_OVER = 15;
+const WARN_OVER = 10;
+
+async function speedRules(sb: any) {
+  const out = { on: PULL_OFF_ON, pullOver: PULL_OFF_OVER, warnOver: WARN_OVER };
+  try {
+    const got = await sb
+      .from('app_settings')
+      .select('speed_pulloff_on, speed_pulloff_over, speed_warn_over')
+      .eq('id', 1)
+      .maybeSingle();
+    if (got.error || !got.data) return out;
+    const row: any = got.data;
+    if (row.speed_pulloff_on === false) out.on = false;
+    if (row.speed_pulloff_on === true) out.on = true;
+    const p = Number(row.speed_pulloff_over);
+    if (isFinite(p) && p > 0) out.pullOver = Math.round(p);
+    const w = Number(row.speed_warn_over);
+    if (isFinite(w) && w > 0) out.warnOver = Math.round(w);
+  } catch (e) {}
+  return out;
+}
+
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
@@ -78,13 +104,15 @@ export async function POST(req: Request) {
     }
     
     const overBy = limitMph > 0 ? Math.round(mph) - Math.round(limitMph) : 0;
+    const rules = await speedRules(sb);
+    const warnNow = limitMph > 0 && overBy >= rules.warnOver;
 
     if (limitMph <= 0 || overBy < 4) {
-      return NextResponse.json({ ok: true, logged: false, removed: false });
+      return NextResponse.json({ ok: true, logged: false, removed: false, warn: false, warnOver: rules.warnOver, pullOver: rules.pullOver, pullOffOn: rules.on });
     }
 
     if (isOwner && !driver) {
-      return NextResponse.json({ ok: true, logged: false, removed: false, owner: true });
+      return NextResponse.json({ ok: true, logged: false, removed: false, owner: true, warn: warnNow, warnOver: rules.warnOver, pullOver: rules.pullOver, pullOffOn: rules.on });
     }
 
     let logged = false;
@@ -114,8 +142,8 @@ export async function POST(req: Request) {
       }
     } catch (e) {}
 
-    if (overBy < 15 || !rideId || !driver) {
-      return NextResponse.json({ ok: true, logged: logged, removed: false });
+    if (!rules.on || overBy < rules.pullOver || !rideId || !driver) {
+      return NextResponse.json({ ok: true, logged: logged, removed: false, warn: warnNow, warnOver: rules.warnOver, pullOver: rules.pullOver, pullOffOn: rules.on });
     }
 
     let removed = false;
@@ -179,6 +207,10 @@ export async function POST(req: Request) {
       ok: true,
       logged: logged,
       removed: removed,
+      warn: warnNow,
+      warnOver: rules.warnOver,
+      pullOver: rules.pullOver,
+      pullOffOn: rules.on,
       message: removed
         ? 'You have been taken off this run for going ' + overBy + ' mph over the speed limit. You are not paid for this run. Another driver is being sent to take it over.'
         : '',
