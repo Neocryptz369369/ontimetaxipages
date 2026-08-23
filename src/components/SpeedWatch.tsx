@@ -82,6 +82,9 @@ export default function SpeedWatch(props: {
   const [geoOff, setGeoOff] = useState('');
   const [armed, setArmed] = useState(false);
   const [removed, setRemoved] = useState('');
+  const [warnOpen, setWarnOpen] = useState(false);
+  const [warnBy, setWarnBy] = useState(0);
+  const [warnLimit, setWarnLimit] = useState(0);
 
   const lastPosRef = useRef<any>(null);
   const brgRef = useRef(0);
@@ -97,6 +100,11 @@ export default function SpeedWatch(props: {
   const tokenRef = useRef('');
   const rideRef = useRef('');
   const removedRef = useRef(false);
+  const warnOverRef = useRef(10);
+  const pullOverRef = useRef(15);
+  const pullOnRef = useRef(true);
+  const warnOpenRef = useRef(false);
+  const warnSpokeRef = useRef(0);
 
   useEffect(function () {
     tokenRef.current = props.token ? String(props.token) : '';
@@ -201,6 +209,14 @@ export default function SpeedWatch(props: {
         }),
       });
       const j: any = await res.json();
+      if (j) {
+        const w = Number(j.warnOver);
+        if (isFinite(w) && w > 0) warnOverRef.current = Math.round(w);
+        const p = Number(j.pullOver);
+        if (isFinite(p) && p > 0) pullOverRef.current = Math.round(p);
+        if (j.pullOffOn === false) pullOnRef.current = false;
+        if (j.pullOffOn === true) pullOnRef.current = true;
+      }
       if (j && j.removed === true && !removedRef.current) {
         removedRef.current = true;
         setRemoved(String(j.message || 'You have been taken off this run for going 15 over the speed limit.'));
@@ -259,6 +275,26 @@ export default function SpeedWatch(props: {
         const lim = limitRef.current;
         if (props.onSpeed) {
           try { props.onSpeed(Math.round(speed), lim); } catch (e) {}
+        }
+
+        const overNow = lim > 0 ? Math.round(speed) - lim : 0;
+
+        if (lim > 0 && overNow >= warnOverRef.current) {
+          if (!warnOpenRef.current) {
+            warnOpenRef.current = true;
+            setWarnOpen(true);
+          }
+          setWarnBy(overNow);
+          setWarnLimit(lim);
+          if (now - warnSpokeRef.current > 9000) {
+            warnSpokeRef.current = now;
+            sayIt(
+              'Warning. You are ' + overNow + ' miles an hour over the speed limit. You can be deactivated for speeding. Slow down now.'
+            );
+          }
+        } else if (warnOpenRef.current && (lim <= 0 || overNow <= 2)) {
+          warnOpenRef.current = false;
+          setWarnOpen(false);
         }
 
         if (lim > 0 && speed > lim + 3) {
@@ -328,6 +364,72 @@ export default function SpeedWatch(props: {
       {over ? (
         <div style={{ marginTop: 12, background: '#dc2626', color: '#fff', borderRadius: 12, padding: '12px 14px', fontWeight: 900, fontSize: 18 }}>
           SLOW DOWN - the limit here is {limit}
+        </div>
+      ) : null}
+
+      {warnOpen ? (
+        <div
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 18,
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 460,
+              background: '#dc2626',
+              color: '#fff',
+              borderRadius: 18,
+              padding: '22px 20px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: '0.02em' }}>SLOW DOWN</div>
+            <div style={{ fontSize: 20, fontWeight: 900, marginTop: 8 }}>
+              You are {warnBy} mph over the speed limit
+            </div>
+            {warnLimit > 0 ? (
+              <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4, opacity: 0.95 }}>
+                The limit on this road is {warnLimit}
+              </div>
+            ) : null}
+            <div style={{ fontSize: 16, fontWeight: 700, marginTop: 14, lineHeight: 1.6 }}>
+              You can be deactivated for speeding. If you reach {pullOverRef.current} over you are taken off
+              this run, you are not paid for it, and another driver is sent to take it over.
+            </div>
+            <button
+              type='button'
+              onClick={function () {
+                warnOpenRef.current = false;
+                setWarnOpen(false);
+              }}
+              style={{
+                marginTop: 18,
+                width: '100%',
+                padding: '14px',
+                borderRadius: 12,
+                border: 'none',
+                background: '#fff',
+                color: '#7f1d1d',
+                fontWeight: 900,
+                fontSize: 17,
+                cursor: 'pointer',
+              }}
+            >
+              I understand
+            </button>
+          </div>
         </div>
       ) : null}
 
