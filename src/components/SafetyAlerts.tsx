@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { getLang, speakTranslated } from '../lib/i18n';
+import { getLang, speakTranslated, primeVoice } from '../lib/i18n';
 
 type Alert = {
   id: string;
@@ -29,19 +29,55 @@ export default function SafetyAlerts() {
   const [openList, setOpenList] = useState(false);
   const [listening, setListening] = useState(false);
   const [note, setNote] = useState('Looking for alerts where you are...');
+  const [needTap, setNeedTap] = useState(false);
 
   const spotRef = useRef<any>(null);
   const spokenRef = useRef<any>({});
   const showingRef = useRef<any>(null);
   const recRef = useRef<any>(null);
   const watchRef = useRef<any>(null);
+  const readyRef = useRef(false);
+  const pendingRef = useRef<any>(null);
 
   useEffect(function () {
     showingRef.current = showing;
   }, [showing]);
 
+  // Phones will not make a sound until the person touches the screen once.
+  // The first touch wakes the voice up and anything waiting gets read out loud.
+  useEffect(function () {
+    const wake = function () {
+      try { primeVoice(); } catch (e) {}
+      readyRef.current = true;
+      const waiting = pendingRef.current;
+      if (waiting) {
+        pendingRef.current = null;
+        setNeedTap(false);
+        try { speakTranslated(String(waiting), getLang()); } catch (e) {}
+      }
+    };
+    try {
+      window.addEventListener('pointerdown', wake);
+      window.addEventListener('touchstart', wake);
+      window.addEventListener('keydown', wake);
+      window.addEventListener('click', wake);
+    } catch (e) {}
+    return function () {
+      try {
+        window.removeEventListener('pointerdown', wake);
+        window.removeEventListener('touchstart', wake);
+        window.removeEventListener('keydown', wake);
+        window.removeEventListener('click', wake);
+      } catch (e) {}
+    };
+  }, []);
+
   function sayIt(text: string) {
     try {
+      primeVoice();
+      readyRef.current = true;
+      pendingRef.current = null;
+      setNeedTap(false);
       speakTranslated(text, getLang());
     } catch (e) {}
   }
@@ -125,7 +161,13 @@ export default function SafetyAlerts() {
         if (next && !showingRef.current) {
           spokenRef.current[String(next.id)] = true;
           setShowing(next);
-          sayIt(String(next.say || next.headline));
+          const words = String(next.say || next.headline);
+          if (readyRef.current) {
+            sayIt(words);
+          } else {
+            pendingRef.current = words;
+            setNeedTap(true);
+          }
           startListening();
         }
       } catch (e) {}
@@ -222,6 +264,24 @@ export default function SafetyAlerts() {
           {showing.area ? <div style={{ fontSize: 14, color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>{showing.area}</div> : null}
           <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.6, marginTop: 8 }}>{showing.headline}</div>
           {showing.doThis ? <div style={{ fontSize: 15, lineHeight: 1.6, marginTop: 8 }}>{showing.doThis}</div> : null}
+          <button
+            type='button'
+            onClick={function () { sayIt(String(showing.say || showing.headline)); }}
+            style={{
+              marginTop: 12,
+              width: '100%',
+              border: 'none',
+              background: colours(showing.kind).edge,
+              color: '#0f172a',
+              borderRadius: 12,
+              padding: '13px 16px',
+              fontWeight: 900,
+              fontSize: 16,
+              cursor: 'pointer',
+            }}
+          >
+            {needTap ? 'Tap here to hear this out loud' : 'Say it again'}
+          </button>
           <div style={{ marginTop: 8, color: '#94a3b8', fontSize: 12, fontWeight: 700 }}>
             {listening ? 'You can also just say "close notification".' : 'Tap the X when you are done.'}
           </div>
