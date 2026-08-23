@@ -7,6 +7,7 @@ import PanicButton from '../../components/PanicButton'
 import RatingBox, { starRow } from '../../components/RatingBox'
 import Ticker from '../../components/Ticker'
 import HandoffWatch from '../../components/HandoffWatch'
+import SafetyAlerts from '../../components/SafetyAlerts'
 
 const BASE_FARE = 5.0
 const PER_MILE = 2.0
@@ -874,6 +875,7 @@ export default function RidePage() {
 
         <Ticker dark={true} />
         <HandoffWatch />
+        <SafetyAlerts />
 
         <div className="rp-map">
           <div ref={mapDivRef} className="rp-mapreal" />
