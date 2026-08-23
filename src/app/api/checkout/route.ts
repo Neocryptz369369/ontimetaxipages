@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { owedRating, riderMustRateMessage } from '../../../lib/ratinggate'
 
 export const runtime = 'nodejs'
 
@@ -11,6 +13,31 @@ export async function POST(req: NextRequest) {
 
   let body: any = {}
   try { body = await req.json() } catch (e) { body = {} }
+
+  // Nobody pays for a new ride until the last one has stars on it,
+  // and nobody rides without a photo on their profile.
+  try {
+    const rider = String(body.token || '')
+    const sbUrl0 = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const svc0 = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (rider && sbUrl0 && svc0) {
+      const sb0 = createClient(sbUrl0, svc0, { auth: { persistSession: false, autoRefreshToken: false } })
+      const me0 = await sb0.auth.getUser(rider)
+      if (me0.data && me0.data.user) {
+        const uid0 = String(me0.data.user.id)
+        try {
+          const face = await sb0.from('profiles').select('photo_url').eq('id', uid0).maybeSingle()
+          if (!face.error && face.data && !face.data.photo_url) {
+            return NextResponse.json({ error: 'Please add a photo of yourself first. Your driver has to know who they are picking up.' }, { status: 403 })
+          }
+        } catch (e) {}
+        const owed0 = await owedRating(sb0, uid0, 'rider')
+        if (owed0) {
+          return NextResponse.json({ error: riderMustRateMessage(owed0), mustRate: owed0 }, { status: 409 })
+        }
+      }
+    }
+  } catch (e) {}
 
   const miles = Number(body.miles) || 0
   const rawTip = Number(body.tip)
