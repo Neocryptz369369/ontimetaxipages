@@ -82,6 +82,8 @@ export async function POST(req: NextRequest) {
             Prefer: 'return=minimal',
           }
           const patch: any = { paid: true }
+          if (session.id) patch.stripe_session_id = String(session.id)
+          if (session.payment_intent) patch.stripe_payment_intent = String(session.payment_intent)
           const t = Number(meta.tip)
           if (!isNaN(t) && t > 0) patch.tip = t
           const r = await fetch(url, { method: 'PATCH', headers: hdrs, body: JSON.stringify(patch) })
