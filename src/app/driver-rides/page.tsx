@@ -13,6 +13,7 @@ import MyTrail from '../../components/MyTrail';
 import PanicButton from '../../components/PanicButton';
 import TodayPay from '../../components/TodayPay';
 import DriverEarnings from '../../components/DriverEarnings';
+import SafetyAlerts from '../../components/SafetyAlerts';
 
 type Ride = {
   id: string;
@@ -414,6 +415,7 @@ export default function DriverRidesPage() {
         <Ticker />
 
         {ready && signedIn && hasDriver ? <DriverEarnings /> : null}
+        {ready && signedIn && hasDriver ? <SafetyAlerts /> : null}
 
         {ready && signedIn && hasDriver ? <DriverAlerts token={myToken} /> : null}
 
