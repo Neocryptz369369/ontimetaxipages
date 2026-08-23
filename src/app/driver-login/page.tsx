@@ -465,28 +465,6 @@ export default function DriverLoginPage() {
               {look.text}
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16, marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', letterSpacing: '0.12em' }}>WHAT YOU MADE TODAY</div>
-              <div style={{ fontSize: 34, fontWeight: 800, color: '#0f172a', marginTop: 6 }}>
-                {money(earnings ? earnings.youMade : 0)}
-              </div>
-              <div style={{ color: '#64748b', marginTop: 6 }}>
-                {earnings ? earnings.rides : 0} rides today
-              </div>
-              <div style={{ borderTop: '1px solid #e2e8f0', marginTop: 12, paddingTop: 12, color: '#475569', lineHeight: 1.7, fontSize: 14 }}>
-                <div>Fares you drove: {money(earnings ? earnings.fares : 0)}</div>
-                <div>Tips: {money(earnings ? earnings.tips : 0)}</div>
-                <div>Company keeps: {money(earnings ? earnings.companyKeeps : 0)}</div>
-                <div style={{ color: '#94a3b8', marginTop: 6 }}>
-                  That is the {money(earnings ? earnings.getInFee : 5)} get in fee on every ride, plus {earnings ? earnings.commissionPct : 20} percent of what is left. Tips are all yours.
-                </div>
-                {earnings && earnings.unpaid > 0 ? (
-                  <div style={{ color: '#b45309', marginTop: 6 }}>
-                    {earnings.unpaid} of those were not paid by card, so they were cash runs you collected yourself.
-                  </div>
-                ) : null}
-              </div>
-            </div>
 
             {driver.status !== 'approved' ? (
               <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#7c2d12', borderRadius: 14, padding: 16, lineHeight: 1.6, marginBottom: 16 }}>
