@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { freeDrivers, turnInfo } from '../../../lib/dispatch';
 import { blockedFor } from '../../../lib/dispatch';
+import { owedRating, driverMustRateMessage } from '../../../lib/ratinggate';
 
 export const runtime = 'nodejs';
 
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
     let wide = true;
     let found: any = await sb
       .from('drivers')
-      .select('driver_code, full_name, phone, status, vehicle_make, vehicle_model, vehicle_plate')
+      .select('driver_code, full_name, phone, status, photo_url, vehicle_make, vehicle_model, vehicle_plate')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -60,11 +61,19 @@ export async function POST(req: Request) {
     }
 
     if (wide) {
+      if (!found.data.photo_url) {
+        return NextResponse.json({ error: 'Add a photo of yourself on your driver page first. The rider has to be able to see who is picking them up.' }, { status: 403 });
+      }
       const hasCar = !!(found.data.vehicle_make || found.data.vehicle_model);
       const hasPlate = !!found.data.vehicle_plate;
       if (!hasCar || !hasPlate) {
         return NextResponse.json({ error: 'Put your car and your licence plate in My details on your driver page first. A rider has to be able to see what car is picking them up.' }, { status: 403 });
       }
+    }
+
+    const owed = await owedRating(sb, String(user.id), 'driver');
+    if (owed) {
+      return NextResponse.json({ error: driverMustRateMessage(owed), mustRate: owed }, { status: 409 });
     }
 
     const ahead = await sb
