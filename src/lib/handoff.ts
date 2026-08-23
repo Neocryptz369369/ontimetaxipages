@@ -2,11 +2,28 @@ import { freeDrivers, nearestFreeMiles } from './dispatch';
 
 export const MAX_PICKUP_MILES = 25;
 export const HANDOFF_WAIT_MINUTES = 8;
+export const PULL_OFF_OVER_BY = 15;
 
 const WIDE =
   'id, status, fare, tip, paid, created_at, rider_id, rider_lat, rider_lng, pickup_lat, pickup_lng, no_pay_driver_ids, removed_driver_id, removed_driver_name, removed_reason, removed_at, handoff_needed, refunded, refunded_at, refund_reason, stripe_payment_intent';
 const PLAIN =
   'id, status, fare, tip, paid, created_at, rider_id, rider_lat, rider_lng, pickup_lat, pickup_lng, no_pay_driver_ids, removed_driver_id, removed_driver_name, removed_reason, removed_at, handoff_needed';
+
+// A refund is ONLY ever sent when a driver was pulled off a live run for going
+// 15 mph or more over the posted speed limit. Nothing else on the site can
+// start an automatic refund.
+export function wasSpeedingPullOff(ride: any) {
+  if (!ride) return false;
+  if (ride.handoff_needed !== true) return false;
+  if (!ride.removed_driver_id) return false;
+  if (!ride.removed_at) return false;
+  const why = ride.removed_reason ? String(ride.removed_reason) : '';
+  const hit = why.match(/(\d+) mph over/);
+  if (!hit) return false;
+  const overBy = Number(hit[1]);
+  if (!isFinite(overBy) || overBy < PULL_OFF_OVER_BY) return false;
+  return true;
+}
 
 async function askStripeForRefund(paymentIntent: string) {
   const secret = process.env.STRIPE_SECRET_KEY ? String(process.env.STRIPE_SECRET_KEY) : '';
@@ -30,6 +47,7 @@ async function askStripeForRefund(paymentIntent: string) {
 }
 
 export async function refundRide(sb: any, ride: any, why: string) {
+  if (!wasSpeedingPullOff(ride)) return false;
   let moneyBack = false;
   const pi = ride && ride.stripe_payment_intent ? String(ride.stripe_payment_intent) : '';
   const wasPaid = ride && ride.paid === true;
@@ -70,6 +88,7 @@ export async function runHandoffChecks(sb: any) {
     const list = await freeDrivers(sb);
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
+      if (!wasSpeedingPullOff(r)) continue;
       const near = nearestFreeMiles(r, list);
       const nobody = near < 0 || near > MAX_PICKUP_MILES;
       const startedAt = r.removed_at ? new Date(r.removed_at).getTime() : 0;
