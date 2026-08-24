@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { snapToRoads } from '../lib/snaproads';
 
 const MAP_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string;
 
@@ -451,25 +452,34 @@ export default function DriverMap() {
       }
     });
     try {
-      const feats: any[] = [];
-      if (showTrails) {
-        drivers.forEach(function (d) {
-          const pts = trailRef.current[d.id];
-          if (pts && pts.length > 1) {
-            feats.push({
-              type: 'Feature',
-              properties: { colour: colourFor(d) },
-              geometry: { type: 'LineString', coordinates: pts },
-            });
-          }
-        });
-      }
-      if (histMins === 0) {
-        const src = m.getSource('ottrails');
-        if (src) src.setData({ type: 'FeatureCollection', features: feats });
-      }
-    } catch (e) {}
-  }, [drivers, mapUp, showTrails, histMins]);
+        const wanted: any[] = [];
+        if (showTrails) {
+          drivers.forEach(function (d) {
+            const pts = trailRef.current[d.id];
+            if (pts && pts.length > 1) wanted.push({ colour: colourFor(d), pts: pts.slice() });
+          });
+        }
+        if (histMins === 0) {
+          (async function () {
+            const feats: any[] = [];
+            for (let i = 0; i < wanted.length; i++) {
+              let road: any = wanted[i].pts;
+              try { road = await snapToRoads(wanted[i].pts, MAP_TOKEN); } catch (e) {}
+              if (!road || road.length < 2) road = wanted[i].pts;
+              feats.push({
+                type: 'Feature',
+                properties: { colour: wanted[i].colour },
+                geometry: { type: 'LineString', coordinates: road },
+              });
+            }
+            try {
+              const src = m.getSource('ottrails');
+              if (src) src.setData({ type: 'FeatureCollection', features: feats });
+            } catch (e) {}
+          })();
+        }
+      } catch (e) {}
+    }, [drivers, mapUp, showTrails, histMins]);
 
   useEffect(function () {
     const mapboxgl = (window as any).mapboxgl;
@@ -630,22 +640,26 @@ export default function DriverMap() {
         const j = await r.json();
         if (dead) return;
         if (j && j.ok && j.trails) {
-          const feats: any[] = [];
-          Object.keys(j.trails).forEach(function (id) {
-            const pts = j.trails[id];
-            if (pts && pts.length > 1) {
-              feats.push({
-                type: 'Feature',
-                properties: { colour: '#a78bfa' },
-                geometry: { type: 'LineString', coordinates: pts },
-              });
+            const feats: any[] = [];
+            const ids = Object.keys(j.trails);
+            for (let i = 0; i < ids.length; i++) {
+              const pts = j.trails[ids[i]];
+              if (pts && pts.length > 1) {
+                let road: any = pts;
+                try { road = await snapToRoads(pts, MAP_TOKEN); } catch (e) {}
+                if (!road || road.length < 2) road = pts;
+                feats.push({
+                  type: 'Feature',
+                  properties: { colour: '#a78bfa' },
+                  geometry: { type: 'LineString', coordinates: road },
+                });
+              }
             }
-          });
-          try {
-            const src = m.getSource('ottrails');
-            if (src) src.setData({ type: 'FeatureCollection', features: feats });
-          } catch (e) {}
-          if (!j.ready) {
+            try {
+              const src = m.getSource('ottrails');
+              if (src) src.setData({ type: 'FeatureCollection', features: feats });
+            } catch (e) {}
+            if (!j.ready) {
             setHistNote('The history store is not switched on yet. Once the database step is run in Supabase it starts filling up on its own.');
           } else if (feats.length === 0) {
             setHistNote('Nothing was saved for ' + histLabel(histMins) + ' yet. History builds up from now on.');
