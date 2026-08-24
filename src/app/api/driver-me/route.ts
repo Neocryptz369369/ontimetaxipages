@@ -45,7 +45,8 @@ export async function POST(req: Request) {
 
     let photoUrl = '';
     if (found.data.photo_url) {
-      const pub = sb.storage.from('profile-photos').getPublicUrl(String(found.data.photo_url));
+      const rawPhoto = String(found.data.photo_url);
+      const pub: any = rawPhoto.indexOf('http') === 0 ? { data: { publicUrl: rawPhoto } } : sb.storage.from('profile-photos').getPublicUrl(rawPhoto);
       photoUrl = pub && pub.data ? pub.data.publicUrl : '';
     }
 
