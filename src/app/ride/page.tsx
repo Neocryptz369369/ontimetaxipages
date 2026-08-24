@@ -625,6 +625,18 @@ export default function RidePage() {
               window.localStorage.removeItem('ott_paid_ride')
             }
           } catch (e) {}
+          try {
+            fetch('/api/push-send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                pickup: pickup,
+                dropoff: dropoff,
+                fare: '$' + Number(rideFare).toFixed(2),
+                rider: riderName,
+              }),
+            })
+          } catch (e) {}
           if (rideInsertErr) {
             setPayError('Could not create your ride: ' + rideInsertErr.message)
             setPaying(false)
