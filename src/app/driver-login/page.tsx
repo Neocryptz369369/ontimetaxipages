@@ -500,7 +500,10 @@ export default function DriverLoginPage() {
                       <div style={{ color: '#64748b', fontWeight: 700, fontSize: 13 }}>{clockTime(r.createdAt)}</div>
                       <div style={{ fontWeight: 900, color: '#0f172a' }}>{money(r.fare)}</div>
                     </div>
-                    <div style={{ color: '#0f172a', fontWeight: 700, marginTop: 4 }}>From {r.pickup}</div>
+                    {r.otherPhoto ? (
+                  <img src={r.otherPhoto} alt='Your rider' style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0', marginTop: 6 }} />
+                ) : null}
+                <div style={{ color: '#0f172a', fontWeight: 700, marginTop: 4 }}>From {r.pickup}</div>
                     <div style={{ color: '#0f172a', fontWeight: 700 }}>To {r.dropoff}</div>
                     <div style={{ color: '#475569', fontSize: 14, marginTop: 4 }}>
                       Rider {r.riderName}{r.tip > 0 ? '  tip ' + money(r.tip) : ''}{r.paid ? '  paid' : '  not paid'}
