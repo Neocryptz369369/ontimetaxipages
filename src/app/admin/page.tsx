@@ -544,7 +544,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isLoggedIn) return;
     let active = true;
-    supabase.from("drivers").select("id, full_name, email, phone, driver_code, status").eq("status", "approved").then((res: any) => {
+    supabase.from("drivers").select("id, full_name, email, phone, driver_code, status, vehicle_make, vehicle_model, vehicle_year, vehicle_color, vehicle_plate").eq("status", "approved").then((res: any) => {
       if (active && !res.error) setApprovedDrivers(res.data || []);
     });
     return () => { active = false; };
@@ -773,7 +773,8 @@ export default function AdminPage() {
 
   async function acceptRide(id: string) {
     setRideMsg("");
-    const d = driverInputs[id] || { name: "", phone: "", vehicle: "", plate: "" };
+    const rawIn: any = driverInputs[id] || {};
+    const d: any = { driverId: rawIn.driverId || "", name: String(rawIn.name || ""), phone: String(rawIn.phone || ""), vehicle: String(rawIn.vehicle || ""), plate: String(rawIn.plate || "") };
     if (!d.name.trim() || !d.phone.trim()) {
       setRideMsg("Enter at least the driver name and phone before accepting.");
       return;
@@ -1131,7 +1132,7 @@ export default function AdminPage() {
                         value={(driverInputs[r.id] && driverInputs[r.id].driverId) || ""}
                         onChange={(e) => {
                           const picked = approvedDrivers.filter((x: any) => x.id === e.target.value)[0];
-                          setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), driverId: e.target.value, name: picked ? (picked.full_name || "") : ((prev[r.id] || {}).name || ""), phone: picked ? (picked.phone || "") : ((prev[r.id] || {}).phone || "") } }));
+                          setDriverInputs((prev: any) => ({ ...prev, [r.id]: { ...(prev[r.id] || {}), driverId: e.target.value, name: picked ? (picked.full_name || "") : ((prev[r.id] || {}).name || ""), phone: picked ? (picked.phone || "") : ((prev[r.id] || {}).phone || ""), vehicle: picked ? [picked.vehicle_year, picked.vehicle_color, picked.vehicle_make, picked.vehicle_model].filter(Boolean).join(" ") : ((prev[r.id] || {}).vehicle || ""), plate: picked ? (picked.vehicle_plate || "") : ((prev[r.id] || {}).plate || "") } }));
                         }}
                         style={{ flex: "1 1 100%", minWidth: 0, padding: "8px 10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)", color: "#fff" }}
                       >
