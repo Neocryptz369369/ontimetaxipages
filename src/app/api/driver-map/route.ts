@@ -84,7 +84,8 @@ export async function POST(req: Request) {
         const mins = seen ? Math.max(0, Math.round((now - seen) / 60000)) : null;
         const mph = num(d.last_mph);
         const limit = num(d.last_limit_mph);
-        const over = mph !== null && limit !== null && limit > 0 ? Math.round(mph - limit) : null;
+        const fresh = mins !== null && mins <= 10;
+        const over = fresh && mph !== null && limit !== null && limit > 0 ? Math.round(mph - limit) : null;
         const car = [d.vehicle_color, d.vehicle_year, d.vehicle_make, d.vehicle_model]
           .map(function (x: any) { return x === null || x === undefined ? '' : String(x).trim(); })
           .filter(function (x: string) { return x !== ''; })
