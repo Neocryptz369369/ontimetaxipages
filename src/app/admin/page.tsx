@@ -12,6 +12,14 @@ import DriverMap from "../../components/DriverMap";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
+function faceUrl(v: any) {
+  const raw = v === null || v === undefined ? '' : String(v)
+  if (!raw) return ''
+  if (raw.indexOf('http') === 0) return raw
+  const pub: any = supabase.storage.from('profile-photos').getPublicUrl(raw)
+  return pub && pub.data ? pub.data.publicUrl : ''
+}
+
 function driverCarLine(d: any) {
   if (!d) return "";
   const bits: string[] = [];
@@ -1095,7 +1103,7 @@ export default function AdminPage() {
                 >
                   {r.profiles && r.profiles.photo_url ? (
                     <img
-                      src={r.profiles.photo_url}
+                      src={faceUrl(r.profiles.photo_url)}
                       alt=""
                       style={{ width: "52px", height: "52px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
                     />
