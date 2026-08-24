@@ -1183,7 +1183,7 @@ export default function AdminPage() {
           </div>
           <p style={{ color: "#d9b3b3", fontSize: "14px", margin: "0 0 6px" }}>
             This is your own panic button. It sends your location to the company, and it records video
-            and sound on this phone for up to 45 seconds. The recording is filed in the panic archive.
+            and sound on this phone. It keeps recording until you press Done. The recording is filed in the panic archive.
           </p>
           <PanicButton role="admin" whoName="On Time Taxi owner" whoPhone="9302164166" />
         </div>
