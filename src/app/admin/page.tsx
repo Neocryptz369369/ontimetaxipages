@@ -9,6 +9,7 @@ import { starRow } from "../../components/RatingBox";
 import SpeedWatch from "../../components/SpeedWatch";
 import DriverMessages from "../../components/DriverMessages";
 import DriverMap from "../../components/DriverMap";
+import NewOrderAlarm from "../../components/NewOrderAlarm";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -1082,6 +1083,7 @@ export default function AdminPage() {
           <p style={{ color: "#c98f8f", fontSize: "13px", marginTop: 0, marginBottom: "16px" }}>
             New ride requests appear here in real time. Accept one to pick it up.
           </p>
+          <NewOrderAlarm ids={incoming.map((r: any) => String(r.id))} />
           {rideMsg ? (
             <p style={{ color: "#ffd7d7", fontSize: "13px", marginBottom: "12px" }}>{rideMsg}</p>
           ) : null}
