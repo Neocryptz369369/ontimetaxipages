@@ -14,6 +14,7 @@ import PanicButton from '../../components/PanicButton';
 import TodayPay from '../../components/TodayPay';
 import DriverEarnings from '../../components/DriverEarnings';
 import SafetyAlerts from '../../components/SafetyAlerts';
+import NewOrderAlarm from '../../components/NewOrderAlarm';
 
 type Ride = {
   id: string;
@@ -413,6 +414,8 @@ export default function DriverRidesPage() {
         </p>
 
         <Ticker />
+
+        <NewOrderAlarm who="driver" ids={rides.map((r: any) => String(r.id))} />
 
         {ready && signedIn && hasDriver ? <DriverEarnings /> : null}
         {ready && signedIn && hasDriver ? <SafetyAlerts /> : null}
