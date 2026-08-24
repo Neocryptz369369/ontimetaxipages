@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { snapToRoads } from '../lib/snaproads';
 
 const MAP_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string;
 
@@ -69,7 +70,12 @@ export default function MyTrail(props: Props) {
       const key = String(data.mine || '');
       const pts: any[] = data.trails && data.trails[key] ? data.trails[key] : [];
       const mi = data.miles && data.miles[key] ? Number(data.miles[key]) : 0;
-      setLine(pts);
+      let road: any = pts;
+      if (pts.length > 1) {
+        try { road = await snapToRoads(pts, MAP_TOKEN); } catch (e) {}
+      }
+      if (!road || road.length < 2) road = pts;
+      setLine(road);
       setMiles(mi);
       if (pts.length < 2) setNote('Nothing saved for that stretch of time yet. It fills up on its own while you drive.');
       else setNote('');
