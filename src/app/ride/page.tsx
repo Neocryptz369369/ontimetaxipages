@@ -1042,8 +1042,11 @@ export default function RidePage() {
                 className="rp-btn rp-ghost"
                 style={{ marginTop: 8, fontSize: '13px', padding: '8px 12px' }}
                 onClick={() => {
-                  if (!navigator.geolocation) { alert('Location is not available on this device.'); return }
-                  navigator.geolocation.getCurrentPosition(async (pos) => {
+                  const nav: any = navigator
+                  if (!nav.geolocation) { alert('Location is not available on this device.'); return }
+                  setPickup('Finding your location...')
+                  setPickupSug([])
+                  const done = async (pos: any) => {
                     const lng = pos.coords.longitude
                     const lat = pos.coords.latitude
                     setPickupCoord([lng, lat])
@@ -1061,7 +1064,21 @@ export default function RidePage() {
                       setPickup(lat.toFixed(5) + ', ' + lng.toFixed(5))
                     }
                     setPickupSug([])
-                  }, () => { alert('Could not get your location. Please allow location access.') })
+                  }
+                  const fail = (err: any) => {
+                    setPickup('')
+                    const code = err && err.code ? err.code : 0
+                    if (code === 1) {
+                      alert('Your phone is blocking location for On Time Taxi. On an iPhone open Settings, then Privacy and Security, then Location Services, make sure it is on, scroll down to Safari Websites and set it to While Using the App with Precise Location on. Then come back and press this button again. You can also use Drop a pin on the map.')
+                    } else if (code === 3) {
+                      alert('It took too long to find you. Turn off Low Power Mode, move near a window or outside, then press this button again. You can also use Drop a pin on the map.')
+                    } else {
+                      alert('Could not get your location. Please tap Allow when your phone asks, or use Drop a pin on the map.')
+                    }
+                  }
+                  nav.geolocation.getCurrentPosition(done, () => {
+                    nav.geolocation.getCurrentPosition(done, fail, { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 })
+                  }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 })
                 }}
               >Use my current location</button>
               <button
