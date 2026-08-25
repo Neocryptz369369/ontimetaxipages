@@ -3,11 +3,16 @@ import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY as string
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+}
+
+function hold(sec: number) {
+  return new Promise((r) => setTimeout(r, sec * 1000))
 }
 
 async function run(origin: string) {
@@ -43,11 +48,18 @@ async function run(origin: string) {
 }
 
 export async function POST(req: Request) {
+  let b: any = {}
+  try { b = await req.json() } catch (e) { b = {} }
+  const d = Number(b.delay || 0)
+  if (d > 0 && d < 50) await hold(d)
   const out = await run(new URL(req.url).origin)
   return NextResponse.json(out)
 }
 
 export async function GET(req: Request) {
-  const out = await run(new URL(req.url).origin)
+  const u = new URL(req.url)
+  const d = Number(u.searchParams.get('delay') || 0)
+  if (d > 0 && d < 50) await hold(d)
+  const out = await run(u.origin)
   return NextResponse.json(out)
 }
