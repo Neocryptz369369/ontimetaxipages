@@ -240,6 +240,11 @@ export default function NewOrderAlarm({ ids, who }: Props) {
         )}
         <button type="button" onClick={sendTestAlert} style={btn('#0f172a', '#fff')}>Send a test alert</button>
       </div>
+      {bg ? null : (
+        <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.5, color: '#fbbf24' }}>
+          iPhone owners: Apple only lets a website send alerts if the site is saved to the Home Screen first. In Safari tap the Share box at the bottom of the screen, tap Add to Home Screen, tap Add, then open On Time Taxi from that new icon and press the blue button above. After that On Time Taxi shows up under Settings, Notifications on your iPhone so you can turn the sound on.
+        </div>
+      )}
     </div>
   );
 }
