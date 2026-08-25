@@ -2,7 +2,7 @@
   "name": "On Time Taxi",
   "short_name": "On Time Taxi",
   "description": "Request a ride, track your driver, and pay your way with On-Time Taxi.",
-  "start_url": "/get-app",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
