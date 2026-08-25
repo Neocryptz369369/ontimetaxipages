@@ -1,0 +1,25 @@
+{
+  "name": "ontimetaxi-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native iOS wrapper for the On Time Taxi service (ontimetaxi.biz)",
+  "scripts": {
+    "setup": "npm install && npx cap add ios && npx cap sync ios",
+    "sync": "npx cap sync ios",
+    "open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^6.0.1",
+    "@capacitor/camera": "^6.0.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/haptics": "^6.0.1",
+    "@capacitor/ios": "^6.1.2",
+    "@capacitor/push-notifications": "^6.0.2",
+    "@capacitor/splash-screen": "^6.0.2",
+    "@capacitor/status-bar": "^6.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}
