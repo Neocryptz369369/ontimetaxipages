@@ -955,6 +955,7 @@ export default function RidePage() {
                 {rMsg ? <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>{rMsg}</div> : null}
                 <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.14)' }}>
                   <Link href="/delete-account" style={{ color: '#ff8a8a', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>Delete my account</Link>
+                </div>
               </div>
             </div>
           ) : null}
