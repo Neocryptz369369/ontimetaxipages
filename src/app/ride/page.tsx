@@ -884,6 +884,7 @@ export default function RidePage() {
           <Link href="/" className="rp-navlink">Home</Link>
           <Link href="/report-driver" className="rp-navlink">Report a driver</Link>
           <Link href="/ride-history" className="rp-navlink">History</Link>
+          <Link href="/delete-account" className="rp-navlink">Delete account</Link>
           <button type="button" onClick={handleSignOut} className="rp-navlink" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>Sign out</button>
         </nav>
 
@@ -952,6 +953,8 @@ export default function RidePage() {
                   {rBusy ? 'Saving...' : 'Save my details'}
                 </button>
                 {rMsg ? <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>{rMsg}</div> : null}
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.14)' }}>
+                  <Link href="/delete-account" style={{ color: '#ff8a8a', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>Delete my account</Link>
               </div>
             </div>
           ) : null}
