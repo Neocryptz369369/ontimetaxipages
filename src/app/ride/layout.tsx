@@ -15,16 +15,15 @@ export default function RideLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (isSuccess) { setAllowed(true); setChecked(true); return; }
-    let active = true;
-    supabase.auth.getSession().then(({ data }) => {
+  let active = true;
+    async function check(retriesLeft: number) {
+      const { data } = await supabase.auth.getSession();
       if (!active) return;
-      if (data.session) {
-        setAllowed(true);
-        setChecked(true);
-      } else {
-        router.replace('/login?next=/ride');
-      }
-    });
+      if (data.session) { setAllowed(true); setChecked(true); return; }
+      if (retriesLeft > 0) { setTimeout(() => { if (active) check(retriesLeft - 1); }, 400); return; }
+      router.replace('/login?next=/ride');
+    }
+    check(3);
     return () => { active = false; };
   }, [isSuccess, pathname, router]);
 
