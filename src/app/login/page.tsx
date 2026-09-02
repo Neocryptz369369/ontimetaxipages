@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
 async function uploadPendingPhoto(userId: string) {
@@ -26,7 +26,6 @@ async function uploadPendingPhoto(userId: string) {
 }
 
 function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params?.get('next') || '/ride';
 
@@ -40,6 +39,7 @@ function LoginForm() {
     setError(null);
     if (!email.trim() || !password) { setError('Please enter your email and password.'); return; }
     setLoading(true);
+    const stall = setTimeout(() => { setLoading(false); setError('This is taking longer than expected. Please check your connection and try again.'); }, 12000);
     try {
       const { data, error: signErr } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -48,10 +48,10 @@ function LoginForm() {
       if (signErr) throw signErr;
       const userId = data.user?.id;
       if (userId) await uploadPendingPhoto(userId);
-      router.push(next);
+      clearTimeout(stall); window.location.href = next;
     } catch (err: any) {
+      clearTimeout(stall);
       setError(err?.message || 'Could not sign in. Please check your details.');
-    } finally {
       setLoading(false);
     }
   }
