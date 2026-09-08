@@ -26,75 +26,115 @@ const checklist = [
 const processFlow = [
   "Upload license and insurance first.",
   "Complete the background check with the approved provider.",
-  "Complete the driving record review for the driver’s state.",
+  "Complete the driving record review for the driver's state.",
   "Wait for full compliance review before expecting approval.",
 ];
 
+const shell: React.CSSProperties = {
+  minHeight: "100vh",
+  background: "linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%)",
+  fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+  color: "#0f172a",
+};
+
+const card: React.CSSProperties = {
+  background: "#fff",
+  borderRadius: 20,
+  border: "1px solid #e5e7eb",
+  boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
+  padding: 24,
+};
+
 export default function DriverOnboardingPage() {
   return (
-    <main className="min-h-screen bg-[#f4efe6] text-slate-900">
-      <section className="border-b border-slate-300 bg-[#10233d] text-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-300">
-              Driver approval path
-            </p>
-            <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-              Driver onboarding and compliance review
-            </h1>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-200 sm:text-lg">
-              This page is built as a checklist-style review screen, not another copy of the supervisor page.
-              It makes the full driver approval path visible before a driver is accepted.
-            </p>
+    <main style={shell}>
+      <section style={{ background: "#0f172a", color: "#fff", padding: "48px 16px 40px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+          <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#facc15", margin: 0 }}>
+            Driver approval path
+          </p>
+          <h1 style={{ fontSize: 36, fontWeight: 800, margin: "12px 0 0", lineHeight: 1.15 }}>
+            Driver onboarding and compliance review
+          </h1>
+          <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.6, color: "#cbd5e1", maxWidth: 640 }}>
+            This is a checklist-style review screen that makes the full driver approval path visible
+            before a driver is accepted.
+          </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/"
-                className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-              >
-                Back to homepage
-              </Link>
-              <a
-                href="#driver-checklist"
-                className="inline-flex items-center rounded-full bg-amber-300 px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-amber-200"
-              >
-                Open checklist
-              </a>
-            </div>
+          <div style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 12 }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex", alignItems: "center", borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.08)",
+                padding: "12px 20px", fontSize: 14, fontWeight: 700, color: "#fff", textDecoration: "none",
+              }}
+            >
+              Back to homepage
+            </Link>
+            <Link
+              href="/driver-login"
+              style={{
+                display: "inline-flex", alignItems: "center", borderRadius: 999,
+                background: "#facc15", padding: "12px 20px", fontSize: 14, fontWeight: 800,
+                color: "#111827", textDecoration: "none",
+              }}
+            >
+              Start driver application
+            </Link>
           </div>
 
-          <div className="rounded-[32px] border border-white/10 bg-white/10 p-6 backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-300">Plain rule</p>
-            <h2 className="mt-3 text-2xl font-extrabold">Not approved with only 2 items</h2>
-            <p className="mt-4 text-sm leading-7 text-slate-200">
-              A driver is not approved with only a license and insurance.
-              Background screening and driving record review are also required before activation.
+          <div style={{
+            marginTop: 32, borderRadius: 20, border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.06)", padding: 20, maxWidth: 640,
+          }}>
+            <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#facc15", margin: 0 }}>
+              Plain rule
+            </p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, margin: "10px 0 0" }}>
+              Not approved with only 2 items
+            </h2>
+            <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.6, color: "#cbd5e1" }}>
+              A driver is not approved with only a license and insurance. Background screening and
+              driving record review are also required before activation.
             </p>
           </div>
         </div>
       </section>
 
-      <section id="driver-checklist" className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-6 flex items-center justify-between gap-4 border-b border-slate-300 pb-4">
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "32px 16px" }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderBottom: "1px solid #e2e8f0", paddingBottom: 14, marginBottom: 20, gap: 12, flexWrap: "wrap",
+        }}>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">Checklist board</p>
-            <h2 className="mt-2 text-3xl font-extrabold">Required compliance items</h2>
+            <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#64748b", margin: 0 }}>
+              Checklist board
+            </p>
+            <h2 style={{ fontSize: 24, fontWeight: 800, margin: "6px 0 0" }}>Required compliance items</h2>
           </div>
-          <div className="rounded-full bg-[#10233d] px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-amber-300">
+          <div style={{
+            borderRadius: 999, background: "#0f172a", color: "#facc15",
+            fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase", padding: "8px 16px",
+          }}>
             4 required checks
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
           {checklist.map((item) => (
-            <div key={item.number} className="rounded-[28px] border-2 border-slate-300 bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#10233d] text-lg font-extrabold text-amber-300">
+            <div key={item.number} style={card}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                <div style={{
+                  flexShrink: 0, width: 44, height: 44, borderRadius: 12, background: "#0f172a",
+                  color: "#facc15", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 800, fontSize: 14,
+                }}>
                   {item.number}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-extrabold text-slate-900">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.body}</p>
+                  <h3 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>{item.title}</h3>
+                  <p style={{ marginTop: 8, fontSize: 14, lineHeight: 1.6, color: "#475569" }}>{item.body}</p>
                 </div>
               </div>
             </div>
@@ -102,26 +142,36 @@ export default function DriverOnboardingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[32px] border border-slate-300 bg-[#eadfcb] p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-600">Review status</p>
-            <h2 className="mt-3 text-3xl font-extrabold">Approval happens after full review</h2>
-            <p className="mt-4 text-sm leading-7 text-slate-700">
-              This step makes it clear that driver activation comes after the complete rideshare-style compliance review,
-              not before it.
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 16px 48px" }}>
+        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+          <div style={{ ...card, background: "#eef2ff" }}>
+            <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#64748b", margin: 0 }}>
+              Review status
+            </p>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: "10px 0 0" }}>Approval happens after full review</h2>
+            <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.6, color: "#475569" }}>
+              Driver activation comes after the complete compliance review, not before it.
             </p>
           </div>
 
-          <div className="rounded-[32px] border border-slate-300 bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">Process flow</p>
-            <div className="mt-5 space-y-4">
+          <div style={card}>
+            <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#64748b", margin: 0 }}>
+              Process flow
+            </p>
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               {processFlow.map((step, index) => (
-                <div key={step} className="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-300 text-sm font-extrabold text-slate-950">
+                <div key={step} style={{
+                  display: "flex", gap: 12, borderRadius: 14, border: "1px solid #e2e8f0",
+                  background: "#f8fafc", padding: 12,
+                }}>
+                  <div style={{
+                    flexShrink: 0, width: 28, height: 28, borderRadius: "50%", background: "#facc15",
+                    color: "#111827", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 800, fontSize: 13,
+                  }}>
                     {index + 1}
                   </div>
-                  <p className="text-sm leading-7 text-slate-700">{step}</p>
+                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "#334155" }}>{step}</p>
                 </div>
               ))}
             </div>
