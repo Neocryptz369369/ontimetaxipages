@@ -151,7 +151,7 @@ export default function HomePage() {
                   Book a ride
                 </Link>
                 <Link
-                  href="/drive"
+                  href="/driver-login"
                   style={{
                     textDecoration: "none",
                     color: "#ffffff",
