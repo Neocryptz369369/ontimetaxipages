@@ -132,6 +132,10 @@ export default function DriverLoginPage() {
   const [phone, setPhone] = useState('');
   const [photo, setPhoto] = useState('');
   const [photoName, setPhotoName] = useState('');
+  const [licensePhoto, setLicensePhoto] = useState('');
+  const [licensePhotoName, setLicensePhotoName] = useState('');
+  const [insurancePhoto, setInsurancePhoto] = useState('');
+  const [insurancePhotoName, setInsurancePhotoName] = useState('');
   const [vehicleMake, setVehicleMake] = useState('');
   const [vehicleModel, setVehicleModel] = useState('');
   const [vehicleYear, setVehicleYear] = useState('');
@@ -309,6 +313,30 @@ export default function DriverLoginPage() {
     reader.readAsDataURL(picked);
   }
 
+  function onLicensePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    if (!picked) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLicensePhoto(String(reader.result || ''));
+      setLicensePhotoName(picked.name);
+    };
+    reader.readAsDataURL(picked);
+  }
+
+  function onInsurancePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    if (!picked) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setInsurancePhoto(String(reader.result || ''));
+      setInsurancePhotoName(picked.name);
+    };
+    reader.readAsDataURL(picked);
+  }
+
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -320,6 +348,8 @@ export default function DriverLoginPage() {
     if (digitsOnly(phone).length !== 10 && digitsOnly(phone).length !== 11) { setError('That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.'); return; }
     if (password.length < 8) { setError('Please pick a password with at least 8 letters or numbers.'); return; }
     if (!photo) { setError('Please add a picture of yourself.'); return; }
+    if (!licensePhoto) { setError('Please add a photo or PDF of your driver license.'); return; }
+    if (!insurancePhoto) { setError('Please add a photo or PDF of your current insurance.'); return; }
     if (!vehicleMake.trim()) { setError('Please enter the make of your car, like Ford or Toyota.'); return; }
     if (!vehicleModel.trim()) { setError('Please enter the model of your car, like Fusion or Camry.'); return; }
     if (!plate.trim()) { setError('Please enter your licence plate number.'); return; }
@@ -337,6 +367,8 @@ export default function DriverLoginPage() {
           phone: prettyPhone(phone),
           password: password,
           photo: photo,
+          licensePhoto: licensePhoto,
+          insurancePhoto: insurancePhoto,
           vehicleMake: vehicleMake.trim(),
           vehicleModel: vehicleModel.trim(),
           vehicleYear: vehicleYear.trim(),
@@ -541,12 +573,12 @@ export default function DriverLoginPage() {
               See open rides and take one
             </Link>
 
-            <Link
-              href='/drive/upload-docs'
+            <a
+              href='tel:9302164166'
               style={{ display: 'block', textAlign: 'center', padding: '13px 16px', borderRadius: 12, background: '#0f172a', color: '#fff', fontWeight: 800, textDecoration: 'none', marginBottom: 12 }}
             >
-              Send in your documents
-            </Link>
+              Need to update your license or insurance? Call 930-216-4166
+            </a>
 
             <button type='button' onClick={onSignOut} style={{ ...mainButton, background: '#e2e8f0', color: '#0f172a' }}>
               Sign out
@@ -644,6 +676,26 @@ export default function DriverLoginPage() {
                 ) : null}
 
                 <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 14, marginBottom: 16 }}>
+                  <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 16, marginBottom: 4 }}>Required for approval</div>
+                  <div style={{ color: '#64748b', fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>
+                    Upload your driver license and current insurance. The owner reviews these along with a background check
+                    and driving record check before approving you to drive.
+                  </div>
+
+                  <label style={label}>Driver's license (photo or PDF)</label>
+                  <input style={{ ...input, padding: '10px 12px' }} type='file' accept='image/*,.pdf,application/pdf' onChange={onLicensePicked} />
+                  {licensePhotoName ? (
+                    <div style={{ color: '#475569', fontSize: 13, marginTop: -8, marginBottom: 14 }}>{licensePhotoName}</div>
+                  ) : null}
+
+                  <label style={label}>Proof of insurance (photo or PDF)</label>
+                  <input style={{ ...input, padding: '10px 12px', marginBottom: 0 }} type='file' accept='image/*,.pdf,application/pdf' onChange={onInsurancePicked} />
+                  {insurancePhotoName ? (
+                    <div style={{ color: '#475569', fontSize: 13, marginTop: 8 }}>{insurancePhotoName}</div>
+                  ) : null}
+                </div>
+
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 14, marginBottom: 16 }}>
                   <div style={{ fontWeight: 900, color: '#0f172a', fontSize: 16, marginBottom: 4 }}>Your car</div>
                   <div style={{ color: '#64748b', fontSize: 13, marginBottom: 12, lineHeight: 1.5 }}>
                     Riders must be able to see the car that is coming for them. This is required.
@@ -678,8 +730,8 @@ export default function DriverLoginPage() {
         ) : null}
 
         <div style={{ textAlign: 'center', marginTop: 18 }}>
-          <Link href='/drive' style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
-            Back to the driver checks page
+          <Link href='/driver-onboarding' style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
+            See what is required for approval
           </Link>
         </div>
       </div>
