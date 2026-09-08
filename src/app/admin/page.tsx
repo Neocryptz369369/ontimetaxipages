@@ -85,7 +85,7 @@ function adminDrawRouteLine(m: any, coords: number[][]) {
 const sections = [
   {
     title: "Drivers and reports",
-    text: "Approve new drivers, suspend or reinstate them, and read rider reports.",
+    text: "Review license, insurance, background check and driving record for each applicant, then approve, suspend, or turn them down.",
     href: "/admin/drivers",
     cta: "Open drivers",
   },
@@ -100,18 +100,6 @@ const sections = [
     text: "View and manage emergency alerts and history from users.",
     href: "/admin/panic-archive",
     cta: "View archives",
-  },
-  {
-    title: "Compliance review",
-    text: "Review submitted documentation and verification requests.",
-    href: "/admin/compliance-review",
-    cta: "Open reviews",
-  },
-  {
-    title: "Driver onboarding",
-    text: "Process new driver applications and document verification.",
-    href: "/admin/driver-onboarding",
-    cta: "Manage applicants",
   },
   {
     title: "Supervisor logs",
