@@ -90,6 +90,12 @@ const sections = [
     cta: "Open drivers",
   },
   {
+    title: "Driver onboarding",
+    text: "The requirements page new drivers see before they apply: photo, driver license, insurance, and the signed agreements.",
+    href: "/driver-onboarding",
+    cta: "View onboarding page",
+  },
+  {
     title: "Signed agreements",
     text: "Every agreement a driver or a rider signed, their signature, the day and time, and the exact words they agreed to.",
     href: "/admin/signatures",
