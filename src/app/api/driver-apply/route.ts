@@ -16,6 +16,22 @@ function phoneClean(v: any) {
   return ten;
 }
 
+function isDataFile(v: string) {
+  return v.slice(0, 11) === 'data:image/' || v.slice(0, 15) === 'data:application';
+}
+
+async function uploadDataFile(sb: any, dataUrl: string, path: string) {
+  const comma = dataUrl.indexOf(',');
+  const contentType = dataUrl.slice(5, comma).split(';')[0];
+  const bytes = Buffer.from(dataUrl.slice(comma + 1), 'base64');
+  let ext = 'jpg';
+  if (contentType === 'image/png') ext = 'png';
+  else if (contentType === 'application/pdf') ext = 'pdf';
+  const fullPath = path + '.' + ext;
+  const up = await sb.storage.from('profile-photos').upload(fullPath, bytes, { upsert: true, contentType: contentType });
+  return up.error ? null : fullPath;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -25,6 +41,8 @@ export async function POST(req: Request) {
     const phone = phoneClean(body.phone);
     const password = String(body.password || '');
     const photo = String(body.photo || '');
+    const licensePhoto = String(body.licensePhoto || '');
+    const insurancePhoto = String(body.insurancePhoto || '');
     const vehicleMake = String(body.vehicleMake || '').trim();
     const vehicleModel = String(body.vehicleModel || '').trim();
     const vehicleYear = String(body.vehicleYear || '').trim();
@@ -47,6 +65,8 @@ export async function POST(req: Request) {
     if (phone.replace(/[^0-9]/g, '').length !== 10 && phone.replace(/[^0-9]/g, '').length !== 11) return NextResponse.json({ error: 'That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.' }, { status: 400 });
     if (password.length < 8) return NextResponse.json({ error: 'Your password must be at least 8 characters.' }, { status: 400 });
     if (photo.slice(0, 11) !== 'data:image/') return NextResponse.json({ error: 'A clear photo of your face is required.' }, { status: 400 });
+    if (!isDataFile(licensePhoto)) return NextResponse.json({ error: 'A photo or PDF of your driver license is required.' }, { status: 400 });
+    if (!isDataFile(insurancePhoto)) return NextResponse.json({ error: 'A photo or PDF of your current insurance is required.' }, { status: 400 });
     if (!vehicleMake) return NextResponse.json({ error: 'Please enter the make of your car, like Ford or Toyota.' }, { status: 400 });
     if (!vehicleModel) return NextResponse.json({ error: 'Please enter the model of your car, like Fusion or Camry.' }, { status: 400 });
     if (!plate) return NextResponse.json({ error: 'Please enter your licence plate number.' }, { status: 400 });
@@ -79,24 +99,41 @@ export async function POST(req: Request) {
 
     let photoPath: string | null = null;
     try {
-      const comma = photo.indexOf(',');
-      const contentType = photo.slice(5, comma).split(';')[0];
-      const bytes = Buffer.from(photo.slice(comma + 1), 'base64');
-      const ext = contentType === 'image/png' ? 'png' : 'jpg';
-      const path = userId + '/avatar.' + ext;
-      const up = await sb.storage.from('profile-photos').upload(path, bytes, { upsert: true, contentType: contentType });
-      if (!up.error) photoPath = path;
+      photoPath = await uploadDataFile(sb, photo, userId + '/avatar');
     } catch (photoErr) {
       photoPath = null;
     }
 
-    const plainRow: any = {
+    let licensePath: string | null = null;
+    try {
+      licensePath = await uploadDataFile(sb, licensePhoto, userId + '/license');
+    } catch (licenseErr) {
+      licensePath = null;
+    }
+
+    let insurancePath: string | null = null;
+    try {
+      insurancePath = await uploadDataFile(sb, insurancePhoto, userId + '/insurance');
+    } catch (insuranceErr) {
+      insurancePath = null;
+    }
+
+    const fullRow: any = {
       id: userId,
       full_name: fullName,
       email: email,
       phone: phone,
       photo_url: photoPath,
       status: 'pending',
+      vehicle_make: vehicleMake,
+      vehicle_model: vehicleModel,
+      vehicle_year: vehicleYear,
+      vehicle_color: vehicleColor,
+      vehicle_plate: plate,
+      license_url: licensePath,
+      insurance_url: insurancePath,
+      background_check_complete: false,
+      driving_record_complete: false,
     };
     const carRow: any = {
       id: userId,
@@ -111,8 +148,21 @@ export async function POST(req: Request) {
       vehicle_color: vehicleColor,
       vehicle_plate: plate,
     };
+    const plainRow: any = {
+      id: userId,
+      full_name: fullName,
+      email: email,
+      phone: phone,
+      photo_url: photoPath,
+      status: 'pending',
+    };
 
-    let inserted = await sb.from('drivers').insert(carRow).select('driver_code').single();
+    let inserted = await sb.from('drivers').insert(fullRow).select('driver_code').single();
+    let usedFallback = false;
+    if (inserted.error) {
+      usedFallback = true;
+      inserted = await sb.from('drivers').insert(carRow).select('driver_code').single();
+    }
     if (inserted.error) {
       inserted = await sb.from('drivers').insert(plainRow).select('driver_code').single();
     }
@@ -183,6 +233,7 @@ export async function POST(req: Request) {
       driverId: userId,
       driverCode: inserted.data ? inserted.data.driver_code : null,
       photoSaved: photoPath !== null,
+      docsSaved: !usedFallback && licensePath !== null && insurancePath !== null,
       consentSaved: consentSaved,
     });
   } catch (err) {
