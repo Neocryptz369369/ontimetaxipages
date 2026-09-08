@@ -113,6 +113,16 @@ export default function AdminDriversPage() {
     load();
   }
 
+  async function setCompliance(id: string, field: 'background_check_complete' | 'driving_record_complete', value: boolean) {
+    setBusy(id);
+    const patch: any = {};
+    patch[field] = value;
+    const res = await supabase.from('drivers').update(patch).eq('id', id);
+    if (res.error) setMsg('That did not save: ' + res.error.message + ' (run the driver documents SQL if this column is missing)');
+    setBusy('');
+    load();
+  }
+
   async function setCalled(id: string, value: boolean) {
     setBusy(id);
     const res = await supabase.from('drivers').update({ called_in: value }).eq('id', id);
@@ -285,6 +295,35 @@ export default function AdminDriversPage() {
                 <button type="button" disabled={busy === d.id} onClick={() => saveCar(d.id, carNow)} style={{ ...btn, background: '#128a3d', color: '#fff' }}>
                   Save this car
                 </button>
+              </div>
+              <div style={{ marginTop: '12px', padding: '12px', border: '1px solid rgba(255,77,77,0.28)', borderRadius: '12px' }}>
+                <div style={{ fontWeight: 900, fontSize: '14px', marginBottom: '10px' }}>
+                  Approval checks ({[!!d.license_url, !!d.insurance_url, !!d.background_check_complete, !!d.driving_record_complete].filter(Boolean).length}/4)
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  {d.license_url ? (
+                    <a href={photoLink(d.license_url)} target="_blank" rel="noreferrer" style={{ ...btn, textDecoration: 'none', display: 'inline-block', background: '#128a3d', color: '#fff', margin: 0 }}>
+                      View license
+                    </a>
+                  ) : (
+                    <span style={{ ...btn, background: '#2a2a2e', color: '#c9a9a9', margin: 0, cursor: 'default' }}>No license on file</span>
+                  )}
+                  {d.insurance_url ? (
+                    <a href={photoLink(d.insurance_url)} target="_blank" rel="noreferrer" style={{ ...btn, textDecoration: 'none', display: 'inline-block', background: '#128a3d', color: '#fff', margin: 0 }}>
+                      View insurance
+                    </a>
+                  ) : (
+                    <span style={{ ...btn, background: '#2a2a2e', color: '#c9a9a9', margin: 0, cursor: 'default' }}>No insurance on file</span>
+                  )}
+                </div>
+                <label style={{ display: 'block', color: '#d9b3b3', fontSize: '14px', marginBottom: '6px' }}>
+                  <input type="checkbox" checked={!!d.background_check_complete} onChange={(e) => setCompliance(d.id, 'background_check_complete', e.target.checked)} style={{ marginRight: '8px' }} />
+                  Background check complete
+                </label>
+                <label style={{ display: 'block', color: '#d9b3b3', fontSize: '14px' }}>
+                  <input type="checkbox" checked={!!d.driving_record_complete} onChange={(e) => setCompliance(d.id, 'driving_record_complete', e.target.checked)} style={{ marginRight: '8px' }} />
+                  Driving record check complete
+                </label>
               </div>
               {d.suspended_reason && <p style={{ color: '#ff9d9d', fontSize: '14px', marginTop: '8px' }}>{d.suspended_reason}</p>}
               <label style={{ display: 'block', marginTop: '10px', color: '#d9b3b3', fontSize: '14px' }}>
