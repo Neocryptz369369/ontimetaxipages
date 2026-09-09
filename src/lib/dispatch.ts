@@ -116,8 +116,16 @@ export function nearestFreeMiles(ride: any, list: FreeDriver[]): number {
   return best;
 }
 
+// For a scheduled ride, pace the turn order off the pickup time instead of when it was booked -
+// otherwise a ride booked two days ago would open up to every driver at once with no order at all.
+export function turnAnchor(ride: any): number {
+  const sched = ride && ride.scheduled_at ? new Date(ride.scheduled_at).getTime() : 0;
+  if (sched > 0) return sched;
+  return ride && ride.created_at ? new Date(ride.created_at).getTime() : 0;
+}
+
 export function allowedCount(ride: any): number {
-  const made = ride && ride.created_at ? new Date(ride.created_at).getTime() : 0;
+  const made = turnAnchor(ride);
   if (!made) return 99999;
   const secs = Math.max(0, Math.floor((Date.now() - made) / 1000));
   return 1 + Math.floor(secs / OFFER_SECONDS);
@@ -138,7 +146,7 @@ export function turnInfo(ride: any, list: FreeDriver[], driverId: string) {
   const mine = rank < allowed;
   let waitSecs = 0;
   if (!mine) {
-    const made = ride && ride.created_at ? new Date(ride.created_at).getTime() : Date.now();
+    const made = turnAnchor(ride) || Date.now();
     waitSecs = Math.max(1, Math.round((made + rank * OFFER_SECONDS * 1000 - Date.now()) / 1000));
   }
   return { rank: rank, allowed: allowed, mine: mine, waitSecs: waitSecs, queue: order.length, blocked: false };
