@@ -119,6 +119,20 @@ function prettyPhone(v: any) {
   return ten
 }
 
+const SCHEDULE_MIN_LEAD_MINUTES = 30
+const SCHEDULE_MAX_DAYS_AHEAD = 30
+
+function combineSchedule(dateStr: string, timeStr: string): Date | null {
+  if (!dateStr || !timeStr) return null
+  const dt = new Date(dateStr + 'T' + timeStr + ':00')
+  if (isNaN(dt.getTime())) return null
+  return dt
+}
+
+function fmtSchedule(d: Date): string {
+  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}
+
 export default function RidePage() {
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
@@ -141,6 +155,9 @@ export default function RidePage() {
   const [rateBusy, setRateBusy] = useState(false)
   const [rateError, setRateError] = useState('')
   const [driverStars, setDriverStars] = useState<any>(null)
+  const [scheduleLater, setScheduleLater] = useState(false)
+  const [schedDate, setSchedDate] = useState('')
+  const [schedTime, setSchedTime] = useState('')
 
   useEffect(() => {
     let alive = true
@@ -582,6 +599,24 @@ export default function RidePage() {
       return
     }
 
+    let scheduledIso: string | null = null
+    if (scheduleLater) {
+      const sd = combineSchedule(schedDate, schedTime)
+      if (!sd) {
+        setPayError('Please pick a date and time for your ride.')
+        return
+      }
+      if (sd.getTime() < Date.now() + SCHEDULE_MIN_LEAD_MINUTES * 60000) {
+        setPayError('Please pick a pickup time at least ' + SCHEDULE_MIN_LEAD_MINUTES + ' minutes from now.')
+        return
+      }
+      if (sd.getTime() > Date.now() + SCHEDULE_MAX_DAYS_AHEAD * 24 * 60 * 60000) {
+        setPayError('Please pick a pickup time within the next ' + SCHEDULE_MAX_DAYS_AHEAD + ' days.')
+        return
+      }
+      scheduledIso = sd.toISOString()
+    }
+
     try { window.localStorage.removeItem('ott_pay_backed_out') } catch (e) {}
     setPayError('')
     setPaying(true)
@@ -603,6 +638,7 @@ export default function RidePage() {
             dropoff,
             fare: rideFare,
             status: 'requested',
+            scheduled_at: scheduledIso,
             pickup_lat: pickupCoord ? pickupCoord[1] : null,
             pickup_lng: pickupCoord ? pickupCoord[0] : null,
             dropoff_lat: dropoffCoord ? dropoffCoord[1] : null,
@@ -697,6 +733,15 @@ export default function RidePage() {
   const tripFare = activeRide && activeRide.fare != null ? Number(activeRide.fare) : total
   const tripMiles = activeRide && activeRide.fare != null ? Math.max(0, (Number(activeRide.fare) - baseFare) / (perMile || 1)) : miles
   const tripStatus = activeRide && activeRide.status === 'picked_up' ? 'On the trip' : 'On the way'
+
+  const scheduleMinDate = new Date(Date.now() + SCHEDULE_MIN_LEAD_MINUTES * 60000)
+  const scheduleMaxDate = new Date(Date.now() + SCHEDULE_MAX_DAYS_AHEAD * 24 * 60 * 60000)
+  const todaySchedStr = new Date().toISOString().slice(0, 10)
+  const maxSchedStr = scheduleMaxDate.toISOString().slice(0, 10)
+  const scheduledDateObj = scheduleLater ? combineSchedule(schedDate, schedTime) : null
+  const scheduleValid = !scheduleLater || (scheduledDateObj !== null && scheduledDateObj.getTime() >= scheduleMinDate.getTime() && scheduledDateObj.getTime() <= scheduleMaxDate.getTime())
+  const activeSchedMs = activeRide && activeRide.scheduled_at ? new Date(activeRide.scheduled_at).getTime() : 0
+  const isFutureSchedule = activeSchedMs > 0 && activeSchedMs > nowTs
 
   // Live tracking: find the rider's active ride, stream their GPS, and receive the driver's GPS
   useEffect(() => {
@@ -973,8 +1018,13 @@ export default function RidePage() {
             {activeRide && (activeRide.status === 'requested' || activeRide.status === 'accepted' || activeRide.status === 'picked_up') && (
             <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(216,27,27,0.12)', border: '1px solid rgba(216,27,27,0.35)' }}>
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
-                    {activeRide.status === 'picked_up' ? 'You are on your way' : (activeRide.status === 'requested' ? 'Ride requested' : 'Your driver is on the way')}
+                    {activeRide.status === 'picked_up' ? 'You are on your way' : (activeRide.status === 'requested' ? (isFutureSchedule ? 'Ride scheduled' : 'Ride requested') : 'Your driver is on the way')}
               </div>
+              {isFutureSchedule && (
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#93c5fd', marginBottom: '6px' }}>
+                  Pickup around {fmtSchedule(new Date(activeRide.scheduled_at))}
+                </div>
+              )}
               {driverCard && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0 10px' }}>
                   {driverCard.photo ? (
@@ -1028,7 +1078,11 @@ export default function RidePage() {
                 </div>
               )}
               <div style={{ fontSize: '13px', opacity: 0.85 }}>
-                    {driverPos ? 'Live location updating on the map above.' : (activeRide.status === 'requested' ? 'Waiting for a driver to accept your ride.' : 'Waiting for your driver location...')}
+                    {driverPos
+                      ? 'Live location updating on the map above.'
+                      : (activeRide.status === 'requested'
+                          ? (isFutureSchedule ? 'We will start matching you with a driver about 15 minutes before your pickup time.' : 'Waiting for a driver to accept your ride.')
+                          : 'Waiting for your driver location...')}
               </div>
               {geoError && (
                 <div style={{ fontSize: '13px', color: '#ffb4b4', marginTop: '6px' }}>{geoError}</div>
@@ -1200,6 +1254,40 @@ export default function RidePage() {
                 </div>
               ))}
 
+              <div className="rp-tipbox">
+                <div className="rp-tiplabel">When do you need a ride?</div>
+                <div className="rp-tiprow">
+                  <button type="button" className={'rp-tipbtn' + (!scheduleLater ? ' rp-tipon' : '')} onClick={() => setScheduleLater(false)}>As soon as possible</button>
+                  <button type="button" className={'rp-tipbtn' + (scheduleLater ? ' rp-tipon' : '')} onClick={() => setScheduleLater(true)}>Schedule for later</button>
+                </div>
+                {scheduleLater && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                    <input
+                      type="date"
+                      className="rp-input rp-tipinput"
+                      style={{ flex: '1 1 150px', marginTop: 0 }}
+                      value={schedDate}
+                      min={todaySchedStr}
+                      max={maxSchedStr}
+                      onChange={(e) => setSchedDate(e.target.value)}
+                    />
+                    <input
+                      type="time"
+                      className="rp-input rp-tipinput"
+                      style={{ flex: '1 1 120px', marginTop: 0 }}
+                      value={schedTime}
+                      onChange={(e) => setSchedTime(e.target.value)}
+                    />
+                  </div>
+                )}
+                {scheduleLater && (
+                  <div className="rp-muted" style={{ marginTop: 6, fontSize: 12 }}>
+                    {scheduleValid && scheduledDateObj
+                      ? 'Picked up around ' + fmtSchedule(scheduledDateObj) + '. We start matching you with a driver about 15 minutes before that time.'
+                      : 'Pick a date and time at least 30 minutes from now, within the next 30 days.'}
+                  </div>
+                )}
+              </div>
               <div className="rp-farebox">
                 <div className="rp-farebig">${total.toFixed(2)}</div>
                 <div className="rp-rate">${baseFare.toFixed(2)} base + ${perMile.toFixed(2)} per mile{miles > 0 ? ' \u00b7 ' + miles.toFixed(1) + ' mi' : ''}{tip > 0 ? ' \u00b7 fare $' + fare.toFixed(2) + ' + tip $' + tip.toFixed(2) : ''}</div>
@@ -1216,7 +1304,9 @@ export default function RidePage() {
                   <input className="rp-input rp-tipinput" type="number" min="0" step="1" placeholder="Tip amount ($)" value={customTip} onChange={(e) => setCustomTip(e.target.value)} />
                 )}
               </div>
-              <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord || paying || stops.some((s: Stop) => s.address.trim().length > 0 && (s.lat == null || s.lng == null))} onClick={startCheckout}>{paying ? 'Processing...' : 'Request On Time Taxi'}</button>
+              <button className="rp-btn" disabled={!pickupCoord || !dropoffCoord || paying || (scheduleLater && !scheduleValid) || stops.some((s: Stop) => s.address.trim().length > 0 && (s.lat == null || s.lng == null))} onClick={startCheckout}>
+                {paying ? 'Processing...' : (scheduleLater ? (scheduledDateObj && scheduleValid ? 'Schedule for ' + fmtSchedule(scheduledDateObj) : 'Pick a date and time') : 'Request On Time Taxi')}
+              </button>
               {payError && <div className="rp-payerr">{payError}</div>}
             </>
           )}
@@ -1224,11 +1314,15 @@ export default function RidePage() {
           {stage === STAGE.SEARCHING && (
             <div className="rp-row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
               <div className="rp-row">
-                <span className="rp-spin" />
-                <span>Finding your driver...</span>
+                {isFutureSchedule ? <span style={{ fontSize: 20 }}>📅</span> : <span className="rp-spin" />}
+                <span>{isFutureSchedule ? 'Scheduled for ' + fmtSchedule(new Date(activeRide.scheduled_at)) : 'Finding your driver...'}</span>
               </div>
                   <div className="rp-muted">${tripFare.toFixed(2)} · {tripMiles.toFixed(1)} mi</div>
-                {!ridePaid && (
+                {isFutureSchedule ? (
+                  <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#93c5fd', fontSize: 13, lineHeight: 1.45 }}>
+                    We will start matching you with a driver about 15 minutes before your pickup time. You do not need to keep this page open.
+                  </div>
+                ) : !ridePaid && (
                   <div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: 'rgba(245,179,1,0.12)', border: '1px solid rgba(245,179,1,0.35)', color: '#f5b301', fontSize: 13, lineHeight: 1.45 }}>
                     {trackUnlocked
                       ? "Live tracking is on. Your driver's location will show on the map above as soon as the driver is on the way."
