@@ -23,6 +23,8 @@ function colours(kind: string) {
   return { edge: '#38bdf8', head: 'WEATHER ALERT' };
 }
 
+const VOICE_TAG = 'otx_safety_voice';
+
 export default function SafetyAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [showing, setShowing] = useState<Alert | null>(null);
@@ -30,6 +32,7 @@ export default function SafetyAlerts() {
   const [listening, setListening] = useState(false);
   const [note, setNote] = useState('Looking for alerts where you are...');
   const [needTap, setNeedTap] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
 
   const spotRef = useRef<any>(null);
   const spokenRef = useRef<any>({});
@@ -38,10 +41,45 @@ export default function SafetyAlerts() {
   const watchRef = useRef<any>(null);
   const readyRef = useRef(false);
   const pendingRef = useRef<any>(null);
+  const voiceOnRef = useRef(true);
 
   useEffect(function () {
     showingRef.current = showing;
   }, [showing]);
+
+  useEffect(function () {
+    voiceOnRef.current = voiceOn;
+  }, [voiceOn]);
+
+  // Load the saved voice on/off setting once when this loads.
+  useEffect(function () {
+    try {
+      const saved = window.localStorage.getItem(VOICE_TAG);
+      if (saved === 'off') {
+        setVoiceOn(false);
+        voiceOnRef.current = false;
+      }
+    } catch (e) {}
+  }, []);
+
+  function toggleVoice() {
+    setVoiceOn(function (prev) {
+      const next = !prev;
+      voiceOnRef.current = next;
+      try {
+        window.localStorage.setItem(VOICE_TAG, next ? 'on' : 'off');
+      } catch (e) {}
+      if (!next) {
+        pendingRef.current = null;
+        setNeedTap(false);
+        try {
+          const w: any = window;
+          if (w.speechSynthesis) w.speechSynthesis.cancel();
+        } catch (e) {}
+      }
+      return next;
+    });
+  }
 
   // Phones will not make a sound until the person touches the screen once.
   // The first touch wakes the voice up and anything waiting gets read out loud.
@@ -161,12 +199,14 @@ export default function SafetyAlerts() {
         if (next && !showingRef.current) {
           spokenRef.current[String(next.id)] = true;
           setShowing(next);
-          const words = String(next.say || next.headline);
-          if (readyRef.current) {
-            sayIt(words);
-          } else {
-            pendingRef.current = words;
-            setNeedTap(true);
+          if (voiceOnRef.current) {
+            const words = String(next.say || next.headline);
+            if (readyRef.current) {
+              sayIt(words);
+            } else {
+              pendingRef.current = words;
+              setNeedTap(true);
+            }
           }
           startListening();
         }
@@ -316,6 +356,31 @@ export default function SafetyAlerts() {
             <span style={{ color: '#2563eb', fontWeight: 800, fontSize: 14 }}>{openList ? 'Hide' : 'Open'}</span>
           </span>
         </button>
+
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            type='button'
+            onClick={toggleVoice}
+            aria-pressed={voiceOn}
+            style={{
+              border: voiceOn ? '1px solid rgba(37,99,235,0.35)' : '1px solid #cbd5e1',
+              background: voiceOn ? 'rgba(37,99,235,0.08)' : '#f1f5f9',
+              color: voiceOn ? '#2563eb' : '#64748b',
+              borderRadius: 999,
+              padding: '6px 12px',
+              fontWeight: 800,
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            {voiceOn ? '🔊 Voice read: On' : '🔇 Voice read: Off'}
+          </button>
+        </div>
+        <div style={{ marginTop: 4, color: '#94a3b8', fontSize: 11.5 }}>
+          {voiceOn
+            ? 'New alerts will be read out loud automatically.'
+            : 'New alerts will show on screen but stay silent. You can still press Read it to me on any alert.'}
+        </div>
 
         {openList ? (
           <div style={{ marginTop: 12 }}>
