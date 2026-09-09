@@ -10,6 +10,7 @@ import SpeedWatch from "../../components/SpeedWatch";
 import DriverMessages from "../../components/DriverMessages";
 import DriverMap from "../../components/DriverMap";
 import NewOrderAlarm from "../../components/NewOrderAlarm";
+import NewRiderAlarm from "../../components/NewRiderAlarm";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -1164,6 +1165,21 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div
+          style={{
+            marginTop: "32px",
+            padding: "24px",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.03)",
+          }}
+        >
+          <div style={{ fontSize: "13px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 800, color: "#93c5fd", marginBottom: "12px" }}>
+            New rider alerts
+          </div>
+          <NewRiderAlarm />
         </div>
 
         <div
