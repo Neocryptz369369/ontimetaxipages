@@ -71,15 +71,21 @@ export async function POST(req: Request) {
       await runHandoffChecks(sb);
     } catch (e) {}
 
+    // A scheduled ride only opens up to drivers this many minutes before its pickup time -
+    // otherwise a ride booked days in advance would show up as "waiting right now" immediately.
+    const SCHEDULE_VISIBLE_MINUTES = 15;
+    const visibleBy = new Date(Date.now() + SCHEDULE_VISIBLE_MINUTES * 60 * 1000).toISOString();
+
     const OPEN_WIDE =
-      'id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name, no_pay_driver_ids, removed_driver_id, removed_driver_name, removed_reason, removed_at, handoff_needed';
+      'id, pickup, dropoff, stops, fare, tip, paid, status, created_at, scheduled_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name, no_pay_driver_ids, removed_driver_id, removed_driver_name, removed_reason, removed_at, handoff_needed';
     const OPEN_PLAIN =
-      'id, pickup, dropoff, stops, fare, tip, paid, status, created_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name';
+      'id, pickup, dropoff, stops, fare, tip, paid, status, created_at, scheduled_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name';
 
     let open: any = await sb
       .from('rides')
       .select(OPEN_WIDE)
       .eq('status', 'requested')
+      .or('scheduled_at.is.null,scheduled_at.lte.' + visibleBy)
       .order('created_at', { ascending: true })
       .limit(25);
 
@@ -88,13 +94,14 @@ export async function POST(req: Request) {
         .from('rides')
         .select(OPEN_PLAIN)
         .eq('status', 'requested')
+        .or('scheduled_at.is.null,scheduled_at.lte.' + visibleBy)
         .order('created_at', { ascending: true })
         .limit(25);
     }
 
     const mine = await sb
       .from('rides')
-      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, accepted_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name')
+      .select('id, pickup, dropoff, stops, fare, tip, paid, status, created_at, scheduled_at, accepted_at, rider_lat, rider_lng, pickup_lat, pickup_lng, rider_id, rider_name')
       .eq('driver_id', user.id)
       .in('status', ['accepted', 'picked_up'])
       .order('created_at', { ascending: false })
