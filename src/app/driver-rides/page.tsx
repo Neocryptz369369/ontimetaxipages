@@ -26,6 +26,7 @@ type Ride = {
   paid: boolean | null;
   status: string;
   created_at: string;
+  scheduled_at?: string | null;
   accepted_at?: string | null;
   rider_name?: string | null;
   rider_photo?: string | null;
@@ -139,6 +140,16 @@ function waited(iso: string) {
   const h = Math.floor(mins / 60);
   if (h === 1) return '1 hour ago';
   return h + ' hours ago';
+}
+
+function fmtWhen(iso: string) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch (e) {
+    return '';
+  }
 }
 
 function stopCount(stops: any) {
@@ -617,6 +628,9 @@ export default function DriverRidesPage() {
                 </div>
                 <div style={rowLine}>Pick up: {r.pickup || 'Not given'}</div>
                 <div style={rowLine}>Drop off: {r.dropoff || 'Not given'}</div>
+                {r.scheduled_at ? (
+                  <div style={{ ...small, color: '#7c2d12', fontWeight: 800 }}>Scheduled pickup: {fmtWhen(r.scheduled_at)}</div>
+                ) : null}
                 <div style={small}>{money(r.fare)} fare. Status: {r.status}.</div>
                 <a
                   href={'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(String(r.pickup || ''))}
@@ -666,6 +680,9 @@ export default function DriverRidesPage() {
             </div>
             <div style={rowLine}>Pick up: {r.pickup || 'Not given'}</div>
             <div style={rowLine}>Drop off: {r.dropoff || 'Not given'}</div>
+            {r.scheduled_at ? (
+              <div style={{ ...small, color: '#7c2d12', fontWeight: 800, fontSize: 14 }}>Scheduled pickup: {fmtWhen(r.scheduled_at)}</div>
+            ) : null}
             {r.riderRatings && r.riderRatings > 0 ? (
               <div style={{ ...small, color: '#b45309', fontWeight: 800, fontSize: 15 }}>
                 {starRow(r.riderStars || 0)} {r.riderStars} stars from {r.riderRatings} drivers
@@ -675,7 +692,7 @@ export default function DriverRidesPage() {
             )}
             {stopCount(r.stops) > 0 ? <div style={small}>Extra stops on the way: {stopCount(r.stops)}</div> : null}
             <div style={{ marginTop: 10, fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{money(r.fare)}</div>
-            <div style={small}>Called in {waited(String(r.created_at))}</div>
+            {!r.scheduled_at ? <div style={small}>Called in {waited(String(r.created_at))}</div> : null}
             {r.paid ? (
               <div style={{ ...small, color: '#166534', fontWeight: 700 }}>Paid by card already.</div>
             ) : (
