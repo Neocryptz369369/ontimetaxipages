@@ -157,6 +157,16 @@ function prettyPhone(v: any) {
   return ten;
 }
 
+function fmtScheduled(iso: any) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + " at " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  } catch (e) {
+    return '';
+  }
+}
+
 export default function AdminPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -1124,6 +1134,11 @@ export default function AdminPage() {
                     <div style={{ color: "#fff", fontSize: "13px", marginTop: "6px" }}>
                       Fare: ${Number(r.fare || 0).toFixed(2)}{Number(r.tip || 0) > 0 ? " + $" + Number(r.tip).toFixed(2) + " tip" : ""}
                     </div>
+                    {r.scheduled_at ? (
+                      <div style={{ color: "#93c5fd", fontSize: "13px", fontWeight: 700, marginTop: "2px" }}>
+                        Scheduled pickup: {fmtScheduled(r.scheduled_at)}
+                      </div>
+                    ) : null}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
                       <select
                         value={(driverInputs[r.id] && driverInputs[r.id].driverId) || ""}
