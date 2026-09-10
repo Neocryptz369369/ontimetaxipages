@@ -73,7 +73,7 @@ export default function DriverOnboardingPage() {
               Back to homepage
             </Link>
             <Link
-              href="/driver-login"
+              href="/driver-login?tab=signup"
               style={{
                 display: "inline-flex", alignItems: "center", borderRadius: 999,
                 background: "#facc15", padding: "12px 20px", fontSize: 14, fontWeight: 800,
