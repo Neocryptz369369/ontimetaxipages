@@ -6,6 +6,8 @@ import { supabase } from '../../../lib/supabase';
 
 const ADMIN_EMAIL = 'neocryptz@yahoo.com';
 
+const AGREEMENT_LABEL: any = { recording: 'Recording agreement', fee: 'Get in fee and 20 percent agreement' };
+
 const wrap: any = { minHeight: '100vh', background: '#04070f', color: '#eaf1f6', padding: '24px 16px 60px', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif' };
 const shell: any = { maxWidth: '1000px', margin: '0 auto' };
 const card: any = { background: 'linear-gradient(160deg, #0a1424 0%, #04070f 100%)', border: '1px solid rgba(59,130,246,0.28)', borderRadius: '16px', padding: '18px', marginBottom: '14px' };
@@ -27,10 +29,15 @@ function whenText(v: string) {
   }
 }
 
+function agreementLabel(kind: string) {
+  return AGREEMENT_LABEL[kind] || (kind ? kind.charAt(0).toUpperCase() + kind.slice(1) + ' agreement' : 'Agreement');
+}
+
 export default function AdminRidersPage() {
   const [checked, setChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [riders, setRiders] = useState<any[]>([]);
+  const [consents, setConsents] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
   const [search, setSearch] = useState('');
 
@@ -39,17 +46,31 @@ export default function AdminRidersPage() {
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session ? session.data.session.access_token : '';
-      const res = await fetch('/api/rider-signups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMsg(String(data.error || 'Could not load riders.'));
+
+      const [ridersRes, consentsRes] = await Promise.all([
+        fetch('/api/rider-signups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token }),
+        }),
+        fetch('/api/consents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token }),
+        }),
+      ]);
+
+      const ridersData = await ridersRes.json();
+      if (!ridersRes.ok) {
+        setMsg(String(ridersData.error || 'Could not load riders.'));
         return;
       }
-      setRiders(data.riders ? data.riders : []);
+      setRiders(ridersData.riders ? ridersData.riders : []);
+
+      const consentsData = await consentsRes.json();
+      if (consentsRes.ok) {
+        setConsents(consentsData.consents ? consentsData.consents : []);
+      }
     } catch (err) {
       setMsg('Could not load riders.');
     }
@@ -81,6 +102,28 @@ export default function AdminRidersPage() {
         </div>
       </div>
     );
+  }
+
+  // The real proof that someone signed is the row they signed in recording_consents
+  // (it carries their drawn signature). Match it to this rider by user id first,
+  // then by email, and keep only the most recent signature per agreement kind.
+  function agreementsFor(r: any): any[] {
+    const rid = String(r.id || '');
+    const remail = String(r.email || '').toLowerCase();
+    const mine = consents.filter((c) => {
+      if (c.personType === 'driver') return false;
+      if (rid && c.userId && String(c.userId) === rid) return true;
+      if (remail && String(c.email || '').toLowerCase() === remail) return true;
+      return false;
+    });
+    const latest: any = {};
+    mine.forEach((c) => {
+      const kind = c.agreementType || 'recording';
+      if (!latest[kind] || new Date(c.signedAt) > new Date(latest[kind].signedAt)) {
+        latest[kind] = c;
+      }
+    });
+    return Object.keys(latest).map((k) => latest[k]);
   }
 
   const words = search.trim().toLowerCase();
@@ -119,6 +162,7 @@ export default function AdminRidersPage() {
 
         {shown.map((r) => {
           const src = photoLink(r.photo_url || '');
+          const signed = agreementsFor(r);
           return (
             <div key={r.id} style={card}>
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -133,11 +177,20 @@ export default function AdminRidersPage() {
                   <div style={{ color: '#6c869e', fontSize: '13px', marginTop: '4px' }}>
                     Signed up {whenText(r.created_at) || 'date not on file'}
                   </div>
-                  <div style={{ fontSize: '13px', marginTop: '6px', fontWeight: 700, color: r.recording_consent_at ? '#86efac' : '#c9a9a9' }}>
-                    {r.recording_consent_at
-                      ? 'Recording agreement signed ' + whenText(r.recording_consent_at)
-                      : 'Recording agreement date not on file'}
+                  <div style={{ marginTop: '8px' }}>
+                    {signed.length === 0 ? (
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#c9a9a9' }}>No signed agreement on file</div>
+                    ) : (
+                      signed.map((c) => (
+                        <div key={c.agreementType} style={{ fontSize: '13px', marginTop: '3px', fontWeight: 700, color: '#86efac' }}>
+                          {agreementLabel(c.agreementType)} signed {whenText(c.signedAt)}
+                        </div>
+                      ))
+                    )}
                   </div>
+                  <Link href="/admin/signatures" style={{ display: 'inline-block', marginTop: '6px', color: '#5eb3ff', fontSize: '13px', fontWeight: 800, textDecoration: 'none' }}>
+                    Look at their signature
+                  </Link>
                 </div>
               </div>
             </div>
