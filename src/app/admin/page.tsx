@@ -11,6 +11,7 @@ import DriverMessages from "../../components/DriverMessages";
 import DriverMap from "../../components/DriverMap";
 import NewOrderAlarm from "../../components/NewOrderAlarm";
 import NewRiderAlarm from "../../components/NewRiderAlarm";
+import SafetyAlerts from "../../components/SafetyAlerts";
 
 const ADMIN_EMAIL = "neocryptz@yahoo.com";
 
@@ -1067,6 +1068,9 @@ export default function AdminPage() {
 
         <div style={{ marginBottom: "32px" }}>
           <DriverMap />
+        </div>
+        <div style={{ marginBottom: "32px" }}>
+          <SafetyAlerts />
         </div>
         <div
           style={{
