@@ -129,7 +129,7 @@ function combineSchedule(dateStr: string, timeStr: string): Date | null {
   return dt
 }
 
-function fmtSchedule(d: Date): string {
+function localDateStr(d: Date): string { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return y + '-' + m + '-' + day } function fmtSchedule(d: Date): string {
   return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 }
 
@@ -736,8 +736,8 @@ export default function RidePage() {
 
   const scheduleMinDate = new Date(Date.now() + SCHEDULE_MIN_LEAD_MINUTES * 60000)
   const scheduleMaxDate = new Date(Date.now() + SCHEDULE_MAX_DAYS_AHEAD * 24 * 60 * 60000)
-  const todaySchedStr = new Date().toISOString().slice(0, 10)
-  const maxSchedStr = scheduleMaxDate.toISOString().slice(0, 10)
+  const todaySchedStr = localDateStr(new Date())
+  const maxSchedStr = localDateStr(scheduleMaxDate)
   const scheduledDateObj = scheduleLater ? combineSchedule(schedDate, schedTime) : null
   const scheduleValid = !scheduleLater || (scheduledDateObj !== null && scheduledDateObj.getTime() >= scheduleMinDate.getTime() && scheduledDateObj.getTime() <= scheduleMaxDate.getTime())
   const activeSchedMs = activeRide && activeRide.scheduled_at ? new Date(activeRide.scheduled_at).getTime() : 0
