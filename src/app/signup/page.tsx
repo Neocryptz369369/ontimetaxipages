@@ -136,7 +136,11 @@ export default function SignUpPage() {
           ) : (
             <form onSubmit={onSubmit}>
               <h1 style={{ color: '#0f172a', fontSize: 24, margin: '0 0 6px' }}>Create your account</h1>
-              <p style={{ color: '#475569', margin: '0 0 22px', fontSize: 14 }}>Sign up before you book. Your driver will see your name, phone, and photo at pickup.</p>
+              <p style={{ color: '#475569', margin: '0 0 14px', fontSize: 14 }}>Sign up before you book. Your driver will see your name, phone, and photo at pickup.</p>
+
+              <p style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: 10, padding: '10px 12px', fontSize: 13, margin: '0 0 22px', lineHeight: 1.5 }}>
+                Trying to sign up to drive for us instead? <Link href="/driver-login?tab=signup" style={{ color: '#1e40af', fontWeight: 700, textDecoration: 'underline' }}>Apply to become a driver here.</Link>
+              </p>
 
               <label style={labelStyle}>Full name</label>
               <input style={inputStyle} value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Jane Doe" autoComplete="name" />
