@@ -231,21 +231,49 @@ export default function AdminDriversPage() {
                 <div style={{ fontWeight: 900, fontSize: '14px', marginBottom: '10px' }}>
                   Approval checks ({[!!d.license_url, !!d.insurance_url, !!d.background_check_complete, !!d.driving_record_complete].filter(Boolean).length}/4)
                 </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                  {d.license_url ? (
-                    <a href={photoLink(d.license_url)} target="_blank" rel="noreferrer" style={{ ...btn, textDecoration: 'none', display: 'inline-block', background: '#128a3d', color: '#fff', margin: 0 }}>
-                      View license
-                    </a>
-                  ) : (
-                    <span style={{ ...btn, background: '#2a2a2e', color: '#c9a9a9', margin: 0, cursor: 'default' }}>No license on file</span>
-                  )}
-                  {d.insurance_url ? (
-                    <a href={photoLink(d.insurance_url)} target="_blank" rel="noreferrer" style={{ ...btn, textDecoration: 'none', display: 'inline-block', background: '#128a3d', color: '#fff', margin: 0 }}>
-                      View insurance
-                    </a>
-                  ) : (
-                    <span style={{ ...btn, background: '#2a2a2e', color: '#c9a9a9', margin: 0, cursor: 'default' }}>No insurance on file</span>
-                  )}
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  <div>
+                    <div style={{ color: '#d9b3b3', fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', marginBottom: '6px' }}>LICENSE PHOTO</div>
+                    {d.license_url ? (
+                      <a href={photoLink(d.license_url)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                        <img
+                          src={photoLink(d.license_url)}
+                          alt="Driver license"
+                          style={{ width: '160px', height: '110px', objectFit: 'cover', borderRadius: '10px', border: '2px solid #128a3d', display: 'block' }}
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement;
+                            img.style.display = 'none';
+                            const sib = img.nextElementSibling as HTMLElement | null;
+                            if (sib) sib.style.display = 'inline-block';
+                          }}
+                        />
+                        <span style={{ ...btn, display: 'none', background: '#128a3d', color: '#fff', margin: 0 }}>Open license file</span>
+                      </a>
+                    ) : (
+                      <span style={{ ...btn, background: '#2a2a2e', color: '#c9a9a9', margin: 0, cursor: 'default' }}>No license on file</span>
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ color: '#d9b3b3', fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px', marginBottom: '6px' }}>INSURANCE PHOTO</div>
+                    {d.insurance_url ? (
+                      <a href={photoLink(d.insurance_url)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                        <img
+                          src={photoLink(d.insurance_url)}
+                          alt="Insurance card"
+                          style={{ width: '160px', height: '110px', objectFit: 'cover', borderRadius: '10px', border: '2px solid #128a3d', display: 'block' }}
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement;
+                            img.style.display = 'none';
+                            const sib = img.nextElementSibling as HTMLElement | null;
+                            if (sib) sib.style.display = 'inline-block';
+                          }}
+                        />
+                        <span style={{ ...btn, display: 'none', background: '#128a3d', color: '#fff', margin: 0 }}>Open insurance file</span>
+                      </a>
+                    ) : (
+                      <span style={{ ...btn, background: '#2a2a2e', color: '#c9a9a9', margin: 0, cursor: 'default' }}>No insurance on file</span>
+                    )}
+                  </div>
                 </div>
                 <label style={{ display: 'block', color: '#d9b3b3', fontSize: '14px', marginBottom: '6px' }}>
                   <input type="checkbox" checked={!!d.background_check_complete} onChange={(e) => setCompliance(d.id, 'background_check_complete', e.target.checked)} style={{ marginRight: '8px' }} />
