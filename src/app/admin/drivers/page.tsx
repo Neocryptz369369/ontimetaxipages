@@ -8,6 +8,12 @@ const ADMIN_EMAIL = 'neocryptz@yahoo.com';
 
 const KIND_TEXT: any = { drugs: 'Drug use', alcohol: 'Alcohol use', both: 'Drugs and alcohol', other: 'Other' };
 
+const AGREEMENT_LABEL: any = { recording: 'Recording agreement', fee: 'Get in fee and 20 percent agreement' };
+
+function agreementLabel(kind: string) {
+  return AGREEMENT_LABEL[kind] || (kind ? kind.charAt(0).toUpperCase() + kind.slice(1) + ' agreement' : 'Agreement');
+}
+
 const wrap: any = { minHeight: '100vh', background: '#0b0303', color: '#f6eaea', padding: '24px 16px 60px', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif' };
 const shell: any = { maxWidth: '1000px', margin: '0 auto' };
 const card: any = { background: 'linear-gradient(160deg, #170606 0%, #0b0303 100%)', border: '1px solid rgba(255,77,77,0.28)', borderRadius: '16px', padding: '18px', marginBottom: '14px' };
@@ -30,6 +36,7 @@ export default function AdminDriversPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [consents, setConsents] = useState<any[]>([]);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState('');
   const [carEdits, setCarEdits] = useState<any>({});
@@ -39,7 +46,40 @@ export default function AdminDriversPage() {
     if (d.error) { setMsg('Could not load drivers: ' + d.error.message); } else { setDrivers(d.data || []); }
     const r = await supabase.from('driver_reports').select('*').order('created_at', { ascending: false });
     if (!r.error) setReports(r.data || []);
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session ? session.data.session.access_token : '';
+      const c = await fetch('/api/consents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token }),
+      });
+      const cData = await c.json();
+      if (c.ok) setConsents(cData.consents ? cData.consents : []);
+    } catch (e) {}
   }, []);
+
+  // The real proof a driver signed is their row in recording_consents (it carries
+  // their drawn signature). Match it by user id first, then by email, and keep only
+  // the most recent signature per agreement kind.
+  function agreementsFor(d: any): any[] {
+    const did = String(d.id || '');
+    const demail = String(d.email || '').toLowerCase();
+    const mine = consents.filter((c) => {
+      if (c.personType !== 'driver') return false;
+      if (did && c.userId && String(c.userId) === did) return true;
+      if (demail && String(c.email || '').toLowerCase() === demail) return true;
+      return false;
+    });
+    const latest: any = {};
+    mine.forEach((c) => {
+      const kind = c.agreementType || 'recording';
+      if (!latest[kind] || new Date(c.signedAt) > new Date(latest[kind].signedAt)) {
+        latest[kind] = c;
+      }
+    });
+    return Object.keys(latest).map((k) => latest[k]);
+  }
 
   useEffect(() => {
     let active = true;
@@ -196,16 +236,30 @@ export default function AdminDriversPage() {
                   <div style={{ fontWeight: 800, fontSize: '17px' }}>{d.full_name || 'No name yet'}</div>
                   <div style={{ color: '#d9b3b3', fontSize: '14px' }}>{d.email} {d.phone ? ' - ' + d.phone : ''}</div>
                   <div style={{ fontFamily: 'ui-monospace, Menlo, Consolas, monospace', letterSpacing: '2px', marginTop: '4px' }}>{d.driver_code}</div>
-                  <div style={{ fontSize: '13px', marginTop: '6px', fontWeight: 700, color: d.recording_consent_at ? '#86efac' : '#c9a9a9' }}>
-                    {d.recording_consent_at
-                      ? 'Recording agreement signed ' + new Date(d.recording_consent_at).toLocaleString()
-                      : 'Recording agreement date not on file'}
-                  </div>
-                  <div style={{ fontSize: '13px', marginTop: '3px', fontWeight: 700, color: d.fee_agreement_at ? '#86efac' : '#c9a9a9' }}>
-                    {d.fee_agreement_at
-                      ? 'Get in fee and 20 percent agreement signed ' + new Date(d.fee_agreement_at).toLocaleString()
-                      : 'Get in fee and 20 percent agreement date not on file'}
-                  </div>
+                  {(() => {
+                    const signed = agreementsFor(d);
+                    const foundKinds = signed.map((c: any) => c.agreementType || 'recording');
+                    const fallbacks: any[] = [];
+                    if (foundKinds.indexOf('recording') === -1 && d.recording_consent_at) {
+                      fallbacks.push({ agreementType: 'recording', signedAt: d.recording_consent_at });
+                    }
+                    if (foundKinds.indexOf('fee') === -1 && d.fee_agreement_at) {
+                      fallbacks.push({ agreementType: 'fee', signedAt: d.fee_agreement_at });
+                    }
+                    const all = signed.concat(fallbacks);
+                    if (all.length === 0) {
+                      return (
+                        <div style={{ fontSize: '13px', marginTop: '6px', fontWeight: 700, color: '#c9a9a9' }}>
+                          No signed agreement on file
+                        </div>
+                      );
+                    }
+                    return all.map((c: any) => (
+                      <div key={c.agreementType} style={{ fontSize: '13px', marginTop: '3px', fontWeight: 700, color: '#86efac' }}>
+                        {agreementLabel(c.agreementType)} signed {new Date(c.signedAt).toLocaleString()}
+                      </div>
+                    ));
+                  })()}
                   <Link href="/admin/signatures" style={{ display: 'inline-block', marginTop: '6px', color: '#ff7b7b', fontSize: '13px', fontWeight: 800, textDecoration: 'none' }}>
                     Look at their signatures
                   </Link>
