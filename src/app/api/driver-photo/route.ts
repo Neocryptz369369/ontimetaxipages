@@ -12,8 +12,19 @@ function adminClient() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const token = String(body.token || '');
     const photo = String(body.photo || '');
-    const email = String(body.email || '').trim().toLowerCase();
+
+    if (!token) {
+      return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 });
+    }
+
+    const sb = adminClient();
+    const got = await sb.auth.getUser(token);
+    if (got.error || !got.data || !got.data.user) {
+      return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 });
+    }
+    const driverId = got.data.user.id;
 
     if (photo.slice(0, 11) !== 'data:image/') {
       return NextResponse.json({ error: 'Please choose a picture file.' }, { status: 400 });
@@ -39,8 +50,6 @@ export async function POST(req: Request) {
     const tail = Math.random().toString(36).slice(2, 8);
     const path = 'uploads/driver-' + stamp + '-' + tail + '.' + ext;
 
-    const sb = adminClient();
-
     const up = await sb.storage.from('profile-photos').upload(path, bytes, { upsert: true, contentType: contentType });
     if (up.error) {
       return NextResponse.json({ error: 'The picture could not be saved. Please try again.' }, { status: 500 });
@@ -49,8 +58,9 @@ export async function POST(req: Request) {
     const pub = sb.storage.from('profile-photos').getPublicUrl(path);
     const publicUrl = pub && pub.data ? pub.data.publicUrl : '';
 
-    if (email) {
-      await sb.from('drivers').update({ photo_url: path }).eq('email', email);
+    const upd = await sb.from('drivers').update({ photo_url: path }).eq('id', driverId);
+    if (upd.error) {
+      return NextResponse.json({ error: 'Your picture was saved but your profile could not be updated. Please try again.' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true, path: path, url: publicUrl });
