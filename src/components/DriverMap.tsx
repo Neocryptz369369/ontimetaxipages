@@ -266,7 +266,7 @@ export default function DriverMap() {
         const startPitch = v && typeof v.pitch === 'number' ? v.pitch : 60;
         const m = new mapboxgl.Map({
           container: boxRef.current,
-          style: 'mapbox://styles/mapbox/standard',
+          style: 'mapbox://styles/mapbox/streets-v12',
           center: v ? [v.lng, v.lat] : [-85.755, 38.3981],
           zoom: v && typeof v.zoom === 'number' ? v.zoom : 11,
           pitch: startPitch,
