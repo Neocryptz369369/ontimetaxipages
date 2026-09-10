@@ -160,6 +160,17 @@ export default function DriverLoginPage() {
     loadMe();
   }, []);
 
+  // A link can jump straight to the New driver tab, e.g. /driver-login?tab=signup
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'signup' || tab === 'apply' || tab === 'new') {
+        setMode('signup');
+      }
+    } catch (e) {}
+  }, []);
+
   async function loadMe() {
     setChecking(true);
     try {
