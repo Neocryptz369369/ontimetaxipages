@@ -86,8 +86,14 @@ function adminDrawRouteLine(m: any, coords: number[][]) {
 
 const sections = [
   {
+    title: "Riders",
+    text: "Every rider sign up: their name, email, phone, photo, and when they signed up. Kept separate from driver information.",
+    href: "/admin/riders",
+    cta: "Open riders",
+  },
+  {
     title: "Drivers and reports",
-    text: "Review license, insurance, background check and driving record for each applicant, then approve, suspend, or turn them down.",
+    text: "Every driver sign up: their name, email, phone, profile photo, license photo, and insurance photo. Review license, insurance, background check and driving record for each applicant, then approve, suspend, or turn them down.",
     href: "/admin/drivers",
     cta: "Open drivers",
   },
