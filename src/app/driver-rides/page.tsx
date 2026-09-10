@@ -284,7 +284,7 @@ export default function DriverRidesPage() {
       const res = await fetch('/api/driver-photo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo: dataUrl, email: myEmail }),
+        body: JSON.stringify({ photo: dataUrl, token: myToken }),
       });
       const j = await res.json();
       if (!res.ok) {
