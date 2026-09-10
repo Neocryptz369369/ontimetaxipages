@@ -17,6 +17,14 @@ function num(v: any) {
   return Number.isFinite(n) ? n : null;
 }
 
+function photoUrl(sb: any, raw: any) {
+  const s = raw ? String(raw) : '';
+  if (!s) return null;
+  if (s.indexOf('http') === 0) return s;
+  const pub = sb.storage.from('profile-photos').getPublicUrl(s);
+  return pub && pub.data ? pub.data.publicUrl : null;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -96,7 +104,7 @@ export async function POST(req: Request) {
           code: String(d.driver_code || ''),
           status: String(d.status || ''),
           phone: String(d.phone || ''),
-          photo: d.photo_url || null,
+          photo: photoUrl(sb, d.photo_url),
           car: car,
           plate: String(d.vehicle_plate || ''),
           lat: lat,
