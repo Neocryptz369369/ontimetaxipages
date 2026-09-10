@@ -27,7 +27,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 403 });
     }
 
-    const res = await sb.from('profiles').select('id, full_name, phone').limit(3000);
+    const res = await sb
+      .from('profiles')
+      .select('id, full_name, email, phone, photo_url, created_at, recording_consent_at')
+      .order('created_at', { ascending: false })
+      .limit(3000);
     if (res.error) {
       return NextResponse.json({ error: res.error.message }, { status: 500 });
     }
