@@ -14,6 +14,7 @@ import PanicButton from '../../components/PanicButton';
 import AccidentReport from '../../components/AccidentReport';
 import DriverEarnings from '../../components/DriverEarnings';
 import SafetyAlerts from '../../components/SafetyAlerts';
+import SpeedWatch from '../../components/SpeedWatch';
 
 type DriverInfo = {
   driverCode: string;
@@ -507,6 +508,14 @@ export default function DriverLoginPage() {
             <div style={{ background: look.bg, color: look.color, border: look.border, borderRadius: 14, padding: 16, fontWeight: 800, marginBottom: 16 }}>
               {look.text}
             </div>
+{driver.status === 'approved' ? (
+  <div style={{ marginBottom: 16 }}>
+    <div style={{ color: '#64748b', fontSize: 13, marginBottom: 8, lineHeight: 1.5 }}>
+      Your location is shared with the owner's live map any time this page is open, not just while you are on a ride.
+    </div>
+    {myToken ? <SpeedWatch role="driver" token={myToken} /> : null}
+  </div>
+) : null}
 
 
             {driver.status !== 'approved' ? (
