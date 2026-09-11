@@ -15,6 +15,7 @@ import TodayPay from '../../components/TodayPay';
 import DriverEarnings from '../../components/DriverEarnings';
 import SafetyAlerts from '../../components/SafetyAlerts';
 import NewOrderAlarm from '../../components/NewOrderAlarm';
+import SpeedWatch from '../../components/SpeedWatch';
 
 type Ride = {
   id: string;
@@ -427,6 +428,12 @@ export default function DriverRidesPage() {
         <Ticker />
 
         <NewOrderAlarm who="driver" ids={rides.map((r: any) => String(r.id))} />
+{ready && approved ? (
+  <div style={{ ...small, marginBottom: 10 }}>
+    Your location is shared with the owner's live map any time this page is open, not just while you are on a ride.
+  </div>
+) : null}
+{ready && approved ? <SpeedWatch role="driver" token={myToken} /> : null}
 
         {ready && signedIn && hasDriver ? <DriverEarnings /> : null}
         {ready && signedIn && hasDriver ? <SafetyAlerts /> : null}
