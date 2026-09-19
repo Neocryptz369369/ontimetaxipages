@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 
-const ADMIN_EMAIL = 'neocryptz@yahoo.com';
+const ADMIN_EMAIL = 'neocryptz@gmail.com';
 
 const wrap: any = { minHeight: '100vh', background: '#0b0303', color: '#f6eaea', padding: '24px 16px 60px', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif' };
 const shell: any = { maxWidth: '1000px', margin: '0 auto' };
