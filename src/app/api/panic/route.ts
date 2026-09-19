@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 
-const ADMIN_EMAIL = 'neocryptz@yahoo.com';
+const ADMIN_EMAIL = 'neocryptz@gmail.com';
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
