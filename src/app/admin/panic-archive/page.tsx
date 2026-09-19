@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 
-const ADMIN_EMAIL = "neocryptz@yahoo.com";
+const ADMIN_EMAIL = "neocryptz@gmail.com";
 
 type Media = {
   id: string;
