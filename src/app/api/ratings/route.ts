@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 
-const ADMIN_EMAIL = 'neocryptz@gmail.com.com';
+const ADMIN_EMAIL = 'neocryptz@gmail.com';
 src/app/admin/panic-archive/page.tsx
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
