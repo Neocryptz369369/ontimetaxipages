@@ -13,7 +13,7 @@ import NewOrderAlarm from "../../components/NewOrderAlarm";
 import NewRiderAlarm from "../../components/NewRiderAlarm";
 import SafetyAlerts from "../../components/SafetyAlerts";
 
-const ADMIN_EMAIL = "neocryptz@yahoo.com";
+const ADMIN_EMAIL = "neocryptz@gmail.com";
 
 function faceUrl(v: any) {
   const raw = v === null || v === undefined ? '' : String(v)
