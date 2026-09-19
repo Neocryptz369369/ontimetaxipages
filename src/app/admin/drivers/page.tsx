@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 
-const ADMIN_EMAIL = 'neocryptz@yahoo.com';
+const ADMIN_EMAIL = 'neocryptz@gmail.com';
 
 const KIND_TEXT: any = { drugs: 'Drug use', alcohol: 'Alcohol use', both: 'Drugs and alcohol', other: 'Other' };
 
