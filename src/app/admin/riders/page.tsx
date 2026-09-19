@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 
-const ADMIN_EMAIL = 'neocryptz@yahoo.com';
+const ADMIN_EMAIL = 'neocryptz@gmail.com';
 
 const AGREEMENT_LABEL: any = { recording: 'Recording agreement', fee: 'Get in fee and 20 percent agreement' };
 
