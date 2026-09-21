@@ -6,29 +6,30 @@ import { getLang, LANG_EVENT } from '../lib/i18n'
 type VideoOption = {
   code: string
   label: string
+  flag: string
   videoId: string
 }
 
 const VIDEOS: VideoOption[] = [
-  { code: 'en', label: 'English', videoId: '4o9HHi7S2rI' },
-  { code: 'es', label: 'Spanish', videoId: 'co-a89-Mg5w' },
-  { code: 'ar', label: 'Arabic', videoId: 'K5LShNnSHfQ' },
-  { code: 'zh-CN', label: 'Chinese', videoId: 'FbwsucT9sYM' },
-  { code: 'ja', label: 'Japanese', videoId: '8pW2TxwtliU' },
-  { code: 'km', label: 'Khmer', videoId: 'd8o_2ohFYoc' },
-  { code: 'ru', label: 'Russian', videoId: 'GLfKTY7pQII' },
-  { code: 'fr', label: 'French', videoId: 't1xV3A_3xlI' },
-  { code: 'tl', label: 'Filipino', videoId: 'HLMBNz0ryEQ' },
-  { code: 'af', label: 'Afrikaans', videoId: 'PRji7sWa6pY' },
-  { code: 'el', label: 'Greek', videoId: '7aOPJWMI-pA' },
-  { code: 'iw', label: 'Hebrew', videoId: '-tulmR1gcyc' },
-  { code: 'sw', label: 'Swahili', videoId: 'nd5qE1WKYDE' },
-  { code: 'uk', label: 'Ukrainian', videoId: 'aGC63d1-Gdc' },
-  { code: 'kn', label: 'Kannada', videoId: 'g3umVG3F1Bo' },
-  { code: 'sv', label: 'Swedish', videoId: 'Jc0GG08PF9A' },
-  { code: 'id', label: 'Indonesian', videoId: '1trMwfwMjSU' },
-  { code: 'nl', label: 'Dutch', videoId: '5mSfLQ0SiaI' },
-  { code: 'it', label: 'Italian', videoId: 'LX9a20uG7tA' },
+  { code: 'en', label: 'English', flag: '🇺🇸', videoId: '4o9HHi7S2rI' },
+  { code: 'es', label: 'Spanish', flag: '🇪🇸', videoId: 'co-a89-Mg5w' },
+  { code: 'ar', label: 'Arabic', flag: '🇸🇦', videoId: 'K5LShNnSHfQ' },
+  { code: 'zh-CN', label: 'Chinese', flag: '🇨🇳', videoId: 'FbwsucT9sYM' },
+  { code: 'ja', label: 'Japanese', flag: '🇯🇵', videoId: '8pW2TxwtliU' },
+  { code: 'km', label: 'Khmer', flag: '🇰🇭', videoId: 'd8o_2ohFYoc' },
+  { code: 'ru', label: 'Russian', flag: '🇷🇺', videoId: 'GLfKTY7pQII' },
+  { code: 'fr', label: 'French', flag: '🇫🇷', videoId: 't1xV3A_3xlI' },
+  { code: 'tl', label: 'Filipino', flag: '🇵🇭', videoId: 'HLMBNz0ryEQ' },
+  { code: 'af', label: 'Afrikaans', flag: '🇿🇦', videoId: 'PRji7sWa6pY' },
+  { code: 'el', label: 'Greek', flag: '🇬🇷', videoId: '7aOPJWMI-pA' },
+  { code: 'iw', label: 'Hebrew', flag: '🇮🇱', videoId: '-tulmR1gcyc' },
+  { code: 'sw', label: 'Swahili', flag: '🇰🇪', videoId: 'nd5qE1WKYDE' },
+  { code: 'uk', label: 'Ukrainian', flag: '🇺🇦', videoId: 'aGC63d1-Gdc' },
+  { code: 'kn', label: 'Kannada', flag: '🇮🇳', videoId: 'g3umVG3F1Bo' },
+  { code: 'sv', label: 'Swedish', flag: '🇸🇪', videoId: 'Jc0GG08PF9A' },
+  { code: 'id', label: 'Indonesian', flag: '🇮🇩', videoId: '1trMwfwMjSU' },
+  { code: 'nl', label: 'Dutch', flag: '🇳🇱', videoId: '5mSfLQ0SiaI' },
+  { code: 'it', label: 'Italian', flag: '🇮🇹', videoId: 'LX9a20uG7tA' },
 ]
 
 export default function VideoLanguagePicker() {
@@ -105,7 +106,7 @@ export default function VideoLanguagePicker() {
           {VIDEOS.map(function (v) {
             return (
               <option key={v.code} value={v.code} style={{ color: '#000000' }}>
-                {v.label}
+                {v.flag + ' ' + v.label}
               </option>
             )
           })}
