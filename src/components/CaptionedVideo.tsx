@@ -20,31 +20,52 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
   const hostRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const wantedLangRef = useRef<string>('en')
+  const watchdogRef = useRef<any>(null)
 
   useEffect(function () {
     let cancelled = false
-    let retryTimer: any = null
+
+    function currentTrackLang(): string | null {
+      const p = playerRef.current
+      if (!p || typeof p.getOption !== 'function') return null
+      try {
+        const t = p.getOption('captions', 'track')
+        if (!t) return null
+        if (t.translationLanguage && t.translationLanguage.languageCode) return t.translationLanguage.languageCode
+        return t.languageCode || null
+      } catch (e) { return null }
+    }
 
     function applyCaptions() {
       const p = playerRef.current
       if (!p || typeof p.setOption !== 'function') return
+      const target = wantedLangRef.current && wantedLangRef.current !== 'en' ? wantedLangRef.current : 'en'
       try {
-        const target = wantedLangRef.current && wantedLangRef.current !== 'en' ? wantedLangRef.current : 'en'
+        const cur = currentTrackLang()
+        if (cur === target) return
         p.setOption('captions', 'track', { languageCode: target })
         p.setOption('captions', 'reload', true)
       } catch (e) {}
     }
 
-    function scheduleApply() {
-      applyCaptions()
-      if (retryTimer) clearTimeout(retryTimer)
-      let tries = 0
-      const tick = function () {
-        tries += 1
-        applyCaptions()
-        if (tries < 6) retryTimer = setTimeout(tick, 700)
+    function stopWatchdog() {
+      if (watchdogRef.current) {
+        clearInterval(watchdogRef.current)
+        watchdogRef.current = null
       }
-      retryTimer = setTimeout(tick, 400)
+    }
+
+    function startWatchdog() {
+      stopWatchdog()
+      let ticks = 0
+      watchdogRef.current = setInterval(function () {
+        ticks += 1
+        applyCaptions()
+        // YouTube can restore its own remembered caption-language preference
+        // shortly after playback starts, racing our call. Keep correcting
+        // for a while, then ease off so we are not polling forever.
+        if (ticks > 12) stopWatchdog()
+      }, 1200)
     }
 
     function makePlayer() {
@@ -55,13 +76,18 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
         events: {
           onReady: function () {
             wantedLangRef.current = getLang()
-            scheduleApply()
+            applyCaptions()
           },
           onApiChange: function () {
-            scheduleApply()
+            applyCaptions()
           },
           onStateChange: function (ev: any) {
-            if (ev && ev.data === 1) scheduleApply()
+            if (ev && ev.data === 1) {
+              applyCaptions()
+              startWatchdog()
+            } else if (ev && (ev.data === 2 || ev.data === 0)) {
+              stopWatchdog()
+            }
           },
         },
       })
@@ -86,13 +112,14 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
     function onLangChange(ev: any) {
       const code = ev && ev.detail ? String(ev.detail) : getLang()
       wantedLangRef.current = code
-      scheduleApply()
+      applyCaptions()
+      startWatchdog()
     }
     window.addEventListener(LANG_EVENT, onLangChange)
 
     return function () {
       cancelled = true
-      if (retryTimer) clearTimeout(retryTimer)
+      stopWatchdog()
       window.removeEventListener(LANG_EVENT, onLangChange)
       try {
         if (playerRef.current && typeof playerRef.current.destroy === 'function') {
