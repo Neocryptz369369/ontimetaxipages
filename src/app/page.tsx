@@ -167,7 +167,33 @@ export default function HomePage() {
                 </Link>
               </div>
               <div style={{ marginTop: "22px", maxWidth: "560px", width: "100%" }}>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 800,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "#8fdcff",
+                    marginBottom: "8px",
+                  }}
+                >
+                  English
+                </div>
                 <CaptionedVideo videoId="4o9HHi7S2rI" title="On Time Taxi Rider Guide" />
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 800,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "#8fdcff",
+                    marginTop: "22px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Spanish
+                </div>
+                <CaptionedVideo videoId="co-a89-Mg5w" title="On Time Taxi Rider Guide (Spanish)" />
               </div>
             </div>
 
