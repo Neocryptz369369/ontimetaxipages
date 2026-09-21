@@ -32,6 +32,7 @@ const VIDEOS: VideoOption[] = [
   { code: 'it', label: 'Italian', flag: '🇮🇹', videoId: 'LX9a20uG7tA' },
   { code: 'de', label: 'German', flag: '🇩🇪', videoId: 'EZk2lERjqPs' },
   { code: 'fi', label: 'Finnish', flag: '🇫🇮', videoId: 'ekT0BChbhaM' },
+  { code: 'ga', label: 'Irish', flag: '🇮🇪', videoId: 'NB8LfR5s9fk' },
 ]
 
 export default function VideoLanguagePicker() {
