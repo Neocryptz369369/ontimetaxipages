@@ -2,16 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import VideoLanguagePicker from "../components/VideoLanguagePicker";
 
-const workflowLinks = [
-  {
-    title: "Broker Account",
-    text: "Broker and insurance workflow now lives on its own page instead of taking over the homepage.",
-    href: "/broker-account",
-    cta: "Open Broker Account",
-    tone: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%)",
-  },
-];
-
 export default function HomePage() {
   return (
     <main
@@ -227,52 +217,6 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section
-          style={{
-            borderRadius: "28px",
-            padding: "24px",
-            marginBottom: "22px",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.10)",
-          }}
-        >
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
-            {workflowLinks.map((card) => (
-              <div
-                key={card.title}
-                style={{
-                  borderRadius: "24px",
-                  overflow: "hidden",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: "rgba(255,255,255,0.05)",
-                  boxShadow: "0 20px 40px rgba(0,0,0,0.18)",
-                }}
-              >
-                <div style={{ height: "10px", background: card.tone }} />
-                <div style={{ padding: "22px" }}>
-                  <div style={{ fontSize: "24px", fontWeight: 800, marginBottom: "10px" }}>{card.title}</div>
-                  <div style={{ color: "#d9e5ff", lineHeight: 1.7, minHeight: "88px" }}>{card.text}</div>
-                  <Link
-                    href={card.href}
-                    style={{
-                      display: "inline-block",
-                      marginTop: "16px",
-                      textDecoration: "none",
-                      color: "#09111f",
-                      background: "#ffffff",
-                      padding: "12px 16px",
-                      borderRadius: "14px",
-                      fontWeight: 800,
-                    }}
-                  >
-                    {card.cta}
-                  </Link>
-                </div>
-              </div>
-            ))}
           </div>
         </section>
       </div>
