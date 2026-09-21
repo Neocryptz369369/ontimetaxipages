@@ -165,12 +165,12 @@ export default function HomePage() {
                   Drive with us
                 </Link>
               </div>
-              <div style={{ marginTop: "22px", maxWidth: "340px" }}>
+              <div style={{ marginTop: "22px", maxWidth: "560px", width: "100%" }}>
                 <div
                   style={{
                     position: "relative",
                     width: "100%",
-                    paddingBottom: "177.78%",
+                    paddingBottom: "56.25%",
                     borderRadius: "20px",
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.14)",
@@ -178,8 +178,8 @@ export default function HomePage() {
                   }}
                 >
                   <iframe
-                    src="https://www.youtube.com/embed/bqNkII1f-J8"
-                    title="On Time Taxi video"
+                    src="https://www.youtube.com/embed/4o9HHi7S2rI?cc_load_policy=1&cc_lang_pref=en"
+                    title="On Time Taxi Rider Guide"
                     style={{
                       position: "absolute",
                       top: 0,
