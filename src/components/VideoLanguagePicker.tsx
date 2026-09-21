@@ -24,6 +24,7 @@ const VIDEOS: VideoOption[] = [
   { code: 'iw', label: 'Hebrew', videoId: '-tulmR1gcyc' },
   { code: 'sw', label: 'Swahili', videoId: 'nd5qE1WKYDE' },
   { code: 'uk', label: 'Ukrainian', videoId: 'aGC63d1-Gdc' },
+  { code: 'kn', label: 'Kannada', videoId: 'g3umVG3F1Bo' },
 ]
 
 export default function VideoLanguagePicker() {
