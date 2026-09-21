@@ -212,18 +212,19 @@ export default function HomePage() {
                     width: "100%",
                     maxWidth: "580px",
                     height: "540px",
-                }}
-              >
-                <Image
-                  src="/ontimetaxi-logo.png"
-                  alt="On Time Taxi large logo"
-                  fill
-                  priority
-                  style={{
-                    objectFit: "contain",
-                    padding: "12px 12px 32px 12px",
                   }}
-                />
+                >
+                  <Image
+                    src="/ontimetaxi-logo.png"
+                    alt="On Time Taxi large logo"
+                    fill
+                    priority
+                    style={{
+                      objectFit: "contain",
+                      padding: "12px 12px 32px 12px",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
