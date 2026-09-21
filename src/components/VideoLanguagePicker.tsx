@@ -13,6 +13,7 @@ const VIDEOS: VideoOption[] = [
   { code: 'en', label: 'English', videoId: '4o9HHi7S2rI' },
   { code: 'es', label: 'Spanish', videoId: 'co-a89-Mg5w' },
   { code: 'ar', label: 'Arabic', videoId: 'K5LShNnSHfQ' },
+  { code: 'zh-CN', label: 'Chinese', videoId: 'FbwsucT9sYM' },
 ]
 
 export default function VideoLanguagePicker() {
