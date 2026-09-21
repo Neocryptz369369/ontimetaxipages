@@ -7,7 +7,7 @@ declare global {
   interface Window {
     YT: any
     onYouTubeIframeAPIReady: () => void
-    __cv?: any
+    __cvAll?: any
   }
 }
 
@@ -19,22 +19,22 @@ type Props = {
 
 const DEBUG = true
 
-function log(...args: any[]) {
-  if (DEBUG) {
-    try {
-      console.log('[CV]', ...args)
-    } catch (e) {}
-  }
-}
-
 export default function CaptionedVideo({ videoId, title, aspectPercent }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const wantedLangRef = useRef<string>('en')
   const watchdogRef = useRef<any>(null)
+  const historyRef = useRef<any[]>([])
 
   useEffect(function () {
     let cancelled = false
+
+    function pushHistory(entry: any) {
+      if (!DEBUG) return
+      entry.t = Date.now()
+      historyRef.current.push(entry)
+      if (historyRef.current.length > 40) historyRef.current.shift()
+    }
 
     function currentTrackLang(): string | null {
       const p = playerRef.current
@@ -49,19 +49,30 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
       }
     }
 
+    function rawTrack(): any {
+      const p = playerRef.current
+      if (!p || typeof p.getOption !== 'function') return null
+      try {
+        return p.getOption('captions', 'track')
+      } catch (e) {
+        return { error: String(e) }
+      }
+    }
+
     function applyCaptions(reason: string) {
       const p = playerRef.current
       if (!p || typeof p.setOption !== 'function') return
       const target = wantedLangRef.current && wantedLangRef.current !== 'en' ? wantedLangRef.current : 'en'
       try {
         const cur = currentTrackLang()
-        log('applyCaptions', { reason: reason, target: target, cur: cur })
+        const track = rawTrack()
+        const state = typeof p.getPlayerState === 'function' ? p.getPlayerState() : null
+        pushHistory({ reason: reason, target: target, cur: cur, track: track, state: state })
         if (cur === target) return
         p.setOption('captions', 'track', { languageCode: target })
         p.setOption('captions', 'reload', true)
-        log('setOption called', { target: target })
       } catch (e) {
-        log('applyCaptions error', String(e))
+        pushHistory({ reason: reason, error: String(e) })
       }
     }
 
@@ -69,14 +80,12 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
       if (watchdogRef.current) {
         clearInterval(watchdogRef.current)
         watchdogRef.current = null
-        log('watchdog stopped')
       }
     }
 
     function startWatchdog() {
       stopWatchdog()
       let ticks = 0
-      log('watchdog started')
       watchdogRef.current = setInterval(function () {
         ticks += 1
         applyCaptions('watchdog-tick-' + ticks)
@@ -86,23 +95,19 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
 
     function makePlayer() {
       if (cancelled || !hostRef.current) return
-      log('makePlayer')
       playerRef.current = new window.YT.Player(hostRef.current, {
         videoId: videoId,
         playerVars: { cc_load_policy: 1, rel: 0 },
         events: {
           onReady: function () {
             wantedLangRef.current = getLang()
-            log('onReady', { wantedLang: wantedLangRef.current })
-            applyCaptions('ready')
-            startWatchdog()
+            pushHistory({ reason: 'onReady', wantedLang: wantedLangRef.current })
           },
           onApiChange: function () {
-            log('onApiChange')
             applyCaptions('apiChange')
           },
           onStateChange: function (ev: any) {
-            log('onStateChange', ev && ev.data)
+            pushHistory({ reason: 'onStateChange', data: ev && ev.data })
             if (ev && ev.data === 1) {
               applyCaptions('state-playing')
               startWatchdog()
@@ -114,7 +119,8 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
       })
 
       if (DEBUG) {
-        window.__cv = {
+        window.__cvAll = window.__cvAll || {}
+        window.__cvAll[videoId] = {
           player: function () {
             return playerRef.current
           },
@@ -122,7 +128,11 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
             return wantedLangRef.current
           },
           currentTrackLang: currentTrackLang,
-          applyCaptions: function () {
+          rawTrack: rawTrack,
+          history: function () {
+            return historyRef.current
+          },
+          apply: function () {
             applyCaptions('manual')
           },
         }
@@ -147,8 +157,8 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
 
     function onLangChange(ev: any) {
       const code = ev && ev.detail ? String(ev.detail) : getLang()
-      log('onLangChange', { code: code })
       wantedLangRef.current = code
+      pushHistory({ reason: 'onLangChange', code: code })
       applyCaptions('langEvent')
       startWatchdog()
     }
