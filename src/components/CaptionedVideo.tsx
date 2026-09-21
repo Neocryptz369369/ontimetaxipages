@@ -7,6 +7,7 @@ declare global {
   interface Window {
     YT: any
     onYouTubeIframeAPIReady: () => void
+    __cv?: any
   }
 }
 
@@ -14,6 +15,16 @@ type Props = {
   videoId: string
   title?: string
   aspectPercent?: number
+}
+
+const DEBUG = true
+
+function log(...args: any[]) {
+  if (DEBUG) {
+    try {
+      console.log('[CV]', ...args)
+    } catch (e) {}
+  }
 }
 
 export default function CaptionedVideo({ videoId, title, aspectPercent }: Props) {
@@ -33,57 +44,67 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
         if (!t) return null
         if (t.translationLanguage && t.translationLanguage.languageCode) return t.translationLanguage.languageCode
         return t.languageCode || null
-      } catch (e) { return null }
+      } catch (e) {
+        return null
+      }
     }
 
-    function applyCaptions() {
+    function applyCaptions(reason: string) {
       const p = playerRef.current
       if (!p || typeof p.setOption !== 'function') return
       const target = wantedLangRef.current && wantedLangRef.current !== 'en' ? wantedLangRef.current : 'en'
       try {
         const cur = currentTrackLang()
+        log('applyCaptions', { reason: reason, target: target, cur: cur })
         if (cur === target) return
         p.setOption('captions', 'track', { languageCode: target })
         p.setOption('captions', 'reload', true)
-      } catch (e) {}
+        log('setOption called', { target: target })
+      } catch (e) {
+        log('applyCaptions error', String(e))
+      }
     }
 
     function stopWatchdog() {
       if (watchdogRef.current) {
         clearInterval(watchdogRef.current)
         watchdogRef.current = null
+        log('watchdog stopped')
       }
     }
 
     function startWatchdog() {
       stopWatchdog()
       let ticks = 0
+      log('watchdog started')
       watchdogRef.current = setInterval(function () {
         ticks += 1
-        applyCaptions()
-        // YouTube can restore its own remembered caption-language preference
-        // shortly after playback starts, racing our call. Keep correcting
-        // for a while, then ease off so we are not polling forever.
-        if (ticks > 12) stopWatchdog()
-      }, 1200)
+        applyCaptions('watchdog-tick-' + ticks)
+        if (ticks > 20) stopWatchdog()
+      }, 1000)
     }
 
     function makePlayer() {
       if (cancelled || !hostRef.current) return
+      log('makePlayer')
       playerRef.current = new window.YT.Player(hostRef.current, {
         videoId: videoId,
         playerVars: { cc_load_policy: 1, rel: 0 },
         events: {
           onReady: function () {
             wantedLangRef.current = getLang()
-            applyCaptions()
+            log('onReady', { wantedLang: wantedLangRef.current })
+            applyCaptions('ready')
+            startWatchdog()
           },
           onApiChange: function () {
-            applyCaptions()
+            log('onApiChange')
+            applyCaptions('apiChange')
           },
           onStateChange: function (ev: any) {
+            log('onStateChange', ev && ev.data)
             if (ev && ev.data === 1) {
-              applyCaptions()
+              applyCaptions('state-playing')
               startWatchdog()
             } else if (ev && (ev.data === 2 || ev.data === 0)) {
               stopWatchdog()
@@ -91,6 +112,21 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
           },
         },
       })
+
+      if (DEBUG) {
+        window.__cv = {
+          player: function () {
+            return playerRef.current
+          },
+          wantedLang: function () {
+            return wantedLangRef.current
+          },
+          currentTrackLang: currentTrackLang,
+          applyCaptions: function () {
+            applyCaptions('manual')
+          },
+        }
+      }
     }
 
     if (window.YT && window.YT.Player) {
@@ -111,8 +147,9 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
 
     function onLangChange(ev: any) {
       const code = ev && ev.detail ? String(ev.detail) : getLang()
+      log('onLangChange', { code: code })
       wantedLangRef.current = code
-      applyCaptions()
+      applyCaptions('langEvent')
       startWatchdog()
     }
     window.addEventListener(LANG_EVENT, onLangChange)
