@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import CaptionedVideo from "../components/CaptionedVideo";
 
 const workflowLinks = [
   {
@@ -166,32 +167,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <div style={{ marginTop: "22px", maxWidth: "560px", width: "100%" }}>
-                <div
-                  style={{
-                    position: "relative",
-                    width: "100%",
-                    paddingBottom: "56.25%",
-                    borderRadius: "20px",
-                    overflow: "hidden",
-                    border: "1px solid rgba(255,255,255,0.14)",
-                    boxShadow: "0 20px 50px rgba(0,0,0,0.30)",
-                  }}
-                >
-                  <iframe
-                    src="https://www.youtube.com/embed/4o9HHi7S2rI?cc_load_policy=1&cc_lang_pref=en"
-                    title="On Time Taxi Rider Guide"
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "100%",
-                      border: 0,
-                    }}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  />
-                </div>
+                <CaptionedVideo videoId="4o9HHi7S2rI" title="On Time Taxi Rider Guide" />
               </div>
             </div>
 
