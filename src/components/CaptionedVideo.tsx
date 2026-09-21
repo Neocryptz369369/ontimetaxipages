@@ -19,18 +19,32 @@ type Props = {
 export default function CaptionedVideo({ videoId, title, aspectPercent }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
+  const wantedLangRef = useRef<string>('en')
 
   useEffect(function () {
     let cancelled = false
+    let retryTimer: any = null
 
-    function applyCaptions(code: string) {
+    function applyCaptions() {
       const p = playerRef.current
       if (!p || typeof p.setOption !== 'function') return
       try {
-        const target = code && code !== 'en' ? code : 'en'
+        const target = wantedLangRef.current && wantedLangRef.current !== 'en' ? wantedLangRef.current : 'en'
         p.setOption('captions', 'track', { languageCode: target })
         p.setOption('captions', 'reload', true)
       } catch (e) {}
+    }
+
+    function scheduleApply() {
+      applyCaptions()
+      if (retryTimer) clearTimeout(retryTimer)
+      let tries = 0
+      const tick = function () {
+        tries += 1
+        applyCaptions()
+        if (tries < 6) retryTimer = setTimeout(tick, 700)
+      }
+      retryTimer = setTimeout(tick, 400)
     }
 
     function makePlayer() {
@@ -40,7 +54,14 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
         playerVars: { cc_load_policy: 1, rel: 0 },
         events: {
           onReady: function () {
-            applyCaptions(getLang())
+            wantedLangRef.current = getLang()
+            scheduleApply()
+          },
+          onApiChange: function () {
+            scheduleApply()
+          },
+          onStateChange: function (ev: any) {
+            if (ev && ev.data === 1) scheduleApply()
           },
         },
       })
@@ -64,12 +85,14 @@ export default function CaptionedVideo({ videoId, title, aspectPercent }: Props)
 
     function onLangChange(ev: any) {
       const code = ev && ev.detail ? String(ev.detail) : getLang()
-      applyCaptions(code)
+      wantedLangRef.current = code
+      scheduleApply()
     }
     window.addEventListener(LANG_EVENT, onLangChange)
 
     return function () {
       cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
       window.removeEventListener(LANG_EVENT, onLangChange)
       try {
         if (playerRef.current && typeof playerRef.current.destroy === 'function') {
