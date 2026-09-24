@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const OWNER_EMAIL = 'neocryptz@yahoo.com';
+const OWNER_EMAIL = 'neocryptz@gmail.com';
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
