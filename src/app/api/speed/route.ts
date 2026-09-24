@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 
-const OWNER_EMAIL = 'neocryptz@yahoo.com';
+const OWNER_EMAIL = 'neocryptz@gmail.com';
 
 // The owner sets these in the admin panel. These are the fall backs
 // used if the settings row cannot be read for any reason.
