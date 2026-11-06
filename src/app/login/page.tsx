@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
+import SocialLogin from '../../components/SocialLogin';
 
 async function uploadPendingPhoto(userId: string) {
   try {
@@ -66,6 +67,8 @@ function LoginForm() {
           <form onSubmit={onSubmit}>
             <h1 style={{ color: '#0f172a', fontSize: 24, margin: '0 0 6px' }}>Sign in</h1>
             <p style={{ color: '#475569', margin: '0 0 22px', fontSize: 14 }}>Sign in to book your ride.</p>
+
+            <SocialLogin next={next} />
 
             <label style={labelStyle}>Email</label>
             <input style={inputStyle} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
