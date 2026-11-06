@@ -1,0 +1,167 @@
+'use client';
+
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { supabase } from '../../lib/supabase';
+import RecordingAgreement, { RECORDING_AGREEMENT_TEXT, blankSignature, isSigned } from '../../components/RecordingAgreement';
+
+function digitsOnly(v: any) {
+  return String(v === null || v === undefined ? '' : v).replace(/[^0-9]/g, '');
+}
+
+function prettyPhone(v: any) {
+  const d = digitsOnly(v);
+  const ten = d.length === 11 && d.charAt(0) === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return ten.slice(0, 3) + '-' + ten.slice(3, 6) + '-' + ten.slice(6);
+  return ten;
+}
+
+// One short screen for riders who signed in with Google or Apple.
+// Collects what those providers do not give us: phone, photo, and the recording agreement.
+function FinishProfile() {
+  const params = useSearchParams();
+  const nextRaw = params?.get('next') || '/ride';
+  const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/ride';
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [hasPhoto, setHasPhoto] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [recordingSign, setRecordingSign] = useState(blankSignature);
+  const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (!user) { window.location.replace('/login?next=' + encodeURIComponent(next)); return; }
+      const meta: any = user.user_metadata || {};
+      setUserId(user.id);
+      setEmail(user.email || '');
+      const { data: row } = await supabase.from('profiles').select('full_name, phone, photo_url').eq('id', user.id).maybeSingle();
+      setFullName(String((row && row.full_name) || meta.full_name || meta.name || ''));
+      setPhone(prettyPhone((row && row.phone) || meta.phone || ''));
+      setHasPhoto(!!(row && row.photo_url));
+      setReady(true);
+    })();
+  }, [next]);
+
+  function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] || null;
+    setPhoto(f);
+    setPreview(f ? URL.createObjectURL(f) : null);
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!userId) return;
+    if (!fullName.trim()) { setError('Please enter your full name.'); return; }
+    const d = digitsOnly(phone);
+    if (d.length !== 10 && d.length !== 11) { setError('That phone number does not look right. Please put in a 10 digit number, like 930-216-4166.'); return; }
+    if (!photo && !hasPhoto) { setError('A profile photo is required so your driver can recognize you.'); return; }
+    if (!isSigned(recordingSign)) { setError('Please type your full name and then sign your name in the recording agreement box.'); return; }
+
+    setLoading(true);
+    try {
+      const fields: any = { full_name: fullName.trim(), phone: prettyPhone(phone) };
+
+      if (photo) {
+        const ext = (photo.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = userId + '/avatar.' + ext;
+        const { error: upErr } = await supabase.storage.from('profile-photos').upload(path, photo, { upsert: true, contentType: photo.type });
+        if (upErr) throw upErr;
+        fields.photo_url = path;
+      }
+
+      // The database trigger normally creates the profile row; insert it if it is somehow missing.
+      const { data: updated, error: updErr } = await supabase.from('profiles').update(fields).eq('id', userId).select('id');
+      if (updErr) throw updErr;
+      if (!updated || updated.length === 0) {
+        const { error: insErr } = await supabase.from('profiles').insert({ id: userId, ...fields });
+        if (insErr) throw insErr;
+      }
+
+      try {
+        await fetch('/api/recording-consent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            personType: 'rider',
+            agreementType: 'recording',
+            fullName: fullName.trim(),
+            email: email.trim().toLowerCase(),
+            phone: prettyPhone(phone),
+            userId,
+            agreed: true,
+            agreementText: RECORDING_AGREEMENT_TEXT,
+            signatureName: recordingSign.name,
+            signatureImage: recordingSign.image,
+            signedAt: recordingSign.signedAt,
+          }),
+        });
+      } catch {}
+
+      window.location.href = next;
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong. Please try again.');
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%)', fontFamily: 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif', padding: '32px 16px' }}>
+      <div style={{ maxWidth: 460, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 24, color: '#2563eb', fontWeight: 700, fontSize: 20 }}>On-Time Taxi</div>
+        <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #e5e7eb', boxShadow: '0 10px 30px rgba(15,23,42,0.06)', padding: 28 }}>
+          {!ready ? (
+            <div style={{ color: '#475569', textAlign: 'center' }}>Loading your account...</div>
+          ) : (
+            <form onSubmit={onSubmit}>
+              <h1 style={{ color: '#0f172a', fontSize: 24, margin: '0 0 6px' }}>Almost done</h1>
+              <p style={{ color: '#475569', margin: '0 0 22px', fontSize: 14 }}>Your driver will see your name, phone, and photo at pickup.{email ? ' Signed in as ' + email + '.' : ''}</p>
+
+              <label style={labelStyle}>Full name</label>
+              <input style={inputStyle} value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Jane Doe" autoComplete="name" />
+
+              <label style={labelStyle}>Phone number</label>
+              <input style={inputStyle} type="tel" inputMode="tel" value={phone} onChange={e => setPhone(prettyPhone(e.target.value))} placeholder="930-216-4166" autoComplete="tel" />
+
+              <label style={labelStyle}>Profile photo {hasPhoto ? '(optional, you already have one)' : '(required)'}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f1f5f9', border: '1px solid #e5e7eb', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {preview ? <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: '#94a3b8', fontSize: 12 }}>{hasPhoto ? 'On file' : 'No photo'}</span>}
+                </div>
+                <input type="file" accept="image/*" capture="user" onChange={onPhoto} style={{ fontSize: 14, color: '#475569' }} />
+              </div>
+
+              <RecordingAgreement value={recordingSign} onChange={setRecordingSign} />
+
+              {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 12px', borderRadius: 10, fontSize: 14, marginBottom: 16 }}>{error}</div>}
+
+              <button type="submit" disabled={loading} style={{ width: '100%', background: loading ? '#93c5fd' : '#2563eb', color: '#fff', border: 'none', padding: '13px', borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: loading ? 'default' : 'pointer' }}>
+                {loading ? 'Saving...' : 'Finish and book a ride'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function FinishProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <FinishProfile />
+    </Suspense>
+  );
+}
+
+const labelStyle: React.CSSProperties = { display: 'block', color: '#0f172a', fontSize: 14, fontWeight: 600, margin: '0 0 6px' };
+const inputStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 15, marginBottom: 16, outline: 'none' };
