@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import RecordingAgreement, { RECORDING_AGREEMENT_TEXT, blankSignature, isSigned } from '../../components/RecordingAgreement';
-import SocialLogin from '../../components/SocialLogin';
 
 async function uploadPhoto(userId: string, photo: File) {
   const ext = (photo.name.split('.').pop() || 'jpg').toLowerCase();
@@ -142,8 +141,6 @@ export default function SignUpPage() {
               <p style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: 10, padding: '10px 12px', fontSize: 13, margin: '0 0 22px', lineHeight: 1.5 }}>
                 Trying to sign up to drive for us instead? <Link href="/driver-login?tab=signup" style={{ color: '#1e40af', fontWeight: 700, textDecoration: 'underline' }}>Apply to become a driver here.</Link>
               </p>
-
-              <SocialLogin next="/ride" />
 
               <label style={labelStyle}>Full name</label>
               <input style={inputStyle} value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Jane Doe" autoComplete="name" />
